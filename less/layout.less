@@ -1,0 +1,264 @@
+@screen-sm: 34em;
+@screen-md: 48em;
+@screen-lg: 62em;
+@screen-xl: 75em;
+
+@font-base-sm: 18;
+@line-height-sm: 1.2;
+
+@font-base-md: 16;
+@line-height-md: 1.2;
+
+@font-base-lg: 18;
+@line-height-lg: 1.5;
+
+@font-base-xl: 20;
+@line-height-xl: 1.4;
+
+.line-em(@font-size, @line-height) when(default()) {
+  @line-height-em: unit(@line-height / @font-size, em);  
+}
+
+.vertical-rhythum-mar(@class, @font-em, @top, @bottom) {
+  @class-line-height: ~"line-height-@{class}";
+  .line-em(@font-em, @@class-line-height);  
+  @margin-top: @top * @line-height-em;
+  @margin-bottom: @bottom * @line-height-em;
+  margin: ~"@{margin-top} 0 @{margin-bottom}";
+}
+.vertical-rhythum-body(@class, @font-em, @lines) {
+  @class-line-height: ~"line-height-@{class}";
+  .line-em(@font-em, @@class-line-height);  
+  font-size: unit(@font-em, em);
+  line-height: unit(@lines * @line-height-em, em);
+}
+.vertical-rhythum(@class, @font-em, @lines, @top, @bottom) {
+  .vertical-rhythum-body(@class, @font-em, @lines);  
+  .vertical-rhythum-mar(@class, @font-em, @top, @bottom);  
+}
+.set-body(@class) {
+  @class-line-height: ~"line-height-@{class}";
+  @class-font-size: ~"font-base-@{class}";
+  font-size: unit(@@class-font-size, px); 
+  line-height: unit(@@class-font-size * @@class-line-height, px);
+}
+
+@media (min-width: 1px) {
+  .line-em(1em, @line-height-sm);  
+  body {
+    .set-body(sm);
+  }  
+  h1 {
+    .vertical-rhythum(sm, 1.7777777777777777em, 2, 2, 1);
+  }
+  h2 {
+    .vertical-rhythum(sm, 1.3333333333333333em, 2, 2.5, 0.5);
+  }
+  h3 {
+    .vertical-rhythum(sm, 1, 2, 1.5, 0.5);
+  }
+  h4 {
+    .vertical-rhythum(sm, 1, 1, 1.5, 0.5);
+  }
+  p {
+    .line-em(1em, @line-height-sm);  
+    margin: ~"0 0 @{line-height-em}";
+  }
+  .date {
+    .vertical-rhythum(sm, 1em, 1, 0.5, 2);
+  }
+  #TOC {
+      width: 100%;
+      line-height: @line-height-em;
+      margin: 0 auto;
+      margin-bottom: 2.5 * @line-height-em;
+      @padding-top: @line-height-em;
+      @padding-bottom: 0.5 * @line-height-em;
+      padding: ~"@{padding-top} 0 @{padding-bottom}";
+  }
+  #TOC a {
+      color: #222234;
+      font-size: 16px;
+      background: transparent;
+  }
+  .main-container {
+      padding-top: 7 * @line-height-em;
+      width: 100%;
+      max-width: 52em;
+  }
+  blockquote {
+      color: #432201;
+      background: #f6f6fa;
+      .vertical-rhythum(sm, 1, 1, 0, 1);
+      @padding-top: 0.5 * @line-height-em;
+      @padding-bottom: 0.5 * @line-height-em;
+      padding: ~"@{padding-top} 0.8em @{padding-bottom}";
+  }
+  pre {
+      .vertical-rhythum(sm, 0.8333333333333334, 0.5, 0.5, 0.5);
+      padding: 0.5 * @line-height-em;
+  }
+  .table > tbody > tr > td {
+      padding: 0.05 * @line-height-em;
+  }
+}
+@media (min-width: @screen-md) {
+  .line-em(1em, @line-height-md);  
+  body {
+    .set-body(md);
+    padding: 0 1em;
+  }  
+  h1 {
+    .vertical-rhythum(md, 1.7777777777777777em, 2, 2, 1);
+  }
+  h2 {
+    .vertical-rhythum(md, 1.3333333333333333em, 2, 2.5, 0.5);
+  }
+  h3 {
+    .vertical-rhythum(md, 1, 2, 1.5, 0.5);
+  }
+  h4 {
+    .vertical-rhythum(md, 1, 1, 1.5, 0.5);
+  }
+  .date {
+    .vertical-rhythum(md, 1em, 1, 0.5, 2);
+  }
+  p {
+    .line-em(1em, @line-height-md);  
+    margin: ~"0 0 @{line-height-em}";
+  }
+  #TOC {
+      .line-em(1em, @line-height-md);  
+      width: 80%;
+      line-height: @line-height-em;
+      margin-bottom: 2.5 * @line-height-em;
+      @padding-top: @line-height-em;
+      @padding-bottom: 0.5 * @line-height-em;
+      padding: ~"@{padding-top} 0 @{padding-bottom}";
+  }
+  .main-container {
+    padding-top: 7 * @line-height-em;
+  }
+  blockquote {
+    .vertical-rhythum(md, 1, 1, 0, 1);
+    @padding-top: 0.5 * @line-height-em;
+    @padding-bottom: 0.5 * @line-height-em;
+    padding: ~"@{padding-top} 0.8em @{padding-bottom}";
+  }
+  pre {
+      .vertical-rhythum(md, 0.8333333333333334, 0.5, 0.5, 0.5);
+      padding: 0.5 * @line-height-em;
+  }
+  .table > tbody > tr > td {
+      padding: 0.05 * @line-height-em;
+  }
+}
+@media (min-width: @screen-lg) {
+  .line-em(1em, @line-height-lg);  
+  body {
+    .set-body(lg);
+    padding: 0;
+  }  
+  h1 {
+    .vertical-rhythum(lg, 1.7777777777777777em, 2, 2, 1);
+  }
+  h2 {
+    .vertical-rhythum(lg, 1.3333333333333333em, 2, 2.5, 0.5);
+  }
+  h3 {
+    .vertical-rhythum(lg, 1, 2, 1.5, 0.5);
+  }
+  h4 {
+    .vertical-rhythum(lg, 1, 1, 1.5, 0.5);
+  }
+  .date {
+    .vertical-rhythum(lg, 1em, 1, 0.5, 2);
+  }
+  p {
+    .line-em(1em, @line-height-lg);  
+    margin: ~"0 0 @{line-height-em}";
+  }
+  .main-container {
+    padding-top: 7 * @line-height-em;
+    max-width: 48em;
+  }
+  blockquote {
+    .vertical-rhythum(lg, 1, 1, 0, 1);
+    @padding-top: 0.5 * @line-height-em;
+    @padding-bottom: 0.5 * @line-height-em;
+    padding: ~"@{padding-top} 0.8em @{padding-bottom}";
+  }
+  pre {
+      .vertical-rhythum(xl, 0.85, 0.5, 0.5, 0.5);
+      padding: 0.5 * @line-height-em;
+  }
+  .table {
+      width: 90%;  
+      margin-left: auto;
+      margin-right: auto;
+  }
+  .table > tbody > tr > td {
+      padding: 0.05 * @line-height-em;
+  }
+}
+@media (min-width: @screen-xl) {
+  .line-em(1em, @line-height-xl);  
+  body {
+    .set-body(xl);
+    padding-left: 14rem;
+  }  
+  h1 {
+    .vertical-rhythum(xl, 1.7777777777777777em, 2, 2, 1);
+  }
+  h2 {
+    .vertical-rhythum(xl, 1.3333333333333333em, 2, 2.5, 0.5);
+  }
+  h3 {
+    .vertical-rhythum(xl, 1, 2, 1.5, 0.5);
+  }
+  h4 {
+    .vertical-rhythum(xl, 1, 1, 1.5, 0.5);
+  }
+  .date {
+    .vertical-rhythum(xl, 1em, 1, 0.5, 2);
+  }
+  p {
+    .line-em(1em, @line-height-xl);  
+    margin: ~"0 0 @{line-height-em}";
+  }
+  #TOC {
+      .line-em(1em, @line-height-xl);  
+      width: 60%;
+      line-height: @line-height-em;
+      margin-bottom: 2.5 * @line-height-em;
+      @padding-top: @line-height-em;
+      @padding-bottom: 0.5 * @line-height-em;
+      padding: ~"@{padding-top} 0 @{padding-bottom}";
+  }
+  .main-container {
+    padding-top: 7 * @line-height-em;
+    margin: 0;
+  }
+  blockquote {
+    .vertical-rhythum(xl, 1, 1, 0, 1);
+    @padding-top: 0.5 * @line-height-em;
+    @padding-bottom: 0.5 * @line-height-em;
+    padding: ~"@{padding-top} 0.8em @{padding-bottom}";
+  }
+  pre {
+      .vertical-rhythum(xl, 0.85, 0.5, 0.5, 0.5);
+      padding: 0.5 * @line-height-em;
+  }
+  .table {
+      width: 80%;  
+  }
+  .table > tbody > tr > td {
+      padding: 0.05 * @line-height-em;
+  }
+}
+.highlight pre {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}

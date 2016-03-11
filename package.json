@@ -1,0 +1,24 @@
+{
+  "name": "article-pass",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concat-stream": "^1.5.1",
+    "css": "^2.2.1",
+    "domutils": "^1.5.1",
+    "html-entities": "^1.2.0",
+    "htmlparser2": "^3.9.0",
+    "katex": "^0.5.1",
+    "lodash": "^4.6.1",
+    "mathjax-node": "^0.5.1",
+    "ucss": "^0.4.7",
+    "uncss": "^0.13.0",
+    "yargs": "^4.2.0"
+  }
+}

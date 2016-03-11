@@ -1,0 +1,5 @@
+triplets = do 
+    x <- xs
+    y <- ys
+    z <- zs
+    return (x,y,z)
