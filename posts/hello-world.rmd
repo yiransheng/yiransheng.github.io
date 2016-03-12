@@ -9,7 +9,7 @@ output: html_document
 
 The last iteration of [my blog](http://www.yiransheng.net/blog) has not recieved any love for over two years. It was my fourth home-grown blog engine([githbub link](https://github.com/yiransheng/my-gae-blog)), based on a [Flask on Google App Engine](https://github.com/yiransheng/seincere) project I did almost half a decade ago. 
 
-I have long come to the realization that I won't be writing in any frequent fashion; any time I start a new blog it's more for the fun factor of building the site itself, and nothing probably will be different this time around. However, I'd like to think after this one, I won't be writing a blogging site for myself for a long time. 
+I have long come to the realization that I won't be writing in any frequent fashion; any time I start a new blog it's more for the fun factor of building the site itself - and nothing probably will be different this time around. However, I'd like to think after this one, I won't be writing a blogging site for myself for a long time. 
 
 ## What changed?
 
@@ -24,7 +24,7 @@ Google App Engine is fantastic, I still have a number of small personal sites th
 * Hyphenation
 * Markdown based authoring
 
-Despite these, the two main reason I decided to move off GAE are strong enough to motivate this migration:
+Despite these, the three main reason I decided to move off GAE are strong enough to motivate this migration:
 
 * I don't like writing in browser
 * I want to have my articles to be version controlled
