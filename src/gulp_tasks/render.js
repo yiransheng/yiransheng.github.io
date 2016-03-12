@@ -7,9 +7,9 @@ var through = require('through2');
 
 var PassThrough = require('stream').PassThrough;
 
-var render = function(opts) {
-  opts = opts || {};
+var render = function() {
   return through.obj(function(file, encoding, callback) {
+    var opts = {};
     if(/index\.html$/.test(file.path)) {
       opts.index = true;
     }

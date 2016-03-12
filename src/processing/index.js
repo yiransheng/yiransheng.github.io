@@ -31,6 +31,7 @@ var makeDOM = Cont.cpsify(parseStream, true);
 var tranverseDOM = Cont.cpsify(tranverse);
 function html(inputStream, opts, callback) {
   var originalDOM = makeDOM(inputStream);
+  var transforms = baseTransforms.concat([]);
   if(opts.index) {
     transforms.unshift(
       function(node) {
@@ -96,7 +97,7 @@ function html(inputStream, opts, callback) {
   });
 }
 
-var transforms = [
+var baseTransforms = [
   function(node) { // add css
     if(node.name === 'head') {
       return makeDOM(
