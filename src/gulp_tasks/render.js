@@ -1,5 +1,6 @@
 var gulp = require('gulp');
 var changed = require('gulp-changed');
+var htmlmin = require('gulp-htmlmin');
 
 var process = require('../processing');
 var through = require('through2');
@@ -27,6 +28,7 @@ module.exports = function(config) {
     return gulp.src(config.src.posts)
       .pipe(changed(config.dist))
       .pipe(render())
+      .pipe(htmlmin())
       .pipe(gulp.dest(config.dist));
   });
 };
