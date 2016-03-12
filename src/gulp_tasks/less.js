@@ -1,7 +1,7 @@
 var path = require('path'),
     gulp = require('gulp'),
     less = require('gulp-less'),
-  cssmin = require('gulp-cssmin');
+  cssmin = require('gulp-clean-css');
 
 
 module.exports = function(config) {
@@ -12,7 +12,7 @@ module.exports = function(config) {
       .pipe(less().on('error', function (err) {
         console.log('Less Compile Failed', err);
       }))
-      .pipe(cssmin().on('error', function(err) {
+      .pipe(cssmin({compatibility: 'ie8', keepSpecialComments: 0}).on('error', function(err) {
         console.log('CSS min failed', err);
       }))
       .pipe(gulp.dest(
