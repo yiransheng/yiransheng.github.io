@@ -54,4 +54,4 @@ The final outcome? It turns [this](http://yiransheng.github.io/median/) into [th
 
 The processing steps are done in `node`, `gulp` and a few lines of `python`. I may write it up some time - as the exercise itself involved some fun experimenting with continuation passing style; but this post is long enough for coming out of a two year hiatus. Before ending it though, I'd like to note a single most important takeway of this project (which I forgot to address): 
 
-**This site does not run any javaScript in your browser. Not bloats, no flicking of client-side rendering, no tracking.**
+**This site does not run any javaScript in your browser. Not bloats, no flickering of client-side rendering, no tracking.**
