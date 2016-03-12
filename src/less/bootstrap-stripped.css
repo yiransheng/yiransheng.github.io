@@ -34,11 +34,6 @@ strong {
   font-weight: bold;
 }
 
-h1 {
-  font-size: 2em;
-  margin: 0.67em 0;
-}
-
 sup {
   font-size: 75%;
   line-height: 0;
@@ -217,18 +212,6 @@ h4 {
   color: inherit;
 }
 
-h1,
-h2,
-h3 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-
-h4 {
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
 h1 {
   font-size: 36px;
 }
@@ -252,7 +235,6 @@ p {
 ul,
 ol {
   margin-top: 0;
-  margin-bottom: 10px;
 }
 
 ul ul {
