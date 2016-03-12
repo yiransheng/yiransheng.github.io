@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="generator" content="pandoc">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Yiran Sheng">
+
+<meta name="date" content="2016-03-11">
+
+<title>Obligatory Hello World</title>
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="style/main.css" rel="stylesheet" tyle="text/css"><link href="https://fonts.googleapis.com/css?family=Source+Serif+Pro:400,700|Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
+
+<body>
+
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+
+
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+<h1 class="title">Obligatory Hello World</h1>
+<h4 class="author"><em>Yiran Sheng</em></h4>
+<h4 class="date"><em>03/11/2016</em></h4>
+
+</div>
+
+
+<div id="previously" class="section level2">
+<h2>Previously</h2>
+<p>The last iteration of <a href="http://www.yiransheng.net/blog">my blog</a> has not recieved any love for over two years. It was my fourth home-grown blog engine(<a href="https://github.com/yiransheng/my-gae-blog">githbub link</a>), based on a <a href="https://github.com/yiransheng/seincere">Flask on Google App Engine</a> project I did almost half a decade ago.</p>
+<p>I have long come to the realization that I won’t be writing in any frequent fashion; any time I start a new blog it’s more for the fun factor of building the site itself, and nothing probably will be different this time around. However, I’d like to think after this one, I won’t be writing a blogging site for myself for a long time.</p>
+</div>
+<div id="what-changed" class="section level2">
+<h2>What changed?</h2>
+<p>Three things: hosting, work flow and design.</p>
+<div id="hosting" class="section level3">
+<h3>Hosting</h3>
+<p>Google App Engine is fantastic, I still have a number of small personal sites there among which <a href="http://read.yiransheng.com/#/">read.yiransheng.com</a> is the one I use the most. GAE as a managed service certainly makes a truly hassle free hosting solution for micro projects like a personal blog. In fact, I am still happy and satisfied about my old blog in every feature I managed to pack into it:</p>
+<ul>
+<li>Syntax highlighting for code blocks</li>
+<li>MathJax for LaTex formulas</li>
+<li>Hyphenation</li>
+<li>Markdown based authoring</li>
+</ul>
+<p>Despite these, the two main reason I decided to move off GAE are strong enough to motivate this migration:</p>
+<ul>
+<li>I don’t like writing in browser</li>
+<li>I want to have my articles to be version controlled</li>
+<li>I want to go full static and remove all usage of javaScript</li>
+</ul>
+<p>So yeah, github pages is a better solution.</p>
+</div>
+<div id="work-flow" class="section level3">
+<h3>Work Flow</h3>
+<p>I knew I want to use markdown, and have the freedom to choose whatever text editor whenever. However, some things remain painful when authoring with markdown: making tables and plots. Over time I have grown to like two “markdown enhanced” workflow to address tables and visualizations, <a href="http://rmarkdown.rstudio.com/">Rmarkdown</a> and <a href="http://jupyter.org/">Jupyter</a>. Having access to the full power of <code>ggplot2</code> or <code>mathplotlib</code> in a notebook environment, as well turning <code>data.frame</code> into markdown table source programmable improves the work flow tremendously, not to mention the benefits of not needing to context switch between coding and writing.</p>
+<p>This post itself is written in Rmarkdown, of course. I have hacked together enough glue scripts for some post processing of Rmarkdown rendered html, and will gladly declare the new system functional, and will move on to handle Jupyter notebooks the next chance I get.</p>
+</div>
+<div id="design" class="section level3">
+<h3>Design</h3>
+<p>Put it simply, default Rmarkdown html output is not appealing enough. The post processing step here does the following:</p>
+<ul>
+<li>“Server” side rendering of LaTex formula using <code>MathJax</code></li>
+<li>“Server” side syntax highlighting for code blocks using <code>pygments</code></li>
+<li>Remove all Rmarkdown js and css</li>
+<li>Inject CSS links to html DOM for a better looking theme and sharing assets across the site (Rmarkdown html is self-contained and inlines js, css, plots as base64 strings)</li>
+<li>Some light DOM transformation related to presentation but not content</li>
+</ul>
+<p>The final outcome? It turns <a href="http://yiransheng.github.io/median/">this</a> into <a href="http://yiransheng.github.io/on-median">this</a>.</p>
+</div>
+</div>
+<div id="closing-words" class="section level2">
+<h2>Closing Words</h2>
+<p>The processing steps are done in <code>node</code>, <code>gulp</code> and a few lines of <code>python</code>. I may write it up some time - as the exercise itself involved some fun experimenting with continuation passing style; but this post is long enough for coming out of a two year hiatus. Before ending it though, I’d like to note a single most important takeway of this project (which I forgot to address):</p>
+<p><strong>This site does not run any javaScript in your browser. Not bloats, no flicking of client-side rendering, no tracking.</strong></p>
+</div>
+
+
+
+
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+
+
+</body>
+</html>
