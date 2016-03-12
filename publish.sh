@@ -1,1 +1,1 @@
-gulp && git subtree push --prefix dist origin master --force
+gulp && git push origin `git subtree split --prefix dist`:master --force 
