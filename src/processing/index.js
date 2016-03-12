@@ -101,7 +101,7 @@ var transforms = [
     if(node.name === 'head') {
       return makeDOM(
         streamFromString('<link href="style/main.css" rel="stylesheet" tyle="text/css">' + 
-        "<link href='https://fonts.googleapis.com/css?family=Source+Serif+Pro:400,700|Roboto+Mono:400,700&subset=latin,latin-ext' rel='stylesheet' type='text/css'>") 
+        "<link href='https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext' rel='stylesheet' type='text/css'>") 
       ).bind(link => {
         domutils.appendChild(node, link[0]);
         domutils.appendChild(node, link[1]);

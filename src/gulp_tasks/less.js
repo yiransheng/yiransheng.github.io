@@ -6,7 +6,14 @@ var path = require('path'),
 
 module.exports = function(config) {
 
-  gulp.task('less', function () {
+  gulp.task('fonts', function() {
+    return gulp.src(path.join(path.dirname(config.src.less), '/fonts/**/*.*'))
+      .pipe(gulp.dest( 
+        path.join(config.dist, 'style/fonts/')
+      ));
+  });
+
+  gulp.task('less', ['fonts'], function () {
 
     return gulp.src(config.src.less)
       .pipe(less().on('error', function (err) {
