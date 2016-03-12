@@ -1,0 +1,902 @@
+/*** uncss> filename: bootstrap.css ***/
+
+/*!
+ * Bootstrap v3.3.5 (http://getbootstrap.com)
+ * Copyright 2011-2016 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ */
+
+/*!
+ * Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=7031cf6d8bf73544edbe)
+ * Config saved to config.json and https://gist.github.com/7031cf6d8bf73544edbe
+ */
+
+/*!
+ * Bootstrap v3.3.6 (http://getbootstrap.com)
+ * Copyright 2011-2015 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ */
+
+/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */
+
+html {
+  font-family: sans-serif;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+
+strong {
+  font-weight: bold;
+}
+
+h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -0.5em;
+}
+
+img {
+  border: 0;
+}
+
+svg:not(:root) {
+  overflow: hidden;
+}
+
+pre {
+  overflow: auto;
+}
+
+code,
+pre {
+  font-family: monospace, monospace;
+  font-size: 1em;
+}
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+td,
+th {
+  padding: 0;
+}
+
+/*! Source: https://github.com/h5bp/html5-boilerplate/blob/master/src/css/main.css */
+
+@media print {
+  *,
+  *:before,
+  *:after {
+    background: transparent !important;
+    color: #000 !important;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+
+  a[href^="#"]:after {
+    content: "";
+  }
+
+  pre,
+  blockquote {
+    border: 1px solid #999;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img {
+    page-break-inside: avoid;
+  }
+
+  img {
+    max-width: 100% !important;
+  }
+
+  p,
+  h2,
+  h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+
+  .table {
+    border-collapse: collapse !important;
+  }
+
+  .table td,
+  .table th {
+    background-color: #fff !important;
+  }
+}
+
+* {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+*:before,
+*:after {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 10px;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.42857143;
+  color: #333333;
+  background-color: #ffffff;
+}
+
+a,
+a:focus,
+a:visited,
+a:active,
+a:hover {
+  text-decoration: none;
+  outline: 0;
+  color: #333;
+  background-image: linear-gradient(to top,
+    rgba(0,0,0,0) 11%,
+    rgba(0,0,0,0.6) 11%,
+    rgba(0,0,0,0.6) 15%,
+    rgba(0,0,0,0) 15%
+    );
+}
+a:hover {
+  text-decoration: none;
+  color: #343434;
+}
+a:focus {
+  text-decoration: none;
+  color: #343434;
+}
+
+
+
+img {
+  vertical-align: middle;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.1;
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+h4 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 36px;
+}
+
+h2 {
+  font-size: 30px;
+}
+
+h3 {
+  font-size: 24px;
+}
+
+h4 {
+  font-size: 18px;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+ul,
+ol {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+ul ul {
+  margin-bottom: 0;
+}
+
+blockquote {
+  padding: 10px 20px;
+  margin: 0 0 20px;
+  font-size: 17.5px;
+  border-left: 5px solid #eeeeee;
+}
+
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+code,
+pre {
+  /* font-family: Menlo, Monaco, Consolas, "Courier New", monospace; */
+  font-family: 'Roboto Mono', Consolas, "Courier New", monospace;
+}
+
+code {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #c7254e;
+  background-color: #f9f2f4;
+  border-radius: 4px;
+}
+
+pre {
+  display: block;
+  word-break: break-all;
+  word-wrap: break-word;
+}
+
+pre code {
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  white-space: pre-wrap;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+.container-fluid {
+  margin-right: auto;
+  margin-left: auto;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+table {
+  background-color: transparent;
+}
+
+th {
+  text-align: left;
+}
+
+.table {
+  width: 100%;
+  max-width: 100%;
+  font-family: 'Roboto Mono', Consolas, "Courier New", monospace;
+  color: #000;
+}
+
+.table > thead > tr > th,
+.table > tbody > tr > td {
+  vertical-align: top;
+}
+
+.table > thead > tr > th {
+  vertical-align: bottom;
+}
+
+.table > thead:first-child > tr:first-child > th {
+  border-top: 0;
+}
+
+tr.odd,
+tr.even {
+  border-top: 1px solid #000;
+}
+
+.table-condensed > thead > tr > th,
+.table-condensed > tbody > tr > td {
+}
+
+.container-fluid:before,
+.container-fluid:after {
+  content: " ";
+  display: table;
+}
+
+.container-fluid:after {
+  clear: both;
+}
+
+
+/*
+@font-face {
+    font-family: 'CMS';
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunrm.eot');
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunrm.eot?#iefix') format('embedded-opentype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunrm.woff') format('woff'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunrm.ttf') format('truetype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunrm.svg#cmunrm') format('svg');
+    font-weight: normal;
+    font-style: normal
+}
+@font-face {
+    font-family: 'CMS';
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbx.eot');
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbx.eot?#iefix') format('embedded-opentype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbx.woff') format('woff'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbx.ttf') format('truetype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbx.svg#cmunbx') format('svg');
+    font-weight: bold;
+    font-style: normal
+}
+@font-face {
+    font-family: 'CMS';
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunti.eot');
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunti.eot?#iefix') format('embedded-opentype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunti.woff') format('woff'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunti.ttf') format('truetype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunti.svg#cmunti') format('svg');
+    font-weight: normal;
+    font-style: italic
+}
+@font-face {
+    font-family: 'CMS';
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbi.eot');
+    src: url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbi.eot?#iefix') format('embedded-opentype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbi.woff') format('woff'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbi.ttf') format('truetype'), url('https://cdn.rawgit.com/dreampulse/computer-modern-web-font/master/font/Serif/cmunbi.svg#cmunbi') format('svg');
+    font-weight: bold;
+    font-style: italic
+}
+*/
+body {
+  color: #222;
+  font-family: 'Source Serif Pro', 'Times New Roman', 'Liberation Serif', Times, serif;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-weight: bold;
+  color: #000;
+}
+h1,
+.author,
+.date {
+  text-align: center;
+  font-weight: 400;
+}
+.author em,
+.date em {
+  font-style: normal;
+}
+@media (min-width: 1px) {
+  body {
+    font-size: 18px;
+    line-height: 21.6px;
+  }
+  h1 {
+    font-size: 1.77777778em;
+    line-height: 1.35em;
+    margin: 1.35em 0 0.675em;
+  }
+  h2 {
+    font-size: 1.33333333em;
+    line-height: 1.8em;
+    margin: 2.25em 0 0.45em;
+  }
+  h3 {
+    font-size: 1em;
+    line-height: 2.4em;
+    margin: 1.7999999999999998em 0 0.6em;
+  }
+  h4 {
+    font-size: 1em;
+    line-height: 1.2em;
+    margin: 1.7999999999999998em 0 0.6em;
+  }
+  p {
+    margin: 0 0 1.2em;
+  }
+  .date {
+    font-size: 1em;
+    line-height: 1.2em;
+    margin: 0.6em 0 2.4em;
+  }
+  #TOC {
+    width: 100%;
+    line-height: 1.2em;
+    margin: 0 auto;
+    margin-bottom: 3em;
+    padding: 1.2em 0 0.6em;
+  }
+  #TOC a {
+    color: #222234;
+    font-size: 16px;
+    background: transparent;
+  }
+  .main-container {
+    padding-top: 8.4em;
+    width: 100%;
+    max-width: 52em;
+  }
+  blockquote {
+    color: #432201;
+    background: #f6f6fa;
+    font-size: 1em;
+    line-height: 1.2em;
+    margin: 0em 0 1.2em;
+    padding: 0.6em 0.8em 0.6em;
+  }
+  pre {
+    font-size: 0.83333333em;
+    line-height: 0.72em;
+    margin: 0.72em 0 0.72em;
+    padding: 0.72em;
+  }
+  .table > tbody > tr > td {
+    padding: 0.06em;
+  }
+}
+@media (min-width: 48em) {
+  body {
+    font-size: 16px;
+    line-height: 19.2px;
+    padding: 0 1em;
+  }
+  h1 {
+    font-size: 1.77777778em;
+    line-height: 1.35em;
+    margin: 1.35em 0 0.675em;
+  }
+  h2 {
+    font-size: 1.33333333em;
+    line-height: 1.8em;
+    margin: 2.25em 0 0.45em;
+  }
+  h3 {
+    font-size: 1em;
+    line-height: 2.4em;
+    margin: 1.7999999999999998em 0 0.6em;
+  }
+  h4 {
+    font-size: 1em;
+    line-height: 1.2em;
+    margin: 1.7999999999999998em 0 0.6em;
+  }
+  .date {
+    font-size: 1em;
+    line-height: 1.2em;
+    margin: 0.6em 0 2.4em;
+  }
+  p {
+    margin: 0 0 1.2em;
+  }
+  #TOC {
+    width: 80%;
+    line-height: 1.2em;
+    margin-bottom: 3em;
+    padding: 1.2em 0 0.6em;
+  }
+  .main-container {
+    padding-top: 8.4em;
+  }
+  blockquote {
+    font-size: 1em;
+    line-height: 1.2em;
+    margin: 0em 0 1.2em;
+    padding: 0.6em 0.8em 0.6em;
+  }
+  pre {
+    font-size: 0.83333333em;
+    line-height: 0.72em;
+    margin: 0.72em 0 0.72em;
+    padding: 0.72em;
+  }
+  .table > tbody > tr > td {
+    padding: 0.06em;
+  }
+}
+@media (min-width: 62em) {
+  body {
+    font-size: 18px;
+    line-height: 27px;
+    padding: 0;
+  }
+  h1 {
+    font-size: 1.77777778em;
+    line-height: 1.6875em;
+    margin: 1.6875em 0 0.84375em;
+  }
+  h2 {
+    font-size: 1.33333333em;
+    line-height: 2.25em;
+    margin: 2.8125em 0 0.5625em;
+  }
+  h3 {
+    font-size: 1em;
+    line-height: 3em;
+    margin: 2.25em 0 0.75em;
+  }
+  h4 {
+    font-size: 1em;
+    line-height: 1.5em;
+    margin: 2.25em 0 0.75em;
+  }
+  .date {
+    font-size: 1em;
+    line-height: 1.5em;
+    margin: 0.75em 0 3em;
+  }
+  p {
+    margin: 0 0 1.5em;
+  }
+  .main-container {
+    padding-top: 10.5em;
+    max-width: 48em;
+  }
+  blockquote {
+    font-size: 1em;
+    line-height: 1.5em;
+    margin: 0em 0 1.5em;
+    padding: 0.75em 0.8em 0.75em;
+  }
+  pre {
+    font-size: 0.85em;
+    line-height: 0.82352941em;
+    margin: 0.8235294117647058em 0 0.8235294117647058em;
+    padding: 0.82352941em;
+  }
+  .table {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .table > tbody > tr > td {
+    padding: 0.075em;
+  }
+}
+@media (min-width: 75em) {
+  body {
+    font-size: 20px;
+    line-height: 28px;
+    padding-left: 14rem;
+  }
+  h1 {
+    font-size: 1.77777778em;
+    line-height: 1.575em;
+    margin: 1.575em 0 0.7875em;
+  }
+  h2 {
+    font-size: 1.33333333em;
+    line-height: 2.1em;
+    margin: 2.625em 0 0.525em;
+  }
+  h3 {
+    font-size: 1em;
+    line-height: 2.8em;
+    margin: 2.0999999999999996em 0 0.7em;
+  }
+  h4 {
+    font-size: 1em;
+    line-height: 1.4em;
+    margin: 2.0999999999999996em 0 0.7em;
+  }
+  .date {
+    font-size: 1em;
+    line-height: 1.4em;
+    margin: 0.7em 0 2.8em;
+  }
+  p {
+    margin: 0 0 1.4em;
+  }
+  #TOC {
+    width: 60%;
+    line-height: 1.4em;
+    margin-bottom: 3.5em;
+    padding: 1.4em 0 0.7em;
+  }
+  .main-container {
+    padding-top: 9.8em;
+    margin: 0;
+  }
+  blockquote {
+    font-size: 1em;
+    line-height: 1.4em;
+    margin: 0em 0 1.4em;
+    padding: 0.7em 0.8em 0.7em;
+  }
+  pre {
+    font-size: 0.85em;
+    line-height: 0.82352941em;
+    margin: 0.8235294117647058em 0 0.8235294117647058em;
+    padding: 0.82352941em;
+  }
+  .table {
+    width: 80%;
+  }
+  .table > tbody > tr > td {
+    padding: 0.07em;
+  }
+}
+.highlight pre {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+p > span.math.eq {
+  margin: 0 auto;
+  display: block;
+}
+p > span.math.eq > svg {
+  position: relative;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+li p {
+  margin: 0;
+}
+.MathJax {
+  font-size: 80%;
+}
+p img {
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+#TOC {
+  border: 1px solid #aeaede;
+  box-shadow: 2px 2px 1px #dedede;
+}
+#TOC a {
+  color: #222234;
+  font-size: 16px;
+}
+pre {
+  border: 1px solid #dedede;
+}
+/**
+ * Syntax highlighting styles
+   Mukluk, based on bootflat
+   https://bootflat.github.io/documentation.html
+ */
+.highlight {
+  color: #CCD1D9;
+  line-height: 1.4em;
+  background: #434A54;
+  padding: 1em;
+  margin: 1em 0;
+  /* additional */
+  border-radius: 2px;
+  overflow: auto;
+}
+.highlight pre {
+  overflow: visible;
+  border: 1px solid transparent;
+}
+.highlight .c {
+  color: #CCD1D9;
+  font-style: italic;
+}
+.highlight .err {
+  color: #ED5565;
+}
+.highlight .k {
+  color: #FC6E51;
+}
+.highlight .o {
+  color: #F5F7FA;
+}
+.highlight .cm {
+  color: #656D78;
+  font-style: italic;
+}
+.highlight .cp {
+  color: #656D78;
+  font-weight: bold;
+}
+.highlight .c1 {
+  color: #656D78;
+  font-style: italic;
+}
+.highlight .cs {
+  color: #656D78;
+  font-weight: bold;
+  font-style: italic;
+}
+.highlight .gd {
+  color: #656D78;
+  background-color: #CCD1D9;
+}
+.highlight .gd .x {
+  color: #656D78;
+  background-color: #CCD1D9;
+}
+.highlight .ge {
+  font-style: italic;
+}
+.highlight .gr {
+  color: #AC92EC;
+}
+.highlight .gh {
+  color: #656D78;
+}
+.highlight .gi {
+  color: #434A54;
+  background-color: #CCD1D9;
+}
+.highlight .gi .x {
+  color: #434A54;
+  background-color: #CCD1D9;
+}
+.highlight .go {
+  color: #656D78;
+}
+.highlight .gp {
+  color: #656D78;
+}
+.highlight .gs {
+  font-weight: bold;
+}
+.highlight .gu {
+  color: #F5F7FA;
+}
+.highlight .gt {
+  color: #ED5565;
+}
+.highlight .kc {
+  color: #FFCE54;
+}
+.highlight .kd {
+  color: #FFCE54;
+}
+.highlight .kp {
+  color: #FFCE54;
+}
+.highlight .kr {
+  color: #FFCE54;
+}
+.highlight .kt {
+  color: #5D9CEC;
+}
+.highlight .m {
+  color: #ED5565;
+}
+.highlight .s {
+  color: #A0D468;
+}
+.highlight .na {
+  color: #4FC1E9;
+}
+.highlight .nb {
+  color: #48CFAD;
+}
+.highlight .nc {
+  color: #ED5565;
+}
+.highlight .no {
+  color: #ED5565;
+}
+.highlight .ni {
+  color: #ED5565;
+}
+.highlight .ne {
+  color: #F5F7FA;
+}
+.highlight .nf {
+  color: #FFCE54;
+}
+.highlight .nn {
+  color: #CCD1D9;
+}
+.highlight .nt {
+  color: #5D9CEC;
+}
+.highlight .nv {
+  color: #4FC1E9;
+}
+.highlight .ow {
+  font-weight: bold;
+}
+.highlight .w {
+  color: #F5F7FA;
+}
+.highlight .mf {
+  color: #5D9CEC;
+}
+.highlight .mh {
+  color: #5D9CEC;
+}
+.highlight .mi {
+  color: #5D9CEC;
+}
+.highlight .mo {
+  color: #5D9CEC;
+}
+.highlight .sb {
+  color: #A0D468;
+}
+.highlight .sc {
+  color: #A0D468;
+}
+.highlight .sd {
+  color: #A0D468;
+}
+.highlight .s2 {
+  color: #A0D468;
+}
+.highlight .se {
+  color: #A0D468;
+}
+.highlight .sh {
+  color: #A0D468;
+}
+.highlight .si {
+  color: #A0D468;
+}
+.highlight .sx {
+  color: #A0D468;
+}
+.highlight .sr {
+  color: #EC87C0;
+}
+.highlight .s1 {
+  color: #A0D468;
+}
+.highlight .ss {
+  color: #AC92EC;
+}
+.highlight .bp {
+  color: #CCD1D9;
+}
+.highlight .vc {
+  color: #ED5565;
+}
+.highlight .vg {
+  color: #ED5565;
+}
+.highlight .vi {
+  color: #4FC1E9;
+}
+.highlight .il {
+  color: #5D9CEC;
+}
+.highlight .lineno {
+  color: #656D78;
+}
