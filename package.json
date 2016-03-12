@@ -24,5 +24,8 @@
     "ucss": "^0.4.7",
     "uncss": "^0.13.0",
     "yargs": "^4.2.0"
+  },
+  "devDependencies": {
+    "gulp-changed": "^1.3.0"
   }
 }

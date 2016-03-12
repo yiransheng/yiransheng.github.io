@@ -1,6 +1,6 @@
 module.exports = {
   src : {
-    posts : './tmp/u.html',
+    posts : './posts/**/*.html',
     less : './src/less/main.less'
   },
   dist : './dist'
