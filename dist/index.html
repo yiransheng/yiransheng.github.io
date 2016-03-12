@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="generator" content="pandoc">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+
+
+<title>[Idea] >>= stringify</title>
+
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="style/main.css" rel="stylesheet" tyle="text/css"><link href="https://fonts.googleapis.com/css?family=Source+Serif+Pro:400,700|Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
+
+<body><header><h1>[Idea] &gt;&gt;= stringify</h1></header>
+
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+
+
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+</div>
+
+
+<div id="test-population-median-equality-for-discrete-distributions" class="section level2">
+<h2><a href="on-median">Test Population Median Equality for Discrete Distributions</a></h2>
+<p>Simulation based examination of various statistical tests for median equality null for discrete r.v.: T-test, Wilcox rank sum, Mood Test and Bootstrapping. Findings:</p>
+<ul>
+<li><p>If we know nothing about the population, all of the proposed tests are not reliable</p></li>
+<li><p>Mood Test tends to reject more often, it might be a good test for contentious distributions, but turns out to be a poor fit for discrete distributions, which can have identical medians yet fail to satisfy Mood’s Test condition</p></li>
+<li><p>Subsampling/Bootstrapping tend to over-reject as well, especially when sample median is biased</p></li>
+<li><p>When population mean and population median can be assumed to be equal, T Test is very robust despite its obvious theoretical shortcomings</p></li>
+<li><p>Wilcox rank sum test is a general close second following T Test, and has good robustness</p></li>
+</ul>
+</div>
+<div id="obligatory-hello-world" class="section level2">
+<h2><a href="hello-world">Obligatory Hello World</a></h2>
+</div>
+
+
+
+
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+
+
+</body>
+</html>

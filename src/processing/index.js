@@ -31,6 +31,32 @@ var makeDOM = Cont.cpsify(parseStream, true);
 var tranverseDOM = Cont.cpsify(tranverse);
 function html(inputStream, opts, callback) {
   var originalDOM = makeDOM(inputStream);
+  if(opts.index) {
+    transforms.unshift(
+      function(node) {
+        if(node.name === 'body') {
+          return makeDOM(
+            streamFromString('<header><h1>[Idea] &gt;&gt;= stringify</h1></header>') 
+          ).bind(header => {
+            domutils.prepend(node.children[0], header[0]);
+            return Cont.unit();
+          });
+        }
+      }
+    );
+    transforms.unshift(
+      function(node) {
+        if(node.name === 'title') {
+          return makeDOM(
+            streamFromString('[Idea] >>= stringify') 
+          ).bind(title => {
+            domutils.appendChild(node, title[0]);
+            return Cont.unit();
+          });
+        }
+      }
+    );
+  }
   Cont.callCC(finish => {
     return originalDOM.bind(dom => {
       var counter = 1;

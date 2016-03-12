@@ -1,0 +1,16 @@
+
+## [Test Population Median Equality for Discrete Distributions](on-median)
+
+Simulation based examination of various statistical tests for median equality null for discrete r.v.: T-test, Wilcox rank sum, Mood Test and Bootstrapping. Findings:
+
+* If we know nothing about the population, all of the proposed tests are not reliable
+
+* Mood Test tends to reject more often, it might be a good test for contentious distributions, but turns out to be a poor fit for discrete distributions, which can have identical medians yet fail to satisfy Mood’s Test  condition
+
+* Subsampling/Bootstrapping tend to over-reject as well, especially when sample median is biased
+
+* When population mean and population median can be assumed to be equal, T Test is very robust despite its obvious theoretical shortcomings
+
+* Wilcox rank sum test is a general close second following T Test, and has good robustness
+
+## [Obligatory Hello World](hello-world)

@@ -10,6 +10,9 @@ var PassThrough = require('stream').PassThrough;
 var render = function(opts) {
   opts = opts || {};
   return through.obj(function(file, encoding, callback) {
+    if(/index\.html$/.test(file.path)) {
+      opts.index = true;
+    }
     var bufferStream = PassThrough();
     bufferStream.end(file.contents);
     process(bufferStream, opts, function(err, htmlStr) {
