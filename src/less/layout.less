@@ -117,9 +117,20 @@
   }
   header h1 {
     color: white;
-    text-align:left;
-    padding-left: 285px;
+    text-align:center;
     padding-top: @line-height-em;
+  }
+  a,
+  a:focus,
+  a:visited,
+  a:active,
+  a:hover {
+  background-image: linear-gradient(to top,
+    rgba(0,0,0,0) 11%,
+    rgba(0,0,0,0.6) 11%,
+    rgba(0,0,0,0.6) 18%,
+    rgba(0,0,0,0) 18%
+    );
   }
 }
 @media (min-width: @screen-md) {
@@ -130,6 +141,10 @@
   }  
   header {
     margin: 0 -1em;
+    h1 {
+      text-align: left;
+      padding-left: 285px;
+    }
   }
   h1 {
     .vertical-rhythum(md, 1.7777777777777777em, 2, 2, 1);
@@ -174,6 +189,18 @@
   }
   .table > tbody > tr > td {
       padding: 0.05 * @line-height-em;
+  }
+  a,
+  a:focus,
+  a:visited,
+  a:active,
+  a:hover {
+  background-image: linear-gradient(to top,
+    rgba(0,0,0,0) 11%,
+    rgba(0,0,0,0.6) 11%,
+    rgba(0,0,0,0.6) 15%,
+    rgba(0,0,0,0) 15%
+    );
   }
 }
 @media (min-width: @screen-lg) {
