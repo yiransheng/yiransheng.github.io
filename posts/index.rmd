@@ -13,4 +13,8 @@ Simulation based examination of various statistical tests for median equality nu
 
 * Wilcox rank sum test is a general close second following T Test, and has good robustness
 
+[Read](on-median)
+
 ## [Obligatory Hello World](hello-world)
+
+[Read](hello-world)
