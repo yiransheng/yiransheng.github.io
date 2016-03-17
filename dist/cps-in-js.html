@@ -117,6 +117,61 @@
 </div>
 <div id="continuation-vs.callback" class="section level2">
 <h2>Continuation vs. Callback</h2>
+<p>Broadly speaking, continuation is a special case of callback. If we have a function which takes a callback, say it’s an api from some library, there’s no knowing when, with what arguments, and how many times our callback gets invoked (or it gets invoked at all). To contrast with CPS, consider these two paragraphs from the <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">Wikipedia page</a> of continuation passing style:</p>
+<blockquote>
+<p>A function written in continuation-passing style takes an extra argument: an explicit “continuation” i.e. a function of one argument. When the CPS function has computed its result value, it “returns” it by calling the continuation function with this value as the argument.</p>
+</blockquote>
+<blockquote>
+<p>Note that in CPS, there is no implicit continuation—every call is a tail call. There is no “magic” here, as the continuation is simply explicitly passed.</p>
+</blockquote>
+<p>This implies a CPS function will typically call the continuation/callback function:</p>
+<ul>
+<li>only once</li>
+<li>at its tail position (place where its direct style counter-part will simply return)</li>
+</ul>
+<p>Another distinction is whether or not a CPS function should return the result of calling continuation. This can be illustrated with the most trival CPS function <code>id</code>.</p>
+<div class="highlight"><pre><span class="c1">// direct style </span>
+
+<span class="kd">function</span> <span class="nx">id</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="nx">x</span><span class="p">;</span>
+
+<span class="p">}</span>
+
+
+
+<span class="c1">// cps implementation 1</span>
+
+<span class="kd">function</span> <span class="nx">id_cps1</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">k</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="nx">k</span><span class="p">(</span><span class="nx">x</span><span class="p">);</span>
+
+<span class="p">}</span>
+
+
+
+<span class="c1">// cps implementation 2</span>
+
+<span class="kd">function</span> <span class="nx">id_cps2</span><span class="p">(</span><span class="nx">s</span><span class="p">,</span> <span class="nx">k</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="nx">k</span><span class="p">(</span><span class="nx">x</span><span class="p">);</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>Haskell’s <code>Control.Monad.Cont</code> opts to implementation continuations similar to <code>id_cps2</code> above. This makes sense. Original concept of a continuation in Scheme is defined as a procedure instead of pure functions. In other words, a continuation can have side effects such as the procedure <code>print</code>. Haskell models continuation as pure functions, which means our <code>id_cps1</code> will essentially become:</p>
+<div class="highlight"><pre><span class="kr">let</span> <span class="n">idCps1</span> <span class="n">x</span> <span class="n">k</span> <span class="ow">=</span> <span class="nb">()</span>
+</pre></div>
+<p>Certainly not very useful.</p>
+<p>However, this lesson does not carry over to javaScript. In almost all cases, a function/api is designed to take a callback because it is asyncous, and the callback is simply invoked some time in the future and its results discarded. In other words, almost all the callback based functions in javaScript cannot be modeled using Haskell’s flavor of CPS; otherwise, we would’ve been able to do things like:</p>
+<div class="highlight"><pre><span class="kd">let</span> <span class="nx">id</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span><span class="p">;</span>
+
+<span class="kd">let</span> <span class="nx">contents</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFile</span><span class="p">(</span><span class="s1">&#39;file.txt&#39;</span><span class="p">,</span> <span class="nx">id</span><span class="p">);</span>
+
+<span class="c1">// in reality contents evaluates to undefined</span>
+</pre></div>
+<p>In which case, practitioners probably won’t even bother, and just use:</p>
+<div class="highlight"><pre><span class="kd">let</span> <span class="nx">contents</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="s1">&#39;file.txt&#39;</span><span class="p">);</span>
+</pre></div>
 </div>
 <div id="poor-mans-monad" class="section level2">
 <h2>Poor man’s Monad</h2>
@@ -291,19 +346,19 @@ y
 <tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">
 x
 </td><td>
-1.814<sup>***</sup>
+2.026<sup>***</sup>
 </td></tr>
 <tr><td style="text-align:left"></td><td>
-(0.180)
+(0.182)
 </td></tr>
 <tr><td style="text-align:left"></td><td></td></tr>
 <tr><td style="text-align:left">
 Constant
 </td><td>
-1.169<sup>***</sup>
+1.086<sup>***</sup>
 </td></tr>
 <tr><td style="text-align:left"></td><td>
-(0.183)
+(0.182)
 </td></tr>
 <tr><td style="text-align:left"></td><td></td></tr>
 <tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">
@@ -314,22 +369,22 @@ Observations
 <tr><td style="text-align:left">
 R<sup>2</sup>
 </td><td>
-0.093
+0.110
 </td></tr>
 <tr><td style="text-align:left">
 Adjusted R<sup>2</sup>
 </td><td>
-0.092
+0.109
 </td></tr>
 <tr><td style="text-align:left">
 Residual Std. Error
 </td><td>
-5.786 (df = 998)
+5.758 (df = 998)
 </td></tr>
 <tr><td style="text-align:left">
 F Statistic
 </td><td>
-101.758<sup>***</sup> (df = 1; 998)
+123.344<sup>***</sup> (df = 1; 998)
 </td></tr>
 <tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">
 <em>Note:</em>

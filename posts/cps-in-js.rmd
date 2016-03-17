@@ -67,6 +67,62 @@ At this point, hopefully my motivation for this excersice becomes more clear. Th
 
 ## Continuation vs. Callback
 
+Broadly speaking, continuation is a special case of callback. If we have a function which takes a callback, say it's an api from some library, there's no knowing when, with what arguments, and how many times our callback gets invoked (or it gets invoked at all). To contrast with CPS, consider these two paragraphs from the [Wikipedia page](https://en.wikipedia.org/wiki/Continuation-passing_style) of continuation passing style:
+
+> A function written in continuation-passing style takes an extra argument: an explicit "continuation" i.e. a function of one argument. When the CPS function has computed its result value, it "returns" it by calling the continuation function with this value as the argument. 
+
+> Note that in CPS, there is no implicit continuation—every call is a tail call. There is no "magic" here, as the continuation is simply explicitly passed. 
+
+This implies a CPS function will typically call the continuation/callback function:
+
+* only once
+* at its tail position (place where its direct style counter-part will simply return)
+
+Another distinction is whether or not a CPS function should return the result of calling continuation. This can be illustrated with the most trival CPS function `id`.
+
+```{javascript, eval=F}
+// direct style 
+function id(x) {
+  return x;
+}
+
+// cps implementation 1
+function id_cps1(x, k) {
+  k(x);
+}
+
+// cps implementation 2
+function id_cps2(s, k) {
+  return k(x);
+}
+```
+
+Haskell's `Control.Monad.Cont` opts to implementation continuations similar to `id_cps2` above. This makes sense. Original concept of a continuation in Scheme is defined as a procedure instead of pure functions. In other words, a continuation can have side effects such as the procedure `print`. Haskell models continuation as pure functions, which means our `id_cps1` will essentially become:
+
+```{haskell, eval=F}
+let idCps1 x k = ()
+```
+
+Certainly not very useful.
+
+However, this lesson does not carry over to javaScript. In almost all cases, a function/api is designed to take a callback because it is asyncous, and the callback is simply invoked some time in the future and its results discarded. In other words, almost all the callback based functions in javaScript cannot be modeled using Haskell's flavor of CPS; otherwise, we would've been able to do things like:
+
+```{javascript, eval=F}
+let id = x => x;
+let contents = fs.readFile('file.txt', id);
+// in reality contents evaluates to undefined
+```
+
+In which case, practitioners probably won't even bother, and just use: 
+
+```{javascript}
+let contents = fs.readFileSync('file.txt');
+```
+
+It seems CPS cannot really help us with aync tasks, all it's capable of is turning straight-forward syncous code int
+
+
+
 ## Poor man's Monad
 
 ```{javascript, eval=F, result='asis'}

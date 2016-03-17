@@ -19,10 +19,12 @@
   @line-height-em: unit(@line-height / @font-size, em);  
 }
 
-.vertical-rhythum-mar(@class, @font-em, @top, @bottom) {
+.vertical-rhythum-mar(@class, @font-em, @top, @bottom, @offset) {
+  @class-font-base: ~"font-base-@{class}";
   @class-line-height: ~"line-height-@{class}";
+  @offset-top: unit(@offset / @@class-font-base / @font-em, em);
   .line-em(@font-em, @@class-line-height);  
-  @margin-top: @top * @line-height-em;
+  @margin-top: @top * @line-height-em - @offset-top;
   @margin-bottom: @bottom * @line-height-em;
   margin: ~"@{margin-top} 0 @{margin-bottom}";
 }
@@ -32,9 +34,9 @@
   font-size: unit(@font-em, em);
   line-height: unit(@lines * @line-height-em, em);
 }
-.vertical-rhythum(@class, @font-em, @lines, @top, @bottom) {
+.vertical-rhythum(@class, @font-em, @lines, @top, @bottom, @offset:0) {
   .vertical-rhythum-body(@class, @font-em, @lines);  
-  .vertical-rhythum-mar(@class, @font-em, @top, @bottom);  
+  .vertical-rhythum-mar(@class, @font-em, @top, @bottom, @offset);  
 }
 .set-body(@class) {
   @class-line-height: ~"line-height-@{class}";
@@ -52,7 +54,7 @@
     .vertical-rhythum(sm, 1.7777777777777777em, 2, 2, 1);
   }
   h2 {
-    .vertical-rhythum(sm, 1.3333333333333333em, 2, 2.5, 0.5);
+    .vertical-rhythum(sm, 1.3333333333333333em, 2, 2.5, 0.5, 2);
   }
   h3 {
     .vertical-rhythum(sm, 1, 2, 1.5, 0.5);
@@ -133,7 +135,7 @@
     .vertical-rhythum(md, 1.7777777777777777em, 2, 2, 1);
   }
   h2 {
-    .vertical-rhythum(md, 1.3333333333333333em, 2, 2.5, 0.5);
+    .vertical-rhythum(md, 1.3333333333333333em, 2, 2.5, 0.5, 2);
   }
   h3 {
     .vertical-rhythum(md, 1, 2, 1.5, 0.5);
@@ -187,7 +189,7 @@
     .vertical-rhythum(lg, 1.7777777777777777em, 2, 2, 1);
   }
   h2 {
-    .vertical-rhythum(lg, 1.3333333333333333em, 2, 2.5, 0.5);
+    .vertical-rhythum(lg, 1.3333333333333333em, 2, 2.5, 0.5, 2);
   }
   h3 {
     .vertical-rhythum(lg, 1, 2, 1.5, 0.5);
@@ -238,7 +240,7 @@
     .vertical-rhythum(xl, 1.7777777777777777em, 2, 2, 1);
   }
   h2 {
-    .vertical-rhythum(xl, 1.3333333333333333em, 2, 2.5, 0.5);
+    .vertical-rhythum(xl, 1.3333333333333333em, 2, 2.5, 0.5, 2);
   }
   h3 {
     .vertical-rhythum(xl, 1, 2, 1.5, 0.5);
