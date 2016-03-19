@@ -28,6 +28,7 @@
     "yargs": "^4.2.0"
   },
   "devDependencies": {
-    "gulp-changed": "^1.3.0"
+    "gulp-changed": "^1.3.0",
+    "gulp-inline-base64": "^0.1.4"
   }
 }
