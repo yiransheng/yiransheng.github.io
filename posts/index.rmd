@@ -1,3 +1,9 @@
+## [Functional JavaScript: An Example of Equational Reasoning](js-functional-array)
+
+In this article, I will demonstrate equational reasoning by focus on a key data structure in javaScript: Arrays. Alternatively, proving monad laws mathematically with javaScript syntax.  
+
+<div style="text-align:right">[Read](js-functional-array)</div>
+
 
 ## [Test Population Median Equality for Discrete Distributions](on-median)
 
