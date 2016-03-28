@@ -138,7 +138,7 @@
  <use xlink:href="#E1-MJMAIN-2261" x="0" y="0"/>
 </g>
 </svg></span> <code>new Array(1, 2)</code>.</p>
-<p><strong>Statement 1</strong> expresses a invariant of our function <code>flatMap</code>. Given the implementation of <code>flatMap</code> and the stated pre-condition, the equivalence relationship holds true for any value of <code>x</code> and <code>f</code>. To see why this is true, let’s substitute the call to <code>flatMap</code> with its implementation details:</p>
+<p><strong>Statement 1</strong> expresses an invariant of our function <code>flatMap</code>. Given the implementation of <code>flatMap</code> and the stated pre-condition, the equivalence relationship holds true for any value of <code>x</code> and <code>f</code>. To see why this is true, let’s substitute the call to <code>flatMap</code> with its implementation details:</p>
 <div class="highlight"><pre><span class="c1">// given some x and f</span>
 
 <span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="err">≡</span> <span class="p">[</span><span class="nx">x</span><span class="p">];</span>
@@ -189,7 +189,7 @@
 
   <span class="err">≡</span> <span class="nx">xs</span>
 </pre></div>
-<p>To proof it in a slightly more rigorous manner, let’s first provide an alternative implementation of <code>flatMap</code> using recursion:</p>
+<p>To prove it in a slightly more rigorous manner, let’s first provide an alternative implementation of <code>flatMap</code> using recursion:</p>
 <div class="highlight"><pre><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">flatMap2</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
@@ -631,6 +631,10 @@
 <span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">t</span><span class="p">.</span><span class="nx">into</span><span class="p">([],</span> <span class="nx">xf</span><span class="p">,</span> <span class="nx">xs</span><span class="p">);</span>  <span class="c1">// calling Array.prototype.reduce by t.into</span>
 </pre></div>
 <p>Transducers accomplish their task by transforming reducing functions with plain function composition, and feed the composed reducer to collection’s <code>reduce</code> operation. <code>kcomp</code> and <code>flatMap</code> compose Kleisli arrows (for Arrays, this simply mean array returning functions), and feed composed Kleisli arrow to a final <code>flatMap</code> operation. If you suspect some deep connections here, this <a href="http://tel.github.io/posts/typing-transducers/">post: Typing Transducers (as Kleisli arrows)</a> offers a good analysis.</p>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>This article is in essence, an introduction to equational reasoning and Kleisli arrows with javaScript syntax. We have bypassed some prerequisites, namely a proper foundation of lambda calculus and category theory. However, the idea is not to shy away from these mathematical topics, rather it is to show an alternative mental model of javaScript code. Rather than model programs as variables and statements that mutates them in sequence, we can think programs as structures with hidden equivalence relationships between them. The only necessary technique is expression substitution. Throughout the article, we have repeatedly replaced function invocations with function bodies and the other way around.</p>
 </div>
 <div id="footnotes" class="section level2">
 <h2>Footnotes</h2>

@@ -154,7 +154,7 @@ Array.prototype.flatMap = function(f) {
 <p><code>flatMap</code> is an interesting function. It is not obvious when and why you should use it. However, instead of giving some examples first, I will state and prove some invariants related to the function, and demonstrate an important aspect of functional programming practices: equational reasoning.</p>
 <p><strong>Statement 1</strong>: for any value <code>x</code>, and function <code>f</code> where <code>f(x)</code> returns an array, <code>Array.of(x).flatMap(f)</code> <span class="math">\(\equiv\)</span> <code>f(x)</code>.</p>
 <p>Here, triple equal sign <span class="math">\(\equiv\)</span> reads as <em>is equivalent to</em>. I choose not to use equal sign “=” as equality in javaScript is some messy business. For practical purposes, <span class="math">\(\equiv\)</span> throughout the rest of the article can be interpreted as <strong>deeply equal</strong> or <strong>equal in value</strong>. For instance, we consider <code>new Array(1,2)</code> <span class="math">\(\equiv\)</span> <code>new Array(1, 2)</code>.</p>
-<p><strong>Statement 1</strong> expresses a invariant of our function <code>flatMap</code>. Given the implementation of <code>flatMap</code> and the stated pre-condition, the equivalence relationship holds true for any value of <code>x</code> and <code>f</code>. To see why this is true, let’s substitute the call to <code>flatMap</code> with its implementation details:</p>
+<p><strong>Statement 1</strong> expresses an invariant of our function <code>flatMap</code>. Given the implementation of <code>flatMap</code> and the stated pre-condition, the equivalence relationship holds true for any value of <code>x</code> and <code>f</code>. To see why this is true, let’s substitute the call to <code>flatMap</code> with its implementation details:</p>
 <pre class="javascript"><code>// given some x and f
 Array.of(x) ≡ [x];
 Array.of(x).flatMap(f)
@@ -176,7 +176,7 @@ xs.flatMap(Array.of)
   ≡ [[x1],[x2],[x3]].flatten()
   ≡ [x1, x2, x3]
   ≡ xs  </code></pre>
-<p>To proof it in a slightly more rigorous manner, let’s first provide an alternative implementation of <code>flatMap</code> using recursion:</p>
+<p>To prove it in a slightly more rigorous manner, let’s first provide an alternative implementation of <code>flatMap</code> using recursion:</p>
 <pre class="javascript"><code>Array.prototype.flatMap2 = function(f) {
   if(!this.length) {
     return [];
@@ -399,6 +399,10 @@ const xf = t.comp( // plain function composition
 
 const ys = t.into([], xf, xs);  // calling Array.prototype.reduce by t.into</code></pre>
 <p>Transducers accomplish their task by transforming reducing functions with plain function composition, and feed the composed reducer to collection’s <code>reduce</code> operation. <code>kcomp</code> and <code>flatMap</code> compose Kleisli arrows (for Arrays, this simply mean array returning functions), and feed composed Kleisli arrow to a final <code>flatMap</code> operation. If you suspect some deep connections here, this <a href="http://tel.github.io/posts/typing-transducers/">post: Typing Transducers (as Kleisli arrows)</a> offers a good analysis.</p>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>This article is in essence, an introduction to equational reasoning and Kleisli arrows with javaScript syntax. We have bypassed some prerequisites, namely a proper foundation of lambda calculus and category theory. However, the idea is not to shy away from these mathematical topics, rather it is to show an alternative mental model of javaScript code. Rather than model programs as variables and statements that mutates them in sequence, we can think programs as structures with hidden equivalence relationships between them. The only necessary technique is expression substitution. Throughout the article, we have repeatedly replaced function invocations with function bodies and the other way around.</p>
 </div>
 <div id="footnotes" class="section level2">
 <h2>Footnotes</h2>

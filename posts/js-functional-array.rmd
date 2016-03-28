@@ -71,7 +71,7 @@ A few quick notes:
 
 Here, triple equal sign $\equiv$ reads as _is equivalent to_. I choose not to use equal sign "=" as equality in javaScript is some messy business. For practical purposes, $\equiv$ throughout the rest of the article can be interpreted as **deeply equal** or **equal in value**. For instance, we consider `new Array(1,2)` $\equiv$ `new Array(1, 2)`. 
 
-**Statement 1** expresses a invariant of our function `flatMap`. Given the implementation of `flatMap` and the stated pre-condition, the equivalence relationship holds true for any value of `x` and `f`. To see why this is true, let's substitute the call to `flatMap` with its implementation details:
+**Statement 1** expresses an invariant of our function `flatMap`. Given the implementation of `flatMap` and the stated pre-condition, the equivalence relationship holds true for any value of `x` and `f`. To see why this is true, let's substitute the call to `flatMap` with its implementation details:
 
 ```{javascript}
 // given some x and f
@@ -106,7 +106,7 @@ xs.flatMap(Array.of)
   ≡ [x1, x2, x3]
   ≡ xs  
 ```
-To proof it in a slightly more rigorous manner, let's first provide an alternative implementation of `flatMap` using recursion:
+To prove it in a slightly more rigorous manner, let's first provide an alternative implementation of `flatMap` using recursion:
 
 ```{javascript}
 Array.prototype.flatMap2 = function(f) {
