@@ -1,0 +1,520 @@
+---
+title: 'Functional JavaScript: An Example of Equational Reasoning'
+author: "Yiran Sheng"
+date: "03/25/2016"
+output: html_document
+layout: post
+excerpt: ""
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knit_engines$set(javascript=function(options){engine_output(options, options$code, '')})
+names(knit_engines$get())
+```
+
+
+In the past few years, functional programming has been gaining popularity in the javaScript community. There are many contributing factors to this trend. Facebook's `React`, although not strictly functional, strongly encourages the use of pure functions and immutable data structures. `Elm`, `Rxjs` `beacon-js` etc. made (functional) reactive programming viable and dependable for browser UI works. In addition to library-level evolution, ES6 and `babel` made javaScript more expressive at a language level.
+
+There are a lot of tutorials and introductions to functional programming in a javaScript context, most of which are fairly informative while at the same time pretty easy and straight-forward to follow for people already know a thing or two about javaScript. After all, javaScript developers have been familiar with higher-order, first-class functions for years. 
+
+However, to cover the full spectrum of functional programming ideas and abstractions, javaScript as a language proves to be an inadequate medium. JavaScript has first-class functions, closures, lambdas, some pattern-matching (destructuring) - but it also lacks native support for immutability, currying and reliable mechanism to manage side effects. The missing parts do not make functional programming in javaScript impossible or significantly harder - they make doing so more _dangerous_ due to missing language-level guarantees.
+
+In javaScript when writing functional code, one has to be extra careful about mutable states, the language does not provide a line of defense for you, it's a programmer's responsibility to mentally track mutations and object identities. This also makes reasoning about code harder, as a lot of functional laws and identities fail to hold in an impure environment. 
+
+Yes, strong immutability and function purity makes reasoning about code much easier. You probably already have heard of that. However, the ease is not just a mere byproduct of the requirement to track _less_ things like state mutations, it is also empowered by a whole new universe of tools to dissect, analyze and understand your code at a deep level. These tools are better known as: logic and math. One such technique is known equational reasoning, enabled by referential transparency and being able to replace equals by equals in _all_ contexts.
+
+In this article, I will demonstrate this practice by focus solely on a key data structure in javaScript: `Array` and start with a new [proposed]((http://bterlson.github.io/proposal-flatMap/)) Array prototype method [`flatMap`](http://bterlson.github.io/proposal-flatMap/).
+
+## Implement `flatMap`
+
+> `Array.prototype.flatMap` first maps each element using a mapping function, then flattens the result into a new array. It is identical to a map followed by a flatten of depth 1.
+
+```{javascript}
+Array.prototype.flatten = function() {
+  return [].concat(...this);
+};
+Array.prototype.map_ = function(f) {
+  return this.map(x => f(x));
+};
+Array.prototype.flatMap = function(f) {
+  return this.map_(f).flatten();
+};
+```
+
+A few quick notes:
+
+* The implementation of `flatten` takes advantage of that `concat` taking variable number of arguments and ES6 spread operator
+
+* javaScript `Array.prototype.map` passes each element, its index and the array itself to the mapping function. While convenient at times, can also be troublesome and non-intuitive in some cases:
+```{javascript}
+[1,2].map(Array.of)
+```
+```
+[[1, 0, [1,2]], [2, 1, [1,2]]]
+```
+
+* Therefore, we implement `map_` for arrays that will only pass elements to the mapping function. From here on in this article, when `map` is mentioned/used, it implicitly refers to `map_` defined above.
+
+```{javascript}
+[1,2].map_(Array.of);
+```
+```
+[[1], [2]]
+```
+
+## Equational Reasoning on `flatMap`
+
+`flatMap` is an interesting function. It is not obvious when and why you should use it. However, instead of giving some examples first, I will state and prove some invariants related to the function, and demonstrate an important aspect of functional programming practices: equational reasoning.
+
+**Statement 1**: for any value `x`, and function `f` where `f(x)` returns an array, `Array.of(x).flatMap(f)` $\equiv$ `f(x)`.
+
+Here, triple equal sign $\equiv$ reads as _is equivalent to_. I choose not to use equal sign "=" as equality in javaScript is some messy business. For practical purposes, $\equiv$ throughout the rest of the article can be interpreted as **deeply equal** or **equal in value**. For instance, we consider `new Array(1,2)` $\equiv$ `new Array(1, 2)`. 
+
+**Statement 1** expresses a invariant of our function `flatMap`. Given the implementation of `flatMap` and the stated pre-condition, the equivalence relationship holds true for any value of `x` and `f`. To see why this is true, let's substitute the call to `flatMap` with its implementation details:
+
+```{javascript}
+// given some x and f
+Array.of(x) ≡ [x];
+Array.of(x).flatMap(f)
+  ≡ [x].flatMap(f)
+  ≡ [x].map(f).flatten()
+  ≡ [f(x)].flatten()
+  ≡ f(x)
+```
+
+The above block obviously is not valid javaScript. What we have done instead is replacing expressions of function calls with the expression defined in corresponding function bodies, just text substitution. This is known as [referential transparency](https://wiki.haskell.org/Referential_transparency). The theory behind functional programming, lambda calculus formalizes this concept among many other things. Pragmatically, referential transparency is beneficial for understanding the program. We simply need to look at the declaration of a variable to understand its behavior, you can find and replace all function invocations with its returned expression in your source code and the resulting program will still run identically. 
+
+JavaScript is not referential transparent in general. But under some specified conditions like our treatment of $\equiv$ relationships, it can be model as a such. The style of analysis here is called equational reasoning, it's a lot like doing mathematical proofs, in the forms of symbol manipulation and substitutions. 
+
+Now that we have "proved" **Statement 1**, under the principle of referential transparency, anywhere in javaScript source code, if we see an expression in the form of `Array.of(x).flatMap(f)` / `[x].flatMap(f)`, we can simply replace it with a simpler form: `f(x)`.
+
+There are of course other similar statements we can come up with that are universally applicable. For example:
+
+
+**Statement 2**: let `xs` be any array, `xs.flatMap(Array.of)` $\equiv$ `xs`. 
+
+Informally, we can illustrate this property with some pseudo code:
+
+```{javascript}
+let xs = [x1, x2, x3];
+
+xs.flatMap(Array.of)
+  ≡ [x1, x2, x3].map(Array.of).flatten()
+  ≡ [Array.of(x1), Array.of(x2), Array.of(x3)].flatten()
+  ≡ [[x1],[x2],[x3]].flatten()
+  ≡ [x1, x2, x3]
+  ≡ xs  
+```
+To proof it in a slightly more rigorous manner, let's first provide an alternative implementation of `flatMap` using recursion:
+
+```{javascript}
+Array.prototype.flatMap2 = function(f) {
+  if(!this.length) {
+    return [];
+  }
+  let [x, ...rest] = this;
+  return f(x).concat( rest.flatMap2(f) );
+}
+```
+
+With this new definition of `flatMap`, let's prove **Statement 2** by induction. 
+
+* First, consider `xs` $\equiv$ `[]`, then `xs.flatMap2(Array.of)` $\equiv$ `[].flatMap2(Array.of)` $\equiv$ `[]` (returned inside the `if (!this.length)` conditional block) 
+
+* Next, suppose for any array of length k (k>=0), **Statement 2 holds**, consider array `xs` of length k+1, and substitute argument `f` in body of `flatMap2` with `Array.of`:
+
+```{javascript}
+xs.flatMap2(Array.of)
+  ≡ [x, ...rest].flatMap2(Array.of)  // rest.length === k
+  ≡ Array.of(x).concat(rest.flatMap2(Array.of))
+  ≡ [x].concat(rest.flatMap2(Array.of))
+  ≡ [x].concat(rest) // induction assumption
+  ≡ xs  // proves Statement 2
+```
+* By induction, **Statement 2** holds for all arrays with length >= 0 
+
+Of course, we still have yet to ascertain that `flatMap2` $\equiv$ `flatMap`. To prove this, let's first prove the following lemma:
+
+**Lemma 1**: for array `xs` of length k>0, write `[x, ...rest]` $\equiv$ `xs`, we must have: `xs.flatMap(f)` $\equiv$ `f(x).concat(rest.flatMap(f))` (note `flatMap` here refers to the original, non-recursive version)
+
+```{javascript}
+// xs.length > 0
+let ys = xs.map(f);
+let [x, ...restx] = xs;
+let [y, ...resty] = ys;
+```
+By definition of `map`:
+
+```{javascript}
+resty ≡ restx.map(f)
+y ≡ f(x)
+```
+Next:
+
+```{javascript}
+// xs.length > 0
+xs.flatMap(f)
+  ≡ ys.flatten()  // substitute xs.map(f) -> ys
+  ≡ [].concat(...ys)  // substitute in body of `flatten`
+  ≡ [].concat(y, ...resty)
+  ≡ y.concat(...resty) // property of `concat` [1]
+  ≡ f(x).concat(...resty) // substitute y -> f(x)
+  ≡ f(x).concat( [].concat(...resty) ) // property of concat [1]
+  ≡ f(x).concat( resty.flatten() ) // substitute `flatten`'s body with function invocation
+  ≡ f(x).concat( restx.map(f).flatten() ) // substitute resty -> restx.map(f)
+  ≡ f(x).concat( restx.flatMap(f) ) // substitute `flatMap`'s body with function invocation
+
+// Q.E.D.  
+``` 
+ 
+**Lemma 2**: `[].flatMap(f)` $\equiv$ `[].flatMap2(f)` $\equiv$ `[]` for any `f`. 
+
+This follows naturally by the definition of `flatMap` and `flatMap2`. Armed with **Lemma 1** and **Lemma 2**, we can rewrite `flatMap` conditioning on whether the array it operates on is empty (length = 0) or not: 
+```{javascript}
+Array.prototype.flatMap = function(f) {
+  if(!this.length) {  // apply Lemma 2
+    return [];
+  }
+  // otherwise, `this.length` > 0 
+  // apply Lemma 1 here
+  let [x, ...rest] = this;
+  return f(x).concat( rest.flatMap(f) ); 
+}
+```
+
+Removing comments, you will notice this is character by character identical to `flatMap2`, therefore: `flatMap` $\equiv$ `flatMap2` and we have proved **Statement 2**.
+
+In addition, **Lemma 1** can be generalized even further to:
+
+**Lemma 3**: let `as` and `bs` be two arrays, then `( as.concat(bs) ).flatMap(f)` $\equiv$ `as.flatMap(f).concat( bs.flatMap(f) )` 
+
+This is the consequence of repeated applying **Lemma 1** on `as.concat(bs)` and cover bases with **Lemma 2** when required. The proof is left as an exercise for the reader.
+
+## Statement 3
+
+For any array `xs` and suitable function `f` and `g`:
+
+```{javascript}
+xs.flatMap(f).flatMap(g)
+  ≡ xs.flatMap( x => f(x).flatMap(g) )
+```
+
+### Simple Example
+
+This time, instead of immediately proving it, let's demonstrate **Statement 3** with an example:
+
+```{javascript}
+const xs = [1,2,3];
+
+function f(x) {
+  return ["f1:" + x, "f2:" + x];    
+}
+function g(x) {
+  return ["g_" + x];
+}
+```
+```{javascript}
+xs.flatMap(f).flatMap(g);
+```
+```
+["g_f1:1", 
+ "g_f2:1", 
+ "g_f1:2", 
+ "g_f2:2", 
+ "g_f1:3", 
+ "g_f2:3"]
+```
+
+```{javascript}
+xs.flatMap(x => {
+  return f(x).flatMap(g);
+});
+```
+```
+["g_f1:1", 
+ "g_f2:1", 
+ "g_f1:2", 
+ "g_f2:2", 
+ "g_f1:3", 
+ "g_f2:3"]
+```
+
+### Proof 
+
+When dealing with **Statement 1 and 2**, we have accumulated quite a few useful insights. Building on top of these, the proof of **Statement 3** almost writes itself.
+
+First, `let h = x => f(x).flatMap(g)`, **Statement 3** can be written as: `xs.flatMap(f).flatMap(g)` $\equiv$ `xs.flatMap(h)`. 
+
+Again, we will use induction. It's trivial to see **Statement 3** holds when `xs` $\equiv$ `[]` by **Lemma 2**. Now suppose it holds true for array of length k, and consider array `xs` of length k+1.
+
+```{javascript}
+xs.flatMap(h)
+  ≡ h(x).concat( rest.flatMap(h) ) // applying Lemma 1
+  ≡ f(x).flatMap(g).concat( rest.flatMap(h) ) // substitute the definition of h
+  ≡ f(x).flatMap(g).concat( rest.flatMap(f).flatMap(g) ) // induction assumption  
+```
+
+Also,
+
+```{javascript}
+xs.flatMap(f).flatMap(g)
+  ≡ ( f(x).conat( rest.flatMap(f) ) ).flatMap(g) // applying Lemma 1
+  // applying Lemma 3, where as=f(x), bs=rest.flatMap(f)
+  ≡ f(x).flatMap(g).concat( rest.flatMap(f).flatMap(g) ) 
+```
+
+Therefore, for xs of length k+1, `xs.flatMap(f).flatMap(g)` $\equiv$ `xs.flatMap(h)`
+
+By induction **Statement 3** holds for array of any length.
+
+## Monad Laws
+
+Array with `flatMap` and `Array.of` (non-variadic version) forms a monad, known as list monad in Haskell. And **Statement 1-3** are essentially three [monad laws](https://wiki.haskell.org/Monad_laws):
+
+* Left identify
+* Right identify
+* Associativity
+
+A loose translation of monad definition into javaScript: a monad is a "class" paired with:
+
+1. a function `of` that takes a single value of some type and produces an instance from the "class"
+2. a prototype method `flatMap` from the class that satisfies the three laws / **Statements 1-3**
+
+## Associativity, Chaining and Nesting
+
+Consider this code: 
+
+```{javascript}
+const xs = [1,2,3,4];
+
+const ys = xs
+  .flatMap(x => {
+    return Array.of(x+1);  
+  })
+  .flatMap(x => {
+    return x % 2 === 0 ? [x] : [];
+  });
+```
+
+By Associativity Law, we know we can rewrite the code as:
+
+```{javascript}
+const ys = xs
+  .flatMap(x => {
+    return Array.of(x+1)
+      .flatMap(x => {
+        return x % 2 === 0 ? [x] : [];
+      });
+  })
+```
+
+In both versions, `ys` will be:
+```
+[2,4]
+```
+In terms of style, the first version illustrates an _chainable_ apis, which are first popularized the very `jQuery`. Chaining looks nice visually in source files and usually is able to concisely communicate the intent of sequential transformations/operations. There are generally two strategies in designing chainable apis:
+
+1. Define classes with methods that returns new instance of the same "class" (meaning objects share the same prototype)
+2. `return this` as the last statement in chainable methods
+
+The second version is an example of _nesting_, and looks quite like the infamous callback hell. One of the recently invented abstraction in dealing with callback hell in async javaScript is `Promise`, which turns nested callbacks into a chain `Promise.then` calls. Such conversion is pretty similar to `flatMap` and application of Associativity Law. In fact, you probably have heard about it, `Promise` is somewhat monadic (though not without caveats, for one thing, `Promise.then` is an overloaded method that serves both a `map` and `flatMap`).  
+
+Therefore, we have learned `flatMap` and monads can be used to establish equivalence between chaining and nesting with the application of Associativity Law. 
+
+## Power of Composition
+
+Now back to the examples, the intent behind both version can be more clearly demonstrated by rewriting the code with more familiar apis:
+
+```{javascript}
+const ys = xs
+  .map(x => x+1)
+  .filter(x % 2 === 0);
+```
+
+Interesting enough, it seems `flatMap` can be used as a building block for both `map` and `filter`. To make this work, let's abstract out `mapping` and `filtering` as higher order functions: 
+
+```{javascript}
+function mapping(f) {
+  return x => [f(x)];
+}
+function filtering(predicate) {
+  return x => predicate(x) ? [x] : [];
+}
+```
+
+Both functions returns functions that is suitable to use in `flatMap`, meaning that they take a single value and returns array(s). In addition, recall our function `h` when proving **Statement 3**, which is a function that combines `f` and `g`:
+
+```{javascript}
+function h(f, g) {
+  return x => {
+    return f(x).flatMap(g);
+  }
+}
+```
+Thinking about the type signature of `h`, it takes two array returning functions and returns another array returning function - essentially a special form function composition for array returning functions. It does have a proper name: Kleisli composition, and not surprisingly it composes Kleisli arrows (function `f` and `g`). In Haskell this function is usually used as an infix operator `>=>` (pronounced fish). By the way also, the reason why the third monad law is called Associativity Law becomes clear, when we express it in terms of Kleisli composition:
+
+**Statement 3<sup>\*</sup>:**
+
+1. Let `f` and `g` and `h` be array returning functions
+2. Let `>=>` denote Kleisli composition
+
+```{haskell, eval=F}
+(f >=> g) >=> h ≡  f >=> (g >=> h)
+```
+
+See Footnote[2] for why **Statement 3<sup>\*</sup>** is the same as **Statement 3**.
+
+
+For the rest of the article, let's name `>=>` as `kcomp` (javascript does not have custom operators), and make it varadic:
+```{javascript}
+function kcomp(...funcs) {
+  const seed = x => [x];
+  return funcs.reduce(function(f, g) {
+    return (x => f(x).flatMap(g));
+  }, seed);
+}
+```
+
+Now back again to the examples, the chaining version of computing `ys` becomes:
+
+```{javascript}
+const ys = xs
+  .flatMap( mapping(x=>x+1) )
+  .flatMap( filtering(x => x % 2 === 0) )
+```
+
+And the nesting version:
+
+```{javascript}
+const ys = xs
+  .flatMap(kcomp(
+    mapping(x=>x+1),
+    filtering(x => x % 2 === 0)
+  ));
+```
+
+Oh, wait, the nesting has gone away. Even better, we can do more:
+
+```{javascript}
+const transformation = 
+  kcomp(
+    mapping( x=> x+1 ),
+    mapping( x=> x*x ),
+    filtering( x=> x%2 == 0),
+    filtering( filterFunc )
+    // ...
+  );
+  
+const ys = xs.flatMap(transformation);
+```
+
+This style might have reminded you of [transducers](http://phuu.net/2014/08/31/csp-and-transducers.html). For example using [`transducer-js`](https://github.com/cognitect-labs/transducers-js) library:
+
+```{javascript}
+const t = transducers;
+
+const xf = t.comp( // plain function composition
+  t.map( x=> x+1 ),
+  t.map( x=> x*x ),
+  t.filter( x=> x%2 === 0 )
+  // ... 
+);
+
+const ys = t.into([], xf, xs);  // calling Array.prototype.reduce by t.into
+```
+
+Transducers accomplish their task by transforming reducing functions with plain function composition, and feed the composed reducer to collection's `reduce` operation. `kcomp` and `flatMap` compose Kleisli arrows (for Arrays, this simply mean array returning functions), and feed composed Kleisli arrow to a final `flatMap` operation. If you suspect some deep connections here, this [post: Typing Transducers (as Kleisli arrows)](http://tel.github.io/posts/typing-transducers/) offers a good analysis. 
+
+## Summary
+
+This article is in essence, an introduction to equational reasoning and Kleisli arrows with javaScript syntax. We have bypassed some prerequisites, namely a proper foundation of lambda calculus and category theory. However, the idea is not to shy away from these mathematical topics, rather it is to show an alternative mental model of javaScript code. Rather than model programs as variables and statements that mutates them in sequence, we can think programs as structures with hidden equivalence relationships between them. The only necessary technique is expression substitution. Throughout the article, we have repeatedly replaced function invocations with function bodies and the other way around.
+
+## Footnotes
+
+### [1] `concat` and monoids
+
+`Array.prototype.concat` has the following syntax:
+
+```{javascript}
+var new_array = old_array.concat(value1[, value2[, ...[, valueN]]])
+```
+
+It is a varadic function. To start simple, let's consider a version of `concat` with only one argument, or the binary `concat` op:
+```{javascript}
+Array.prototype.concat_ = function(other) {
+  return this.concat(other);
+};
+```
+It is easy to see: 
+
+* `[].concat_(any_array)` $\equiv$ `any_array`
+* `any_array.concat_([])` $\equiv$ `any_array`
+
+Furthermore:
+
+* `a.concat_(b).conat_(c)` $\equiv$ `a.concat_( b.concat_(c) )`
+
+These properties form the essential definition of a [monoid](https://en.wikipedia.org/wiki/Monoid). A monoid in a set theoretic view is defined as:
+
+A monoid is a set $S$ that is closed under an associative binary operation $\cdot$ and has an identity element $I$ in $S$ such that for all $a \in S$, $I \cdot a = a \cdot I = a$. A set of all `Array` is such a set, with `concat_` serving as the binary operation $\cdot$.
+
+
+In our proof earlier, we used the following property of array concatenation:
+
+```{javascript}
+[].concat(y, ...resty) ≡ y.concat(...resty)
+```
+
+Rewrite this in a mathy notation, denote `[]` as $I$, `concat` as $\cdot$:
+
+$$ I \cdot y \cdot y_{\text{rest_1}} \cdot \dotsc \cdot y_{\text{rest_n}} = y \cdot y_{\text{rest_1}} \cdot \dotsc \cdot y_{\text{rest_n}}$$
+
+We also used:
+
+```{javascript}
+f(x).concat(...resty) 
+  ≡ f(x).concat( [].concat(...resty) ) 
+```
+Rewrite this in a mathy notation, denote `[]` as $I$, `concat` as $\cdot$, `f(x)` as $a$:
+
+$$a \cdot y_{\text{rest_1}} \cdot \dotsc \cdot y_{\text{rest_n}} = a \cdot ( I \cdot y_{\text{rest_1}} \cdot \dotsc \cdot y_{\text{rest_n}} ) $$
+
+Both properties are pretty self-evident. Knowing that array concatenation forms a monoid helps in coming up substitutions like these when doing equational reasoning, and carry the proof forward. In addition, you might have noticed the similarity of monoid laws and monad laws here. Let's just throw the famous tongue in cheek here: 
+
+> A monad is just a monoid in the category of endofunctors, what's the problem?
+
+### [2] Kleisli Composition and Associativity Law 
+
+It's obvious that the infix notation of Kleisli Composition makes a more clear demonstration of Associativity Law. However, to stick to javaScript syntax, let's rewrite the infix version with the `kcomp` function we have defined and used:
+
+```{javascript}
+kcomp(f, g, h) ≡ kcomp(f, kcomp(g, h))
+```
+
+Next, we replace function invocation with function body, both left side and right side of the above equivalence relationship evaluates to a function:
+
+```{javascript}
+kcomp(f, g, h) = function(x) {
+  return f(x).flatMap(g).flatMap(h);
+}
+kcomp(f, kcomp(g, h)) = function(x) {
+  return f(x).flatMap(x => {
+    return g(x).flatMap(h);
+  })
+}
+```
+
+To highlight only the function body:
+
+```{javascript}
+// kcomp(f, g, h) = function(x) {
+  /* return */ f(x).flatMap(g).flatMap(h);
+// }
+// kcomp(f, kcomp(g, h)) = function(x) {
+  /* return */ f(x).flatMap(x => {
+    return g(x).flatMap(h);
+  })
+// }
+```
+It's clear, the body expressions of both functions are in the form of **Statement 3**, which we have demonstrated to be equivalent. 
