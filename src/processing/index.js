@@ -37,7 +37,7 @@ function html(inputStream, opts, callback) {
       function(node) {
         if(node.name === 'body') {
           return makeDOM(
-            streamFromString('<style>body{padding: 0;} .main-container {margin: 0 auto;margin-top: -20vmin;background: #fff;position: relative;border-radius: 30px 0 0 0;box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);padding: 2.4em;}header {margin:0}</style><header><div class="big"><div class="bg"></div><div class="author-name card-2">Yiran Sheng</div><div class="tagline">[Idea] >>= stringify</div></div></header>') 
+            streamFromString('<style>body{padding: 0;background: #eeeded;} .main-container {margin: 0 auto;margin-top: -20vmin;background: #fff;position: relative;border-radius: 30px 0 0 0;box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);padding: 2.4em;}header {margin:0}</style><header><div class="big"><div class="bg"></div><div class="author-name card-2">Yiran Sheng</div><div class="tagline">[Idea] >>= stringify</div></div></header>') 
           ).bind(header => {
             domutils.prepend(node.children[0], header[1]);
             domutils.prepend(node.children[0], header[0]);
