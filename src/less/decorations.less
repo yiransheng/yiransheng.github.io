@@ -57,3 +57,85 @@ p {
 #header + p, h2 + p {
   text-indent: 0;
 }
+.big {
+  width: 100vw;
+  height: 100vh;
+  max-height: 800px;
+  background: #000;
+  position: relative;
+}
+.bg {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 855px;
+  max-height: 720px;
+  width: 100vw;
+  height: 42.1052631575vw * 2;
+  background-color: #000;
+  background-image: url(https://storage.googleapis.com/stuff.yiransheng.com/yiran-cover.png);
+  background-position: 50% 0;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  z-index: 0;
+}
+
+.author-name {
+  background: rgba(20,98, 33, .9);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0.7em;
+  font-size: 4vmin;
+  display: inline-block;
+  position: relative;
+  left: 50%;
+  transform: translate(-50%);
+  position: relative;
+  z-index: 2;
+}
+.tagline {
+  font-size: 7vmin;
+  margin-top: -0.7rem;
+  text-align: center;
+  color: rgba(255,255,255,.4);
+  font-family: 'Roboto Mono',Consolas,"Courier New",monospace;
+  position: relative;
+  z-index: 1;
+}
+
+.card {
+  background: #fff;
+  border-radius: 2px;
+  display: block;
+  float: left;
+  margin: 1rem;
+  padding: 2.1em;
+  position: relative;
+  width: 450px;
+}
+
+.card-1 {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  transition: all 0.2s ease-in-out;
+}
+
+.card-1:hover {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+
+.card-2 {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.card-3 {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+
+.card-4 {
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+.card-5 {
+  box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+}
+
