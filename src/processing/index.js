@@ -118,12 +118,12 @@ var baseTransforms = [
   },
   function(node) { // add bootstrap table classes
     if(node.name === 'table') {
-      node.attribs.class = 'table table-condensed';
+      node.attribs['class'] = 'table table-condensed';
     }
   },
   function(node) { // pre compile TeX
     if (node && node.name === 'span' && 
-        node.attribs.class === 'math') 
+        _.startsWith(node.attribs['class'], 'math'))
     {
       return Cont.cpsify(renderEq, true)(span2tex(node))
         .bind(function(eqHtmlStr) {
@@ -134,7 +134,7 @@ var baseTransforms = [
               domutils.appendChild(node, newSpan[0]);      
               var maths = node.parent.children;
               if(maths.length === 1 && maths[0] === node) {
-                node.attribs.class += ' eq';
+                node.attribs['class'] += ' eq';
               }
             }
             return Cont.unit();
@@ -144,7 +144,7 @@ var baseTransforms = [
   },
   function (node) { // highlight
     var code;
-    var lang = node.attribs && node.attribs.class; 
+    var lang = node.attribs && node.attribs['class']; 
     if(node.name === 'pre' && node.children.length && node.children[0].name === 'code' && lang) {
       code = code2source(node.children[0]);
       if(!code) {
