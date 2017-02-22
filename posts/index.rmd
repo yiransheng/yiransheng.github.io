@@ -1,3 +1,9 @@
+## [Anatomy of JavaScript Method Chaining](js-chain)
+
+In this article, we will try to distill method chaining to its essence, making a distinction of mutable vs immutable chaining, and draw some parallels with composition in functional programming.
+
+<div style="text-align:right">[Read](js-chain)</div>
+
 ## [Functional JavaScript: An Example of Equational Reasoning](js-functional-array)
 
 In this article, I will demonstrate equational reasoning by focus on a key data structure in javaScript: Arrays. Alternatively, proving monad laws mathematically with javaScript syntax.  

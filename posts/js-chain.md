@@ -3,8 +3,6 @@ title: 'Anatomy of JavaScript Method Chaining'
 author: "Yiran Sheng"
 date: "02/25/2017"
 output: html_document
-layout: post
-excerpt: ""
 ---
 
 Method chaining is ubiquitous in javaScript libraries. It's a useful patten for designing apis in a convenient and succinct fashion. Resulting code is usually a series of on-liners that declaratively communicates the underlying data flow without getting distracted by implementation details.
@@ -431,6 +429,6 @@ After exploring the various aspects of method chaining, a couple of useful princ
 
 * Decide on mutable vs. immutable chaining when designing an api
 * But know that you can have both with pattens like `withMutations`
-* When your api targets an functional audience, do the following to facilitate composition:
-  - make the functions curried (at least optionally)
-  - arrange the function arguments such that the last argument is the primary data type 
+* When your api targets a functional audience, do the following to facilitate composition:
+    - make the functions curried (at least optionally)
+    - arrange the function arguments such that the last argument is the primary data type 
