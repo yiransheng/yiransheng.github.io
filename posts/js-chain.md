@@ -7,7 +7,40 @@ layout: post
 excerpt: ""
 ---
 
-Method chaining is ubiquitous in javaScript libraries. 
+Method chaining is ubiquitous in javaScript libraries. It's a useful patten for designing apis in a convenient and succinct fashion. Resulting code is usually a series of on-liners that declaratively communicates the underlying data flow without getting distracted by implementation details.
+
+It's found in `jQuery`:
+
+```javascript
+$(selector)
+  .addClass(className)
+  .css("display", "block")
+  .fadeIn();
+```
+
+In `lodash`:
+
+```javascript
+_(collection)
+  .map(transform)
+  .filter(predicate)
+  .find({ id: 123 });
+```
+
+Even in vanilla code:
+
+```javascript
+fetch(httpOptions)
+  .then(res => res.json())
+  .then(data => data.articles)
+  .catch(err => console.error(err));
+```
+
+
+
+In this article, we will try to distill method chaining to its essence, making a distinction of mutable vs immutable chaining, and draw some parallels with composition in functional programming. Let's begin with a very simple example.
+
+
 
 ## Introductory Example
 
@@ -81,7 +114,7 @@ User user = User.builder()
 
 `Builder` objects are mutable, all the build steps returns the same instance with its internal state modified. A final `build` call constructs the underlying structure it tries to build. Many mutable method chaining apis tend to have a definitive "final" call to indicate the finalization / completion of the chain of calls, with names like `build`, `finalize`, `done`, `value` etc.
 
-Another JVM language, Scala, is a language perhaps immutable method chaining is most often spotted. 
+Another JVM language, Scala, is a language where perhaps immutable method chaining is most often spotted. 
 
 
 ```scala
@@ -275,7 +308,7 @@ $$
 \text{compose}(f, g) = f \circ g := x \rightarrow f(g(x))
 $$
 
-`compose` is not particularly common in javaScript ecosystem; but not unheard of either. For example `redux` ships it and makes heavy use of it in its middleware / enhancer architecture. To implement `compose` from scratch is not hard either with ES2015 syntactic sugar:
+`compose` is not particularly common in javaScript ecosystem; but not unheard of either. For example `redux` ships it and makes heavy use of the function in its middleware / enhancer architecture. To implement `compose` from scratch is not hard either with ES2015 syntactic sugar:
 
 ```javascript
 function compose(...funcs) {
@@ -390,4 +423,14 @@ function id(x) {
 }
 ```
 
-`id` can be in fact be composed together with other `a -> a` functions, providing a no-op step in the pipeline.
+`id` can be in fact be composed together with other `a -> a` functions, providing a no-op step in the pipeline. This is equivalent to providing `return this` as a method on chaining based approaches.
+
+## Closing Remarks
+
+After exploring the various aspects of method chaining, a couple of useful principles or takeaways can be summarized:
+
+* Decide on mutable vs. immutable chaining when designing an api
+* But know that you can have both with pattens like `withMutations`
+* When your api targets an functional audience, do the following to facilitate composition:
+  - make the functions curried (at least optionally)
+  - arrange the function arguments such that the last argument is the primary data type 
