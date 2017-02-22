@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="generator" content="pandoc">
+
+
+<meta name="author" content="Yiran Sheng">
+
+<meta name="date" content="2017-02-25">
+
+<title>Anatomy of JavaScript Method Chaining</title>
+
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="style/main.css" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
+
+<body>
+
+
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Anatomy of JavaScript Method Chaining</h1>
+<h4 class="author"><em>Yiran Sheng</em></h4>
+<h4 class="date"><em>02/25/2017</em></h4>
+
+</div>
+
+
+<p>Method chaining is ubiquitous in javaScript libraries. It’s a useful patten for designing apis in a convenient and succinct fashion. Resulting code is usually a series of on-liners that declaratively communicates the underlying data flow without getting distracted by implementation details.</p>
+<p>It’s found in <code>jQuery</code>:</p>
+<div class="highlight"><pre><span></span><span class="nx">$</span><span class="p">(</span><span class="nx">selector</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">addClass</span><span class="p">(</span><span class="nx">className</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">css</span><span class="p">(</span><span class="s2">&quot;display&quot;</span><span class="p">,</span> <span class="s2">&quot;block&quot;</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">fadeIn</span><span class="p">();</span>
+</pre></div>
+<p>In <code>lodash</code>:</p>
+<div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">(</span><span class="nx">collection</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">transform</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">predicate</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">find</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="mi">123</span> <span class="p">});</span>
+</pre></div>
+<p>Even in vanilla code:</p>
+<div class="highlight"><pre><span></span><span class="nx">fetch</span><span class="p">(</span><span class="nx">httpOptions</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">res</span> <span class="o">=&gt;</span> <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+
+  <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nx">data</span><span class="p">.</span><span class="nx">articles</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">err</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">));</span>
+</pre></div>
+<p>In this article, we will try to distill method chaining to its essence, making a distinction of mutable vs immutable chaining, and draw some parallels with composition in functional programming. Let’s begin with a very simple example.</p>
+<div id="introductory-example" class="section level2">
+<h2>Introductory Example</h2>
+<p>A 2d <code>Point</code> data structure is commonly used in many programming language tutorials to demonstrate basic usage of certain language features such as classes or structs. Operations of interests include vector addition, dot product, normalization and so on. In javaScript it’s natural to use a <code>class</code> for such a task.</p>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">Point</span> <span class="p">{</span>
+
+  <span class="nx">constructor</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>This is a good starting point. To implement addition of two <code>Point</code>s:</p>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">Point</span> <span class="p">{</span>
+
+  <span class="nx">constructor</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+  <span class="nx">add</span><span class="p">(</span><span class="nx">otherPoint</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">+=</span> <span class="nx">otherPoint</span><span class="p">.</span><span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">+=</span> <span class="nx">otherPoint</span><span class="p">.</span><span class="nx">y</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>This version of <code>add</code> mutates <code>Point</code> instances, and by returning <code>this</code> we can chain as many <code>add</code> calls as needed, and get back the original point with <code>x</code> and <code>y</code> properties updated in-place. An alternative version may opt not to change original point:</p>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">Point</span> <span class="p">{</span>
+
+  <span class="nx">constructor</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+  <span class="nx">add</span><span class="p">(</span><span class="nx">otherPoint</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Point</span><span class="p">(</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">+</span> <span class="nx">otherPoint</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">+</span> <span class="nx">otherPoint</span><span class="p">.</span><span class="nx">y</span>
+
+    <span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>When using <code>Point</code> class:</p>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">p0</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="kr">const</span> <span class="nx">p1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+<span class="kr">const</span> <span class="nx">p2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+
+
+<span class="kr">const</span> <span class="nx">p</span> <span class="o">=</span> <span class="nx">p0</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">p1</span><span class="p">).</span><span class="nx">add</span><span class="p">(</span><span class="nx">p2</span><span class="p">);</span>
+</pre></div>
+<p>Both implementation with return a <code>Point</code> with <code>x = 1</code> and <code>y = 1</code>, differences here, of course are the enforcement of immutability. It’s very important to recognize these two different type of method chaining with regards to immutability. And depending on the context and convention, one variation may be more favorable than the other.</p>
+</div>
+<div id="immutable-and-mutable-chaining-in-other-languages" class="section level2">
+<h2>Immutable and Mutable Chaining in other Languages</h2>
+<p>In java, the builder pattern is a common recipie to construct object in a concise and readable way:</p>
+<div class="highlight"><pre><span></span><span class="n">User</span> <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+
+  <span class="o">.</span><span class="na">email</span><span class="o">(</span><span class="s">&quot;user@example.com&quot;</span><span class="o">)</span>
+
+  <span class="o">.</span><span class="na">age</span><span class="o">(</span><span class="mi">30</span><span class="o">)</span>
+
+  <span class="o">.</span><span class="na">phone</span><span class="o">(</span><span class="s">&quot;1234567&quot;</span><span class="o">)</span>
+
+  <span class="o">.</span><span class="na">address</span><span class="o">(</span><span class="s">&quot;1234 Somewhere&quot;</span><span class="o">)</span>
+
+  <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</pre></div>
+<p><code>Builder</code> objects are mutable, all the build steps returns the same instance with its internal state modified. A final <code>build</code> call constructs the underlying structure it tries to build. Many mutable method chaining apis tend to have a definitive “final” call to indicate the finalization / completion of the chain of calls, with names like <code>build</code>, <code>finalize</code>, <code>done</code>, <code>value</code> etc.</p>
+<p>Another JVM language, Scala, is a language where perhaps immutable method chaining is most often spotted.</p>
+<div class="highlight"><pre><span></span><span class="n">textFile</span><span class="o">.</span><span class="n">flatMap</span><span class="o">(</span><span class="n">line</span> <span class="k">=&gt;</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&quot; &quot;</span><span class="o">))</span>
+
+                 <span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">word</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">word</span><span class="o">,</span> <span class="mi">1</span><span class="o">))</span>
+
+                 <span class="o">.</span><span class="n">reduceByKey</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="k">_</span><span class="o">)</span>
+</pre></div>
+<p>In the above code (Spark), each step returns a new value of the same type (RDD in this case); previous value is kept intact and unchanged.</p>
+<p>The wikpedia <a href="https://en.wikipedia.org/wiki/Method_chaining">article</a> on this topic has a few more examples from various languages.</p>
+</div>
+<div id="to-mutate-or-not-to-mutate" class="section level2">
+<h2>To Mutate or not to Mutate</h2>
+<p>Although most of the time when designing an api, it’s necessary to decide on immutable vs mutable representations upfront, it’s still possible to offer the benefits of both worlds while maintaining an unified front of the entire api surface. An example is <a href="https://facebook.github.io/immutable-js/"><code>immutable-js</code></a>. For instance, consider the following code:</p>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">map1</span> <span class="o">=</span> <span class="nx">Immutable</span><span class="p">.</span><span class="nx">Map</span><span class="p">();</span>
+
+<span class="kd">function</span> <span class="nx">setABC</span><span class="p">(</span><span class="nx">map</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="nx">map</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">set</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">).</span><span class="nx">set</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+<span class="p">}</span>
+
+<span class="kr">const</span> <span class="nx">map2</span> <span class="o">=</span> <span class="nx">setABC</span><span class="p">(</span><span class="nx">map1</span><span class="p">);</span>
+</pre></div>
+<p><code>map.set(&quot;a&quot;, 1).set(&quot;b&quot;, 2).set(&quot;c&quot;, 3)</code> creates two intermediary <code>Map</code>s that are not needed at all. Fortunately, the library does offer a solution, <code>withMutations</code>, used like this:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">setABC</span><span class="p">(</span><span class="nx">map</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="nx">map</span><span class="p">.</span><span class="nx">withMutations</span><span class="p">(</span><span class="nx">mutMap</span> <span class="o">=&gt;</span> <span class="p">{</span>
+
+    <span class="nx">mutMap</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">).</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+  <span class="p">});</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>The implementation of <code>withMutation</code>, can be found <a href="https://github.com/facebook/immutable-js/blob/c65062599ecad54a1ad5bacd72f65e8f9ef7449b/src/Map.js#L165">here</a>:</p>
+<div class="highlight"><pre><span></span><span class="c1">// ...</span>
+
+  <span class="nx">withMutations</span><span class="p">(</span><span class="nx">fn</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">mutable</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">asMutable</span><span class="p">();</span>
+
+    <span class="nx">fn</span><span class="p">(</span><span class="nx">mutable</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nx">mutable</span><span class="p">.</span><span class="nx">wasAltered</span><span class="p">()</span> <span class="o">?</span> <span class="nx">mutable</span><span class="p">.</span><span class="nx">__ensureOwner</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">__ownerID</span><span class="p">)</span> <span class="o">:</span> <span class="k">this</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+<span class="c1">// ...</span>
+</pre></div>
+<p>Without going into too much details, the library offers a mutable version of its immutable data structure (in this case <code>Map</code>) sharing much of the same api, and allow for the conversion between the two seamlessly. To explore this idea with a toy example, let’s revisit the <code>Point</code> class.</p>
+<p>First, create a both mutable and immutable version of <code>Point</code>:</p>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">PointerInterface</span> <span class="p">{</span>
+
+  <span class="nx">add</span><span class="p">(</span><span class="nx">otherPoint</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+
+
+
+<span class="kr">class</span> <span class="nx">PointMut</span> <span class="kr">extends</span> <span class="nx">PointerInterface</span> <span class="p">{</span>
+
+  <span class="nx">constructor</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+  <span class="nx">add</span><span class="p">({</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="p">})</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">+=</span> <span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">+=</span> <span class="nx">y</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+
+<span class="kr">class</span> <span class="nx">Point</span> <span class="kr">extends</span> <span class="nx">PointerInterface</span> <span class="p">{</span>
+
+  <span class="nx">constructor</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+  <span class="nx">add</span><span class="p">({</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="p">})</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Point</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">x</span><span class="o">+</span><span class="nx">x</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">y</span><span class="o">+</span><span class="nx">y</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>Then, implement <code>asMutable</code> for <code>Point</code> to <code>PointMut</code> conversion:</p>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">Point</span> <span class="kr">extends</span> <span class="nx">PointerInterface</span> <span class="p">{</span>
+
+  <span class="c1">// ...</span>
+
+  <span class="nx">asMutable</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">PointMut</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">y</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>Similarly,</p>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">PointMut</span> <span class="kr">extends</span> <span class="nx">PointerInterface</span> <span class="p">{</span>
+
+  <span class="c1">// ...</span>
+
+  <span class="nx">asImmutable</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Point</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">y</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>Then we can write <code>withMutations</code> similar to how <code>immutable-js</code> does things:</p>
+<div class="highlight"><pre><span></span><span class="c1">// only export immutable Point</span>
+
+<span class="kr">export</span> <span class="k">default</span> <span class="kr">class</span> <span class="nx">Point</span> <span class="kr">extends</span> <span class="nx">PointerInterface</span> <span class="p">{</span>
+
+  <span class="nx">constructor</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">x</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">y</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+  <span class="nx">add</span><span class="p">({</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="p">})</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Point</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">x</span><span class="o">+</span><span class="nx">x</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">y</span><span class="o">+</span><span class="nx">y</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+  <span class="nx">asMutable</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">PointMut</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">y</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+  <span class="nx">withMutations</span><span class="p">(</span><span class="nx">fn</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">mutable</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">asMutable</span><span class="p">();</span>
+
+    <span class="nx">fn</span><span class="p">(</span><span class="nx">mutable</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nx">mutable</span><span class="p">.</span><span class="nx">asImmutable</span><span class="p">();</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
+<div id="immutable-method-chaining-a-functional-view" class="section level2">
+<h2>Immutable Method Chaining: a Functional View</h2>
+<p>It seems fairly obvious how to design immutable, chainable apis, just write methods returning new (immutable) instances of the class.</p>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">Chainable</span> <span class="p">{</span>
+
+  <span class="nx">transform</span><span class="p">(...</span><span class="nx">args</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="c1">// implementation</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Chainable</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>As a simpler alternative, the following code does the exact same thing as above, with a plain function:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">transform</span><span class="p">(</span><span class="nx">chainable</span><span class="p">,</span> <span class="p">...</span><span class="nx">args</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="c1">// implementation</span>
+
+  <span class="k">return</span> <span class="k">new</span> <span class="nx">Chainable</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>The type signature of <code>transform</code> is: <code>(Chainable, ...any) -&gt; Chainable</code>. Of course, when we have multiple <code>transform</code>s on <code>Chainable</code> (either multiple calls or multiple types of transforms), the function version quickly becomes very cumbersome to use. Compare the following:</p>
+<div class="highlight"><pre><span></span><span class="nx">transform3</span><span class="p">(</span>
+
+  <span class="nx">transform2</span><span class="p">(</span>
+
+    <span class="nx">transform1</span><span class="p">(</span><span class="nx">chainable</span><span class="p">,</span> <span class="nx">args1</span><span class="p">),</span> <span class="nx">args2</span><span class="p">),</span> <span class="nx">args3</span><span class="p">);</span>
+</pre></div>
+<p>vs.</p>
+<div class="highlight"><pre><span></span><span class="nx">chainable</span>
+
+  <span class="p">.</span><span class="nx">transform1</span><span class="p">(</span><span class="nx">args1</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">transform2</span><span class="p">(</span><span class="nx">args2</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">transform3</span><span class="p">(</span><span class="nx">args3</span><span class="p">);</span>
+</pre></div>
+<p>However, this does not mean function-only strategy is not possible to achieve the same level of flatness and readability, we have a few tricks that can help from functional programming: function currying and composition.</p>
+<p>First, lets rearrange the arguments position for <code>transform</code>s, and make them curried:</p>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">transform1</span> <span class="o">=</span> <span class="p">(</span><span class="nx">arg</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="nx">chainable</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+
+  <span class="c1">// code</span>
+
+  <span class="k">return</span> <span class="k">new</span> <span class="nx">Chainable</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+<span class="p">}</span>
+
+<span class="kr">const</span> <span class="nx">transform2</span> <span class="o">=</span> <span class="p">(</span><span class="nx">arg</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="nx">chainable</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+
+  <span class="c1">// code</span>
+
+  <span class="k">return</span> <span class="k">new</span> <span class="nx">Chainable</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+<span class="p">}</span>
+
+<span class="kr">const</span> <span class="nx">transform3</span> <span class="o">=</span> <span class="p">(</span><span class="nx">arg</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="nx">chainable</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+
+  <span class="c1">// code</span>
+
+  <span class="k">return</span> <span class="k">new</span> <span class="nx">Chainable</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>How do we proceed in using them? We could carefully write down all the necessary calls:</p>
+<div class="highlight"><pre><span></span><span class="nx">transform3</span><span class="p">(</span><span class="nx">arg3</span><span class="p">)(</span><span class="nx">transform2</span><span class="p">(</span><span class="nx">arg2</span><span class="p">)(</span><span class="nx">transform</span><span class="p">(</span><span class="nx">arg1</span><span class="p">)(</span><span class="nx">chainable</span><span class="p">)))</span>
+</pre></div>
+<p>But there is a better way. To get to it, we will need to introduce a higher order function: <code>compose</code>. It is a variadic function than takes any number of functions, and produce a single function that runs all input functions (right to left per convention). For a case with two input functions <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.279ex" height="2.509ex" style="vertical-align: -0.671ex" viewbox="0 -791.3 550.5 1080.4" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<path stroke-width="1" id="E1-MJMATHI-66" d="M118 -162Q120 -162 124 -164T135 -167T147 -168Q160 -168 171 -155T187 -126Q197 -99 221 27T267 267T289 382V385H242Q195 385 192 387Q188 390 188 397L195 425Q197 430 203 430T250 431Q298 431 298 432Q298 434 307 482T319 540Q356 705 465 705Q502 703 526 683T550 630Q550 594 529 578T487 561Q443 561 443 603Q443 622 454 636T478 657L487 662Q471 668 457 668Q445 668 434 658T419 630Q412 601 403 552T387 469T380 433Q380 431 435 431Q480 431 487 430T498 424Q499 420 496 407T491 391Q489 386 482 386T428 385H372L349 263Q301 15 282 -47Q255 -132 212 -173Q175 -205 139 -205Q107 -205 81 -186T55 -132Q55 -95 76 -78T118 -61Q162 -61 162 -103Q162 -122 151 -136T127 -157L118 -162Z"/>
+</defs>
+<g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
+ <use xlink:href="#E1-MJMATHI-66" x="0" y="0"/>
+</g>
+</svg></span> and <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.116ex" height="2.009ex" style="vertical-align: -0.671ex" viewbox="0 -576.1 480.5 865.1" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<path stroke-width="1" id="E1-MJMATHI-67" d="M311 43Q296 30 267 15T206 0Q143 0 105 45T66 160Q66 265 143 353T314 442Q361 442 401 394L404 398Q406 401 409 404T418 412T431 419T447 422Q461 422 470 413T480 394Q480 379 423 152T363 -80Q345 -134 286 -169T151 -205Q10 -205 10 -137Q10 -111 28 -91T74 -71Q89 -71 102 -80T116 -111Q116 -121 114 -130T107 -144T99 -154T92 -162L90 -164H91Q101 -167 151 -167Q189 -167 211 -155Q234 -144 254 -122T282 -75Q288 -56 298 -13Q311 35 311 43ZM384 328L380 339Q377 350 375 354T369 368T359 382T346 393T328 402T306 405Q262 405 221 352Q191 313 171 233T151 117Q151 38 213 38Q269 38 323 108L331 118L384 328Z"/>
+</defs>
+<g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
+ <use xlink:href="#E1-MJMATHI-67" x="0" y="0"/>
+</g>
+</svg></span>:</p>
+<p><span class="math display eq"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="37.492ex" height="2.843ex" style="vertical-align: -0.838ex" viewbox="0 -863.1 16142.3 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<path stroke-width="1" id="E1-MJMAIN-63" d="M370 305T349 305T313 320T297 358Q297 381 312 396Q317 401 317 402T307 404Q281 408 258 408Q209 408 178 376Q131 329 131 219Q131 137 162 90Q203 29 272 29Q313 29 338 55T374 117Q376 125 379 127T395 129H409Q415 123 415 120Q415 116 411 104T395 71T366 33T318 2T249 -11Q163 -11 99 53T34 214Q34 318 99 383T250 448T370 421T404 357Q404 334 387 320Z"/>
+<path stroke-width="1" id="E1-MJMAIN-6F" d="M28 214Q28 309 93 378T250 448Q340 448 405 380T471 215Q471 120 407 55T250 -10Q153 -10 91 57T28 214ZM250 30Q372 30 372 193V225V250Q372 272 371 288T364 326T348 362T317 390T268 410Q263 411 252 411Q222 411 195 399Q152 377 139 338T126 246V226Q126 130 145 91Q177 30 250 30Z"/>
+<path stroke-width="1" id="E1-MJMAIN-6D" d="M41 46H55Q94 46 102 60V68Q102 77 102 91T102 122T103 161T103 203Q103 234 103 269T102 328V351Q99 370 88 376T43 385H25V408Q25 431 27 431L37 432Q47 433 65 434T102 436Q119 437 138 438T167 441T178 442H181V402Q181 364 182 364T187 369T199 384T218 402T247 421T285 437Q305 442 336 442Q351 442 364 440T387 434T406 426T421 417T432 406T441 395T448 384T452 374T455 366L457 361L460 365Q463 369 466 373T475 384T488 397T503 410T523 422T546 432T572 439T603 442Q729 442 740 329Q741 322 741 190V104Q741 66 743 59T754 49Q775 46 803 46H819V0H811L788 1Q764 2 737 2T699 3Q596 3 587 0H579V46H595Q656 46 656 62Q657 64 657 200Q656 335 655 343Q649 371 635 385T611 402T585 404Q540 404 506 370Q479 343 472 315T464 232V168V108Q464 78 465 68T468 55T477 49Q498 46 526 46H542V0H534L510 1Q487 2 460 2T422 3Q319 3 310 0H302V46H318Q379 46 379 62Q380 64 380 200Q379 335 378 343Q372 371 358 385T334 402T308 404Q263 404 229 370Q202 343 195 315T187 232V168V108Q187 78 188 68T191 55T200 49Q221 46 249 46H265V0H257L234 1Q210 2 183 2T145 3Q42 3 33 0H25V46H41Z"/>
+<path stroke-width="1" id="E1-MJMAIN-70" d="M36 -148H50Q89 -148 97 -134V-126Q97 -119 97 -107T97 -77T98 -38T98 6T98 55T98 106Q98 140 98 177T98 243T98 296T97 335T97 351Q94 370 83 376T38 385H20V408Q20 431 22 431L32 432Q42 433 61 434T98 436Q115 437 135 438T165 441T176 442H179V416L180 390L188 397Q247 441 326 441Q407 441 464 377T522 216Q522 115 457 52T310 -11Q242 -11 190 33L182 40V-45V-101Q182 -128 184 -134T195 -145Q216 -148 244 -148H260V-194H252L228 -193Q205 -192 178 -192T140 -191Q37 -191 28 -194H20V-148H36ZM424 218Q424 292 390 347T305 402Q234 402 182 337V98Q222 26 294 26Q345 26 384 80T424 218Z"/>
+<path stroke-width="1" id="E1-MJMAIN-73" d="M295 316Q295 356 268 385T190 414Q154 414 128 401Q98 382 98 349Q97 344 98 336T114 312T157 287Q175 282 201 278T245 269T277 256Q294 248 310 236T342 195T359 133Q359 71 321 31T198 -10H190Q138 -10 94 26L86 19L77 10Q71 4 65 -1L54 -11H46H42Q39 -11 33 -5V74V132Q33 153 35 157T45 162H54Q66 162 70 158T75 146T82 119T101 77Q136 26 198 26Q295 26 295 104Q295 133 277 151Q257 175 194 187T111 210Q75 227 54 256T33 318Q33 357 50 384T93 424T143 442T187 447H198Q238 447 268 432L283 424L292 431Q302 440 314 448H322H326Q329 448 335 442V310L329 304H301Q295 310 295 316Z"/>
+<path stroke-width="1" id="E1-MJMAIN-65" d="M28 218Q28 273 48 318T98 391T163 433T229 448Q282 448 320 430T378 380T406 316T415 245Q415 238 408 231H126V216Q126 68 226 36Q246 30 270 30Q312 30 342 62Q359 79 369 104L379 128Q382 131 395 131H398Q415 131 415 121Q415 117 412 108Q393 53 349 21T250 -11Q155 -11 92 58T28 218ZM333 275Q322 403 238 411H236Q228 411 220 410T195 402T166 381T143 340T127 274V267H333V275Z"/>
+<path stroke-width="1" id="E1-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"/>
+<path stroke-width="1" id="E1-MJMATHI-66" d="M118 -162Q120 -162 124 -164T135 -167T147 -168Q160 -168 171 -155T187 -126Q197 -99 221 27T267 267T289 382V385H242Q195 385 192 387Q188 390 188 397L195 425Q197 430 203 430T250 431Q298 431 298 432Q298 434 307 482T319 540Q356 705 465 705Q502 703 526 683T550 630Q550 594 529 578T487 561Q443 561 443 603Q443 622 454 636T478 657L487 662Q471 668 457 668Q445 668 434 658T419 630Q412 601 403 552T387 469T380 433Q380 431 435 431Q480 431 487 430T498 424Q499 420 496 407T491 391Q489 386 482 386T428 385H372L349 263Q301 15 282 -47Q255 -132 212 -173Q175 -205 139 -205Q107 -205 81 -186T55 -132Q55 -95 76 -78T118 -61Q162 -61 162 -103Q162 -122 151 -136T127 -157L118 -162Z"/>
+<path stroke-width="1" id="E1-MJMAIN-2C" d="M78 35T78 60T94 103T137 121Q165 121 187 96T210 8Q210 -27 201 -60T180 -117T154 -158T130 -185T117 -194Q113 -194 104 -185T95 -172Q95 -168 106 -156T131 -126T157 -76T173 -3V9L172 8Q170 7 167 6T161 3T152 1T140 0Q113 0 96 17Z"/>
+<path stroke-width="1" id="E1-MJMATHI-67" d="M311 43Q296 30 267 15T206 0Q143 0 105 45T66 160Q66 265 143 353T314 442Q361 442 401 394L404 398Q406 401 409 404T418 412T431 419T447 422Q461 422 470 413T480 394Q480 379 423 152T363 -80Q345 -134 286 -169T151 -205Q10 -205 10 -137Q10 -111 28 -91T74 -71Q89 -71 102 -80T116 -111Q116 -121 114 -130T107 -144T99 -154T92 -162L90 -164H91Q101 -167 151 -167Q189 -167 211 -155Q234 -144 254 -122T282 -75Q288 -56 298 -13Q311 35 311 43ZM384 328L380 339Q377 350 375 354T369 368T359 382T346 393T328 402T306 405Q262 405 221 352Q191 313 171 233T151 117Q151 38 213 38Q269 38 323 108L331 118L384 328Z"/>
+<path stroke-width="1" id="E1-MJMAIN-29" d="M60 749L64 750Q69 750 74 750H86L114 726Q208 641 251 514T294 250Q294 182 284 119T261 12T224 -76T186 -143T145 -194T113 -227T90 -246Q87 -249 86 -250H74Q66 -250 63 -250T58 -247T55 -238Q56 -237 66 -225Q221 -64 221 250T66 725Q56 737 55 738Q55 746 60 749Z"/>
+<path stroke-width="1" id="E1-MJMAIN-3D" d="M56 347Q56 360 70 367H707Q722 359 722 347Q722 336 708 328L390 327H72Q56 332 56 347ZM56 153Q56 168 72 173H708Q722 163 722 153Q722 140 707 133H70Q56 140 56 153Z"/>
+<path stroke-width="1" id="E1-MJMAIN-2218" d="M55 251Q55 328 112 386T249 444T386 388T444 249Q444 171 388 113T250 55Q170 55 113 112T55 251ZM245 403Q188 403 142 361T96 250Q96 183 141 140T250 96Q284 96 313 109T354 135T375 160Q403 197 403 250Q403 313 360 358T245 403Z"/>
+<path stroke-width="1" id="E1-MJMAIN-3A" d="M78 370Q78 394 95 412T138 430Q162 430 180 414T199 371Q199 346 182 328T139 310T96 327T78 370ZM78 60Q78 84 95 102T138 120Q162 120 180 104T199 61Q199 36 182 18T139 0T96 17T78 60Z"/>
+<path stroke-width="1" id="E1-MJMATHI-78" d="M52 289Q59 331 106 386T222 442Q257 442 286 424T329 379Q371 442 430 442Q467 442 494 420T522 361Q522 332 508 314T481 292T458 288Q439 288 427 299T415 328Q415 374 465 391Q454 404 425 404Q412 404 406 402Q368 386 350 336Q290 115 290 78Q290 50 306 38T341 26Q378 26 414 59T463 140Q466 150 469 151T485 153H489Q504 153 504 145Q504 144 502 134Q486 77 440 33T333 -11Q263 -11 227 52Q186 -10 133 -10H127Q78 -10 57 16T35 71Q35 103 54 123T99 143Q142 143 142 101Q142 81 130 66T107 46T94 41L91 40Q91 39 97 36T113 29T132 26Q168 26 194 71Q203 87 217 139T245 247T261 313Q266 340 266 352Q266 380 251 392T217 404Q177 404 142 372T93 290Q91 281 88 280T72 278H58Q52 284 52 289Z"/>
+<path stroke-width="1" id="E1-MJMAIN-2192" d="M56 237T56 250T70 270H835Q719 357 692 493Q692 494 692 496T691 499Q691 511 708 511H711Q720 511 723 510T729 506T732 497T735 481T743 456Q765 389 816 336T935 261Q944 258 944 250Q944 244 939 241T915 231T877 212Q836 186 806 152T761 85T740 35T732 4Q730 -6 727 -8T711 -11Q691 -11 691 0Q691 7 696 25Q728 151 835 230H70Q56 237 56 250Z"/>
+</defs>
+<g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
+ <use xlink:href="#E1-MJMAIN-63"/>
+ <use xlink:href="#E1-MJMAIN-6F" x="444" y="0"/>
+ <use xlink:href="#E1-MJMAIN-6D" x="945" y="0"/>
+ <use xlink:href="#E1-MJMAIN-70" x="1778" y="0"/>
+ <use xlink:href="#E1-MJMAIN-6F" x="2335" y="0"/>
+ <use xlink:href="#E1-MJMAIN-73" x="2835" y="0"/>
+ <use xlink:href="#E1-MJMAIN-65" x="3230" y="0"/>
+ <use xlink:href="#E1-MJMAIN-28" x="3674" y="0"/>
+ <use xlink:href="#E1-MJMATHI-66" x="4064" y="0"/>
+ <use xlink:href="#E1-MJMAIN-2C" x="4614" y="0"/>
+ <use xlink:href="#E1-MJMATHI-67" x="5059" y="0"/>
+ <use xlink:href="#E1-MJMAIN-29" x="5540" y="0"/>
+ <use xlink:href="#E1-MJMAIN-3D" x="6207" y="0"/>
+ <use xlink:href="#E1-MJMATHI-66" x="7263" y="0"/>
+ <use xlink:href="#E1-MJMAIN-2218" x="8036" y="0"/>
+ <use xlink:href="#E1-MJMATHI-67" x="8759" y="0"/>
+<g transform="translate(9517,0)">
+ <use xlink:href="#E1-MJMAIN-3A"/>
+ <use xlink:href="#E1-MJMAIN-3D" x="278" y="0"/>
+</g>
+ <use xlink:href="#E1-MJMATHI-78" x="10852" y="0"/>
+ <use xlink:href="#E1-MJMAIN-2192" x="11702" y="0"/>
+ <use xlink:href="#E1-MJMATHI-66" x="12980" y="0"/>
+ <use xlink:href="#E1-MJMAIN-28" x="13531" y="0"/>
+ <use xlink:href="#E1-MJMATHI-67" x="13920" y="0"/>
+ <use xlink:href="#E1-MJMAIN-28" x="14401" y="0"/>
+ <use xlink:href="#E1-MJMATHI-78" x="14790" y="0"/>
+ <use xlink:href="#E1-MJMAIN-29" x="15363" y="0"/>
+ <use xlink:href="#E1-MJMAIN-29" x="15752" y="0"/>
+</g>
+</svg></span></p>
+<p><code>compose</code> is not particularly common in javaScript ecosystem; but not unheard of either. For example <code>redux</code> ships it and makes heavy use of the function in its middleware / enhancer architecture. To implement <code>compose</code> from scratch is not hard either with ES2015 syntactic sugar:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">compose</span><span class="p">(...</span><span class="nx">funcs</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="nx">funcs</span><span class="p">.</span><span class="nx">reduceRight</span><span class="p">((</span><span class="nx">g</span><span class="p">,</span> <span class="nx">f</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(...</span><span class="nx">args</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">f</span><span class="p">(</span><span class="nx">g</span><span class="p">(...</span><span class="nx">args</span><span class="p">)),</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span><span class="p">);</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>Now, back to the problem (piping input value through a series of <code>transform</code>s):</p>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">compose</span><span class="p">(</span>
+
+  <span class="nx">transform3</span><span class="p">(</span><span class="nx">arg3</span><span class="p">),</span>
+
+  <span class="nx">transform2</span><span class="p">(</span><span class="nx">arg2</span><span class="p">),</span>
+
+  <span class="nx">transform1</span><span class="p">(</span><span class="nx">arg1</span><span class="p">)</span>
+
+<span class="p">)(</span><span class="nx">chainable</span><span class="p">);</span>
+</pre></div>
+<p>Why does this work? Recall transform functions are curried. <code>transform1(arg1)</code> produces a function / closure that takes a <code>Chainable</code> and returns another <code>Chainable</code>, so does <code>transform2(arg2)</code> and <code>transform3(arg3)</code>. When composed together (right to left), we get a function than takes an input, and call all three functions in order (1, 2, 3).</p>
+<p>Compare the code with the version based on method chaining:</p>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">chainable</span>
+
+  <span class="p">.</span><span class="nx">transform1</span><span class="p">(</span><span class="nx">arg1</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">transform2</span><span class="p">(</span><span class="nx">arg2</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">transform3</span><span class="p">(</span><span class="nx">arg3</span><span class="p">);</span>
+</pre></div>
+<p>Both has pretty good readability and conveys the underlying intent of the code well. Chaining based api has been commonplace in javaScript ecosystem pretty much since forever. <code>compose</code>-based ones on the other hand, have only seen a surge in popularity in the last few years. Here’s a few high-profile examples:</p>
+<div id="redux-enhancers" class="section level3">
+<h3><code>redux</code> enhancers</h3>
+<p>A <code>redux</code> <a href="https://github.com/reactjs/redux/blob/master/docs/Glossary.md">enhancer</a> defined by its types:</p>
+<blockquote>
+<p><code>type StoreCreator = (reducer: Reducer, preloadedState: ?State) =&gt; Store</code></p>
+<p><code>type StoreEnhancer = (next: StoreCreator) =&gt; StoreCreator</code></p>
+</blockquote>
+<p>Enhancers are higher order functions that takes a store creator and returns a new one. Multiple enhancers can be composed together, and applied to the base store creator - providing rich extensions to core redux functionality. Example:</p>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">createStoreWithEnhancers</span> <span class="o">=</span> <span class="nx">compose</span><span class="p">(</span>
+
+  <span class="nx">applyMiddlewares</span><span class="p">(...),</span>
+
+  <span class="nx">batchStoreEnhancer</span><span class="p">,</span>
+
+  <span class="nx">createAgendaEnhancer</span>
+
+<span class="p">)(</span><span class="nx">createStore</span><span class="p">);</span>
+
+
+
+<span class="kr">const</span> <span class="nx">store</span> <span class="o">=</span> <span class="nx">createStoreWithEnhancers</span><span class="p">(</span><span class="nx">reducer</span><span class="p">,</span> <span class="nx">initialState</span><span class="p">);</span>
+</pre></div>
+</div>
+<div id="recompose" class="section level3">
+<h3><code>recompose</code></h3>
+<p>Another example from <code>React</code> ecosystem. As the name suggests, <code>recompose</code> is all about provide higher order react components (which are just functions with <code>Component -&gt; Component</code> signature), and compose them together. Example:</p>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">enhancer</span> <span class="o">=</span> <span class="nx">compose</span><span class="p">(</span>
+
+  <span class="nx">withState</span><span class="p">(</span><span class="s2">&quot;counter&quot;</span><span class="p">,</span> <span class="s2">&quot;setCounter&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+
+  <span class="nx">withProps</span><span class="p">(</span><span class="nx">derivingProps</span><span class="p">)</span>
+
+  <span class="nx">pure</span>
+
+<span class="p">);</span>
+
+<span class="kr">const</span> <span class="nx">EnrichedComponent</span> <span class="o">=</span> <span class="nx">enhancer</span><span class="p">(</span><span class="nx">BaseComponent</span><span class="p">);</span>
+</pre></div>
+</div>
+<div id="transducers" class="section level3">
+<h3><code>transducers</code></h3>
+<p><a href="http://phuu.net/2014/08/31/csp-and-transducers.html">Transducer</a> is a powerful idea coming from the clojure world. A javaScript <a href="https://github.com/cognitect-labs/transducers-js">implementation</a> exists. Example:</p>
+<div class="highlight"><pre><span></span><span class="kr">import</span> <span class="nx">t</span> <span class="nx">from</span> <span class="s1">&#39;transducers-js&#39;</span><span class="p">;</span>
+
+
+
+<span class="kr">const</span> <span class="nx">xf</span> <span class="o">=</span> <span class="nx">compose</span><span class="p">(</span>
+
+  <span class="nx">t</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+
+  <span class="nx">t</span><span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span>
+
+  <span class="nx">t</span><span class="p">.</span><span class="nx">takeWhile</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="p">)</span>
+
+<span class="nx">t</span><span class="p">.</span><span class="nx">into</span><span class="p">([],</span> <span class="nx">xf</span><span class="p">,</span> <span class="nx">range</span><span class="p">(</span><span class="mi">20</span><span class="p">));</span> <span class="c1">// [2, 4]</span>
+</pre></div>
+</div>
+</div>
+<div id="more-on-compose" class="section level2">
+<h2>More on <code>compose</code></h2>
+<p>A unique library where both chaining and compose based apis are provided is <code>lodash</code> / <code>lodash-fp</code>. Some time back in <code>lodash</code> v3, the following code is encouraged to take advantage of lazy evaluation:</p>
+<div class="highlight"><pre><span></span><span class="nx">_</span><span class="p">(</span><span class="nx">array</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">value</span><span class="p">();</span>
+</pre></div>
+<p>This practice is now discouraged due to consideration of bundle size. In order to use lodash wrapping and chaining, all lodash helpers needs to be defined on the wrapper class prototype, forcing the user to load the entire library, even if only a couple methods are used.</p>
+<p>Instead, with <code>lodash-fp</code>:</p>
+<div class="highlight"><pre><span></span><span class="nx">compose</span><span class="p">(</span>
+
+  <span class="nx">map</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>  <span class="c1">// a function of type: [a] -&gt; [a]</span>
+
+  <span class="nx">filter</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">// a function of type: [a] -&gt; [a]</span>
+
+<span class="p">)(</span><span class="nx">array</span><span class="p">);</span>
+</pre></div>
+<p>Only <code>map</code> and <code>filter</code> needs to be imported. Of course in this particular example, underlying performance characteristics may be different (with respect to allocating intermediary arrays).</p>
+<p>This is a good example outlining the benefits of <code>compose</code> based apis: they do not require the data type being manipulated to be a <code>class</code>. A chaining based api requires all desired transformations defined as prototype methods beforehand. On the other hand, with <code>compose</code>, new transformations can be defined and created much easier, and the underlying mechanism is more extensible and flexible. As long as we can express the problem at hand with some data type <code>a</code>, and model the operations we intend to perform on it as functions of type <code>a -&gt; a</code>, <code>compose</code> can be used to build bigger computations from small units. the type <code>a</code> can even be other functions (like redux <code>createStore</code>).</p>
+<p>One last little observation, notice anything about the <code>a -&gt; a</code> signature? Can you come up with a function that satisfies this? Well, the most trival one come to mind first:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">id</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="nx">x</span><span class="p">;</span>
+
+<span class="p">}</span>
+</pre></div>
+<p><code>id</code> can be in fact be composed together with other <code>a -&gt; a</code> functions, providing a no-op step in the pipeline. This is equivalent to providing <code>return this</code> as a method on chaining based approaches.</p>
+</div>
+<div id="closing-remarks" class="section level2">
+<h2>Closing Remarks</h2>
+<p>After exploring the various aspects of method chaining, a couple of useful principles or takeaways can be summarized:</p>
+<ul>
+<li>Decide on mutable vs. immutable chaining when designing an api</li>
+<li>But know that you can have both with pattens like <code>withMutations</code></li>
+<li>When your api targets a functional audience, do the following to facilitate composition:
+<ul>
+<li>make the functions curried (at least optionally)</li>
+<li>arrange the function arguments such that the last argument is the primary data type</li>
+</ul></li>
+</ul>
+</div>
+
+
+
+
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+
+
+</body>
+</html>
