@@ -31,7 +31,7 @@
 
 
 
-<link href="style/main.css" rel="stylesheet" tyle="text/css"><link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
+<link href="style/main.css" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
 
 <body>
 
@@ -84,7 +84,7 @@
 </blockquote>
 <p>This article [Spoiler Alert] illustrates the fundamental difficulties in composing direct style (normal) functions and callback taking functions (typically async in nature). Modern day javaScript has plenty of tools in dealing with the issue here: <code>Promise</code>, <code>async/await</code>, <code>generators</code>, <code>Observables/FRP</code>, golang style <code>CSP</code> and more. However, almost all of these newer constructs aim to eliminate the heavy usage of callbacks and try to turn callback hell into some innocent/synchronous looking code - either in imperative (eg. CSP) or functional style (eg. FRP).</p>
 <p>Callback hell is an integral part of javaScript’s notoriety However, callback hell, or rather multiple level nested functions are <em>not</em> necessarily “considered harmful” in functional programming. For instance, consider some simple monadic comprehension code in Haskell:</p>
-<div class="highlight"><pre><span class="nf">triplets</span> <span class="ow">=</span> <span class="kr">do</span> 
+<div class="highlight"><pre><span></span><span class="nf">triplets</span> <span class="ow">=</span> <span class="kr">do</span> 
 
     <span class="n">x</span> <span class="ow">&lt;-</span> <span class="n">xs</span>
 
@@ -95,7 +95,7 @@
     <span class="n">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
 </pre></div>
 <p>which desugars to:</p>
-<div class="highlight"><pre><span class="kr">let</span> <span class="n">triplets</span> <span class="ow">=</span> <span class="n">xs</span> <span class="o">&gt;&gt;=</span> <span class="nf">\</span><span class="n">x</span> <span class="ow">-&gt;</span>
+<div class="highlight"><pre><span></span><span class="kr">let</span> <span class="n">triplets</span> <span class="ow">=</span> <span class="n">xs</span> <span class="o">&gt;&gt;=</span> <span class="nf">\</span><span class="n">x</span> <span class="ow">-&gt;</span>
 
                          <span class="n">ys</span> <span class="o">&gt;&gt;=</span> <span class="nf">\</span><span class="n">y</span> <span class="ow">-&gt;</span>
 
@@ -130,7 +130,7 @@
 <li>at its tail position (place where its direct style counter-part will simply return)</li>
 </ul>
 <p>Another distinction is whether or not a CPS function should return the result of calling continuation. This can be illustrated with the most trival CPS function <code>id</code>.</p>
-<div class="highlight"><pre><span class="c1">// direct style </span>
+<div class="highlight"><pre><span></span><span class="c1">// direct style </span>
 
 <span class="kd">function</span> <span class="nx">id</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
 
@@ -159,23 +159,23 @@
 <span class="p">}</span>
 </pre></div>
 <p>Haskell’s <code>Control.Monad.Cont</code> opts to implementation continuations similar to <code>id_cps2</code> above. This makes sense. Original concept of a continuation in Scheme is defined as a procedure instead of pure functions. In other words, a continuation can have side effects such as the procedure <code>print</code>. Haskell models continuation as pure functions, which means our <code>id_cps1</code> will essentially become:</p>
-<div class="highlight"><pre><span class="kr">let</span> <span class="n">idCps1</span> <span class="n">x</span> <span class="n">k</span> <span class="ow">=</span> <span class="nb">()</span>
+<div class="highlight"><pre><span></span><span class="kr">let</span> <span class="n">idCps1</span> <span class="n">x</span> <span class="n">k</span> <span class="ow">=</span> <span class="nb">()</span>
 </pre></div>
 <p>Certainly not very useful.</p>
 <p>However, this lesson does not carry over to javaScript. In almost all cases, a function/api is designed to take a callback because it is asyncous, and the callback is simply invoked some time in the future and its results discarded. In other words, almost all the callback based functions in javaScript cannot be modeled using Haskell’s flavor of CPS; otherwise, we would’ve been able to do things like:</p>
-<div class="highlight"><pre><span class="kd">let</span> <span class="nx">id</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="kd">let</span> <span class="nx">id</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span><span class="p">;</span>
 
 <span class="kd">let</span> <span class="nx">contents</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFile</span><span class="p">(</span><span class="s1">&#39;file.txt&#39;</span><span class="p">,</span> <span class="nx">id</span><span class="p">);</span>
 
 <span class="c1">// in reality contents evaluates to undefined</span>
 </pre></div>
 <p>In which case, practitioners probably won’t even bother, and just use:</p>
-<div class="highlight"><pre><span class="kd">let</span> <span class="nx">contents</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="s1">&#39;file.txt&#39;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="kd">let</span> <span class="nx">contents</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="s1">&#39;file.txt&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <div id="poor-mans-monad" class="section level2">
 <h2>Poor man’s Monad</h2>
-<div class="highlight"><pre><span class="kr">class</span> <span class="nx">MyMonad</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">MyMonad</span> <span class="p">{</span>
 
   <span class="nx">constructor</span><span class="p">()</span> <span class="p">{</span>
 
@@ -224,7 +224,7 @@
 </div>
 <div id="cont.-monad-in-js" class="section level2">
 <h2>Cont. Monad in js</h2>
-<div class="highlight"><pre><span class="kd">function</span> <span class="nx">Cont</span> <span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">async</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">Cont</span> <span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">async</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">this</span><span class="p">.</span><span class="nx">_func</span> <span class="o">=</span> <span class="nx">f</span><span class="p">;</span>
 

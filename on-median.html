@@ -26,10 +26,9 @@
 
 
 
-<line href="http://localhost:7000/style/fonts/sourceserifpro-bold-webfont.woff2" rel="preload" type="application/x-font-woff">
-<line href="http://localhost:7000/style/fonts/sourceserifpro-regular-webfont.woff2" rel="preload" type="application/x-font-woff">
 
-<link href="style/main.css" rel="stylesheet" style="text/css"><link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
+
+<link href="style/main.css" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
 
 <body>
 
@@ -782,7 +781,7 @@
  <use transform="scale(0.707)" xlink:href="#E1-MJMATHI-6A" x="693" y="-213"/>
 </g>
 </svg></span>’s) and return test’s <code>p.value</code>.</p>
-<div class="highlight"><pre><span class="c1"># single run</span>
+<div class="highlight"><pre><span></span><span class="c1"># single run</span>
 
 sim.run <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>test<span class="p">,</span> sample.fun<span class="p">,</span> sample_size <span class="o">=</span> <span class="m">2500</span><span class="p">)</span> <span class="p">{</span>
 
@@ -797,7 +796,7 @@ sim.run <span class="o">&lt;-</span> <span class="kr">function</span><span class
 <span class="p">}</span>
 </pre></div>
 <p>For our Binomial populations, here’s the implementation of <code>sample.fun</code></p>
-<div class="highlight"><pre>sample.binom <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>sample.binom <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="p">{</span>
 
   <span class="kp">cbind</span><span class="p">(</span>
 
@@ -824,7 +823,7 @@ sim.run <span class="o">&lt;-</span> <span class="kr">function</span><span class
  <use xlink:href="#E1-MJMATHI-59" x="0" y="0"/>
 </g>
 </svg></span> are plotted below:</p>
-<div class="highlight"><pre>pmf.X <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">100</span><span class="p">,</span> prob <span class="o">=</span> dbinom<span class="p">(</span><span class="m">0</span><span class="o">:</span><span class="m">100</span><span class="p">,</span> size <span class="o">=</span> <span class="m">100</span><span class="p">,</span> p <span class="o">=</span> <span class="m">0.15</span><span class="p">),</span> variable <span class="o">=</span> <span class="s">&#39;X&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span>pmf.X <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">100</span><span class="p">,</span> prob <span class="o">=</span> dbinom<span class="p">(</span><span class="m">0</span><span class="o">:</span><span class="m">100</span><span class="p">,</span> size <span class="o">=</span> <span class="m">100</span><span class="p">,</span> p <span class="o">=</span> <span class="m">0.15</span><span class="p">),</span> variable <span class="o">=</span> <span class="s">&#39;X&#39;</span><span class="p">)</span>
 
 pmf.Y <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">20</span><span class="p">,</span> prob <span class="o">=</span> dbinom<span class="p">(</span><span class="m">0</span><span class="o">:</span><span class="m">20</span><span class="p">,</span> size <span class="o">=</span> <span class="m">20</span><span class="p">,</span> p <span class="o">=</span> <span class="m">15</span><span class="o">/</span><span class="m">20</span><span class="p">),</span> variable <span class="o">=</span> <span class="s">&#39;Y&#39;</span><span class="p">)</span>
 
@@ -876,7 +875,7 @@ p <span class="o">+</span> geom_segment<span class="p">(</span>aes<span class="p
 <li>Perform a chi-square test on this table, testing the hypothesis that the probability of an observation being greater than the overall median is the same for all populations.</li>
 </ol>
 <p>And here’s the code:</p>
-<div class="highlight"><pre>mood.test <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>mood.test <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> <span class="p">{</span>
 
   overall_mid <span class="o">&lt;-</span> median<span class="p">(</span> <span class="kt">c</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> <span class="p">)</span>
 
@@ -947,7 +946,7 @@ p <span class="o">+</span> geom_segment<span class="p">(</span>aes<span class="p
 </svg></span>’s follows a normal distribution asymptotically with the mean of population median, due to CLT - and this is a statistic we can perform T Test on.</p>
 <p>In addition to Bootstrapping, we also consider subsampling. The key difference is when resampling, subsampling samples a smaller sample size and <em>without</em> replacement. The advantage of subsampling is that it is valid under much weaker conditions compared to the bootstrap.</p>
 <p>The code:</p>
-<div class="highlight"><pre>medians.bootstrap <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> k<span class="o">=</span><span class="m">1e3</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>medians.bootstrap <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> k<span class="o">=</span><span class="m">1e3</span><span class="p">)</span> <span class="p">{</span>
 
   n <span class="o">&lt;-</span> <span class="kp">length</span><span class="p">(</span>x<span class="p">)</span>
 
@@ -1082,7 +1081,7 @@ t.test.subsample <span class="o">&lt;-</span> <span class="kr">function</span><s
 <p>At this step, a problem surfaced. Since there are so few possible values sample observations could occupy, resampling using Bootstrapping essential produces the same sample median all the time, halting the subsequent T Test. Error message in R:</p>
 <pre><code>Error in t.test.default(c(1, 1), c(1, 1)) : data are essentially constant</code></pre>
 <p>Therefore, we have to drop Bootstrapping in favor of Subsampling.</p>
-<div class="highlight"><pre>p.values <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p">(</span>
+<div class="highlight"><pre><span></span>p.values <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p">(</span>
 
   <span class="kp">replicate</span><span class="p">(</span>n<span class="o">=</span><span class="m">1e4</span><span class="p">,</span> expr<span class="o">=</span>sim.run<span class="p">(</span>t.test<span class="p">,</span> sample.binom<span class="p">)),</span>
 
@@ -1101,7 +1100,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 </div>
 <div id="kernel-density-plots-of-p-values" class="section level3">
 <h3>Kernel Density Plots of p-values</h3>
-<div class="highlight"><pre>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<div class="highlight"><pre><span></span>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
 
 <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">)</span> <span class="p">{</span>
 
@@ -1115,7 +1114,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 </div>
 <div id="ecdf-plots-of-p-values" class="section level3">
 <h3>ECDF Plots of p-values</h3>
-<div class="highlight"><pre>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<div class="highlight"><pre><span></span>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
 
 <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">)</span> <span class="p">{</span>
 
@@ -1462,7 +1461,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
  <use transform="scale(0.707)" xlink:href="#E1-MJMAIN-31" x="1175" y="-213"/>
 </g>
 </svg></span> is true:</p>
-<div class="highlight"><pre>sample.binom2 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">,</span> <span class="kp">diff</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>sample.binom2 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">,</span> <span class="kp">diff</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="kp">cbind</span><span class="p">(</span>
 
@@ -1526,7 +1525,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
  <use xlink:href="#E1-MJMAIN-7D" x="15097" y="0"/>
 </g>
 </svg></span>.</p>
-<div class="highlight"><pre>power <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span><span class="kp">diff</span><span class="p">,</span> runs<span class="o">=</span><span class="m">1e4</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>power <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span><span class="kp">diff</span><span class="p">,</span> runs<span class="o">=</span><span class="m">1e4</span><span class="p">)</span> <span class="p">{</span>
 
 
 
@@ -1576,13 +1575,13 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
  <use xlink:href="#E1-MJMATHI-3B8" x="0" y="0"/>
 </g>
 </svg></span> values:</p>
-<div class="highlight"><pre>powers <span class="o">&lt;-</span> ldply<span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">-5</span><span class="o">:</span><span class="m">-1</span><span class="p">,</span> <span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">),</span> power<span class="p">)</span>
+<div class="highlight"><pre><span></span>powers <span class="o">&lt;-</span> ldply<span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">-5</span><span class="o">:</span><span class="m">-1</span><span class="p">,</span> <span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">),</span> power<span class="p">)</span>
 
 powers <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p">(</span>powers<span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="m">-5</span><span class="o">:</span><span class="m">-1</span><span class="p">,</span> <span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">))</span>
 
 <span class="kp">names</span><span class="p">(</span>powers<span class="p">)[</span><span class="m">5</span><span class="p">]</span> <span class="o">&lt;-</span> <span class="s">&#39;Median.Diff&#39;</span>
 </pre></div>
-<div class="highlight"><pre><span class="kp">print</span><span class="p">(</span>powers<span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kp">print</span><span class="p">(</span>powers<span class="p">)</span>
 </pre></div>
 <pre><code>##    T Wilcox Mood Subsample Median.Diff
 ## 1  1      1    1         1          -5
@@ -2468,7 +2467,7 @@ powers <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p"
  <use xlink:href="#E1-MJMATHI-58" x="0" y="0"/>
 </g>
 </svg></span></p>
-<div class="highlight"><pre>x.probs <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>x.probs <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
 
   ps <span class="o">&lt;-</span> runif<span class="p">(</span><span class="m">11</span><span class="p">)</span>
 
@@ -2477,7 +2476,7 @@ powers <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p"
 <span class="p">}</span>
 </pre></div>
 <p>The following function <code>pop.median</code> and <code>pop.mean</code> computes the population median and mean given a vector of probabilities:</p>
-<div class="highlight"><pre>S <span class="o">&lt;-</span> <span class="kp">lower.tri</span><span class="p">(</span><span class="kp">diag</span><span class="p">(</span><span class="m">11</span><span class="p">),</span> diag<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
+<div class="highlight"><pre><span></span>S <span class="o">&lt;-</span> <span class="kp">lower.tri</span><span class="p">(</span><span class="kp">diag</span><span class="p">(</span><span class="m">11</span><span class="p">),</span> diag<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
 
 pop.median <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>probs<span class="p">)</span> <span class="p">{</span>  
 
@@ -2515,7 +2514,7 @@ pop.mean <span class="o">&lt;-</span> <span class="kr">function</span><span clas
  <use xlink:href="#E1-MJMATHI-59" x="0" y="0"/>
 </g>
 </svg></span> given a non-integer median:</p>
-<div class="highlight"><pre>y.probs.1 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>m<span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>y.probs.1 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>m<span class="p">)</span> <span class="p">{</span>
 
   m <span class="o">&lt;-</span> <span class="kp">floor</span><span class="p">(</span>m<span class="p">)</span>
 
@@ -2543,7 +2542,7 @@ pop.mean <span class="o">&lt;-</span> <span class="kr">function</span><span clas
  <use xlink:href="#E1-MJMATHI-59" x="0" y="0"/>
 </g>
 </svg></span> given an integer median:</p>
-<div class="highlight"><pre>y.probs.2 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>m<span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>y.probs.2 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>m<span class="p">)</span> <span class="p">{</span>
 
   pa <span class="o">&lt;-</span> runif<span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0.5</span><span class="p">)</span>
 
@@ -2575,7 +2574,7 @@ pop.mean <span class="o">&lt;-</span> <span class="kr">function</span><span clas
  <use xlink:href="#E1-MJMATHI-59" x="0" y="0"/>
 </g>
 </svg></span>:</p>
-<div class="highlight"><pre>y.probs <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>m<span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>y.probs <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>m<span class="p">)</span> <span class="p">{</span>
 
   <span class="kr">if</span><span class="p">(</span>m <span class="o">==</span> <span class="kp">floor</span><span class="p">(</span>m<span class="p">))</span> <span class="p">{</span>
 
@@ -2590,7 +2589,7 @@ pop.mean <span class="o">&lt;-</span> <span class="kr">function</span><span clas
 <span class="p">}</span>
 </pre></div>
 <p>Here’s how two randomly generated populations look like in their pmf:</p>
-<div class="highlight"><pre>pxs <span class="o">&lt;-</span> x.probs<span class="p">()</span>
+<div class="highlight"><pre><span></span>pxs <span class="o">&lt;-</span> x.probs<span class="p">()</span>
 
 mx <span class="o">&lt;-</span> pop.median<span class="p">(</span>pxs<span class="p">)</span>
 
@@ -2615,14 +2614,14 @@ p <span class="o">&lt;-</span> ggplot<span class="p">(</span>dat<span class="p">
 p <span class="o">+</span> geom_segment<span class="p">(</span>aes<span class="p">(</span>xend <span class="o">=</span> k<span class="p">,</span> yend <span class="o">=</span> <span class="m">0</span><span class="p">),</span> size<span class="o">=</span><span class="m">4</span><span class="p">)</span> <span class="o">+</span> ylab<span class="p">(</span><span class="s">&#39;p(k)&#39;</span><span class="p">)</span> <span class="o">+</span> facet_grid<span class="p">(</span><span class="m">.</span> <span class="o">~</span> variable<span class="p">)</span>
 </pre></div>
 <p><img src="data:image/png;base64,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" title="" alt="" width="672"></p>
-<div class="highlight"><pre><span class="kp">print</span><span class="p">(</span>pop.median<span class="p">(</span>pxs<span class="p">))</span>
+<div class="highlight"><pre><span></span><span class="kp">print</span><span class="p">(</span>pop.median<span class="p">(</span>pxs<span class="p">))</span>
 </pre></div>
 <pre><code>## [1] 5</code></pre>
-<div class="highlight"><pre><span class="kp">print</span><span class="p">(</span>pop.median<span class="p">(</span>pys<span class="p">))</span>
+<div class="highlight"><pre><span></span><span class="kp">print</span><span class="p">(</span>pop.median<span class="p">(</span>pys<span class="p">))</span>
 </pre></div>
 <pre><code>## [1] 5</code></pre>
 <p>And we create a new sample function, which creates a pair of randomized populations with the same median, and sample from them:</p>
-<div class="highlight"><pre>sample.random_pop <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>sample.random_pop <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="p">{</span>
 
   px <span class="o">&lt;-</span> x.probs<span class="p">()</span>
 
@@ -2643,7 +2642,7 @@ p <span class="o">+</span> geom_segment<span class="p">(</span>aes<span class="p
 </div>
 <div id="simulation" class="section level3">
 <h3>Simulation</h3>
-<div class="highlight"><pre>p.values <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p">(</span>
+<div class="highlight"><pre><span></span>p.values <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p">(</span>
 
   <span class="kp">replicate</span><span class="p">(</span>n<span class="o">=</span><span class="m">1e4</span><span class="p">,</span> expr<span class="o">=</span>sim.run<span class="p">(</span>t.test<span class="p">,</span> sample.random_pop<span class="p">)),</span>
 
@@ -2662,7 +2661,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 </div>
 <div id="kernel-density-plots-of-p-values-1" class="section level3">
 <h3>Kernel Density Plots of p-values</h3>
-<div class="highlight"><pre>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<div class="highlight"><pre><span></span>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
 
 <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">)</span> <span class="p">{</span>
 
@@ -2676,7 +2675,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 </div>
 <div id="ecdf-plots-of-p-values-1" class="section level3">
 <h3>ECDF Plots of p-values</h3>
-<div class="highlight"><pre>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<div class="highlight"><pre><span></span>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
 
 <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">)</span> <span class="p">{</span>
 
@@ -2695,7 +2694,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 <div id="trouble-shooting" class="section level3">
 <h3>Trouble Shooting</h3>
 <p>Let’s generate two random populations:</p>
-<div class="highlight"><pre><span class="kp">set.seed</span><span class="p">(</span><span class="m">123</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kp">set.seed</span><span class="p">(</span><span class="m">123</span><span class="p">)</span>
 
 pxs <span class="o">&lt;-</span> x.probs<span class="p">()</span>
 
@@ -2718,7 +2717,7 @@ pys <span class="o">&lt;-</span> y.probs<span class="p">(</span>m<span class="p"
  <use xlink:href="#E1-MJMATHI-59" x="0" y="0"/>
 </g>
 </svg></span>. The mean and median is not the same for the population, therefore, we expect T Test to perform poorly. To get a sense of the population distribution, we plot their pmf:</p>
-<div class="highlight"><pre>pmf.X <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">,</span> prob <span class="o">=</span> pxs<span class="p">,</span> variable <span class="o">=</span> <span class="s">&#39;X&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span>pmf.X <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">,</span> prob <span class="o">=</span> pxs<span class="p">,</span> variable <span class="o">=</span> <span class="s">&#39;X&#39;</span><span class="p">)</span>
 
 pmf.Y <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">,</span> prob <span class="o">=</span> pys<span class="p">,</span> variable <span class="o">=</span> <span class="s">&#39;Y&#39;</span><span class="p">)</span>
 
@@ -2750,7 +2749,7 @@ p <span class="o">+</span> geom_segment<span class="p">(</span>aes<span class="p
  <use xlink:href="#E1-MJMATHI-59" x="0" y="0"/>
 </g>
 </svg></span> have very different distributions, even if they share the same median. Keep these two populations fixed, we repeated sample from them using the following sample function:</p>
-<div class="highlight"><pre>sample.random_pop2 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span>sample.random_pop2 <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="p">{</span>
 
   <span class="kp">cbind</span><span class="p">(</span>
 
@@ -2763,7 +2762,7 @@ p <span class="o">+</span> geom_segment<span class="p">(</span>aes<span class="p
 <span class="p">}</span>
 </pre></div>
 <p>And Run the simulation</p>
-<div class="highlight"><pre>p.values <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p">(</span>
+<div class="highlight"><pre><span></span>p.values <span class="o">&lt;-</span> <span class="kp">cbind</span><span class="p">(</span>
 
   <span class="kp">replicate</span><span class="p">(</span>n<span class="o">=</span><span class="m">1e4</span><span class="p">,</span> expr<span class="o">=</span>sim.run<span class="p">(</span>t.test<span class="p">,</span> sample.random_pop<span class="p">)),</span>
 
@@ -2779,7 +2778,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 
 <span class="kp">names</span><span class="p">(</span>p.values<span class="p">)</span> <span class="o">&lt;-</span> <span class="kt">c</span><span class="p">(</span><span class="s">&#39;T&#39;</span><span class="p">,</span> <span class="s">&#39;Wilcox&#39;</span><span class="p">,</span> <span class="s">&#39;Mood&#39;</span><span class="p">,</span> <span class="s">&#39;Subsample&#39;</span><span class="p">)</span>
 </pre></div>
-<div class="highlight"><pre>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<div class="highlight"><pre><span></span>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
 
 <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">)</span> <span class="p">{</span>
 
@@ -3040,7 +3039,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
  <use xlink:href="#E1-MJMATHI-58" x="0" y="0"/>
 </g>
 </svg></span> size ranging from 10 to 100000, and plot the sample median:</p>
-<div class="highlight"><pre>sizes <span class="o">&lt;-</span> <span class="kp">floor</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="kp">seq</span><span class="p">(</span><span class="m">50</span><span class="p">,</span> <span class="m">950</span><span class="p">,</span> by<span class="o">=</span><span class="m">50</span><span class="p">),</span> <span class="m">10</span><span class="o">^</span><span class="p">(</span><span class="kp">seq</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="m">5</span><span class="p">,</span>by<span class="o">=</span><span class="m">0.2</span><span class="p">))))</span>
+<div class="highlight"><pre><span></span>sizes <span class="o">&lt;-</span> <span class="kp">floor</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="kp">seq</span><span class="p">(</span><span class="m">50</span><span class="p">,</span> <span class="m">950</span><span class="p">,</span> by<span class="o">=</span><span class="m">50</span><span class="p">),</span> <span class="m">10</span><span class="o">^</span><span class="p">(</span><span class="kp">seq</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="m">5</span><span class="p">,</span>by<span class="o">=</span><span class="m">0.2</span><span class="p">))))</span>
 
 
 
@@ -3058,7 +3057,7 @@ sample.medians <span class="o">&lt;-</span> <span class="kt">data.frame</span><s
 
 <span class="p">)</span>
 </pre></div>
-<div class="highlight"><pre>p <span class="o">&lt;-</span> ggplot<span class="p">(</span>sample.medians<span class="p">)</span>
+<div class="highlight"><pre><span></span>p <span class="o">&lt;-</span> ggplot<span class="p">(</span>sample.medians<span class="p">)</span>
 
 p <span class="o">&lt;-</span> p <span class="o">+</span> geom_point<span class="p">(</span>aes<span class="p">(</span>x<span class="o">=</span>size<span class="p">,</span> y<span class="o">=</span>median<span class="p">))</span> <span class="o">+</span> 
 
@@ -3098,7 +3097,7 @@ plot<span class="p">(</span>p<span class="p">)</span>
  <use xlink:href="#E1-MJMAIN-5D" x="4328" y="0"/>
 </g>
 </svg></span>(0.6121182) is very large.</p>
-<div class="highlight"><pre>medians <span class="o">&lt;-</span> <span class="kp">sapply</span><span class="p">(</span>sizes<span class="p">,</span> 
+<div class="highlight"><pre><span></span>medians <span class="o">&lt;-</span> <span class="kp">sapply</span><span class="p">(</span>sizes<span class="p">,</span> 
 
                   <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="kp">mean</span><span class="p">(</span><span class="kp">replicate</span><span class="p">(</span><span class="m">1e3</span><span class="p">,</span> expr<span class="o">=</span>median<span class="p">(</span><span class="kp">sample</span><span class="p">(</span>x <span class="o">=</span> <span class="kp">seq</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">),</span> n<span class="p">,</span> replace <span class="o">=</span> <span class="bp">T</span><span class="p">,</span> prob<span class="o">=</span>pys<span class="p">)))))</span>
 
@@ -3112,7 +3111,7 @@ sample.medians <span class="o">&lt;-</span> <span class="kt">data.frame</span><s
 
 <span class="p">)</span>
 </pre></div>
-<div class="highlight"><pre>p <span class="o">&lt;-</span> ggplot<span class="p">(</span>sample.medians<span class="p">)</span>
+<div class="highlight"><pre><span></span>p <span class="o">&lt;-</span> ggplot<span class="p">(</span>sample.medians<span class="p">)</span>
 
 p <span class="o">&lt;-</span> p <span class="o">+</span> geom_point<span class="p">(</span>aes<span class="p">(</span>x<span class="o">=</span>size<span class="p">,</span> y<span class="o">=</span>median<span class="p">))</span> <span class="o">+</span> 
 
@@ -3420,12 +3419,12 @@ plot<span class="p">(</span>p<span class="p">)</span>
  <use xlink:href="#E1-MJMAIN-29" x="3874" y="0"/>
 </g>
 </svg></span>. Both have their mean and median equal to 5, yet their distribution is very different.</p>
-<div class="highlight"><pre>pxs <span class="o">&lt;-</span> <span class="kp">rep</span><span class="p">(</span><span class="m">1</span><span class="o">/</span><span class="m">11</span><span class="p">,</span> <span class="m">11</span><span class="p">)</span>
+<div class="highlight"><pre><span></span>pxs <span class="o">&lt;-</span> <span class="kp">rep</span><span class="p">(</span><span class="m">1</span><span class="o">/</span><span class="m">11</span><span class="p">,</span> <span class="m">11</span><span class="p">)</span>
 
 pys <span class="o">&lt;-</span> dbinom<span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">),</span> <span class="m">10</span><span class="p">,</span> <span class="m">0.5</span><span class="p">)</span>
 </pre></div>
 <p>Their Pmfs are plotted below:</p>
-<div class="highlight"><pre>pmf.X <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">,</span> prob <span class="o">=</span> pxs<span class="p">,</span> variable <span class="o">=</span> <span class="s">&#39;X&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span>pmf.X <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">,</span> prob <span class="o">=</span> pxs<span class="p">,</span> variable <span class="o">=</span> <span class="s">&#39;X&#39;</span><span class="p">)</span>
 
 pmf.Y <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>k <span class="o">=</span> <span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">,</span> prob <span class="o">=</span> pys<span class="p">,</span> variable <span class="o">=</span> <span class="s">&#39;Y&#39;</span><span class="p">)</span>
 
@@ -3445,7 +3444,7 @@ p <span class="o">+</span> geom_segment<span class="p">(</span>aes<span class="p
 </div>
 <div id="simulation-1" class="section level3">
 <h3>Simulation</h3>
-<div class="highlight"><pre>sample.random_pop3 <span class="o">&lt;-</span> sample.random_pop2  <span class="c1"># global variable pxs and pys have changed, so we can reuse this function</span>
+<div class="highlight"><pre><span></span>sample.random_pop3 <span class="o">&lt;-</span> sample.random_pop2  <span class="c1"># global variable pxs and pys have changed, so we can reuse this function</span>
 
 
 
@@ -3468,7 +3467,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 </div>
 <div id="kernel-density-plots-of-p-values-2" class="section level3">
 <h3>Kernel Density Plots of p-values</h3>
-<div class="highlight"><pre>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<div class="highlight"><pre><span></span>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
 
 <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">)</span> <span class="p">{</span>
 
@@ -3482,7 +3481,7 @@ p.values <span class="o">&lt;-</span> <span class="kp">as.data.frame</span><span
 </div>
 <div id="ecdf-plots-of-p-values-2" class="section level3">
 <h3>ECDF Plots of p-values</h3>
-<div class="highlight"><pre>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<div class="highlight"><pre><span></span>par<span class="p">(</span>mfrow<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
 
 <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">)</span> <span class="p">{</span>
 
