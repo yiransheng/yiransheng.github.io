@@ -428,7 +428,7 @@ function id(x) {
 After exploring the various aspects of method chaining, a couple of useful principles or takeaways can be summarized:
 
 * Decide on mutable vs. immutable chaining when designing an api
-* But know that you can have both with pattens like `withMutations`
+* But know that you can have both with patterns like `withMutations`
 * When your api targets a functional audience, do the following to facilitate composition:
     - make the functions curried (at least optionally)
     - arrange the function arguments such that the last argument is the primary data type 
