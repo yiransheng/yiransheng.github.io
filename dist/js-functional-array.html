@@ -72,7 +72,7 @@
 <blockquote>
 <p><code>Array.prototype.flatMap</code> first maps each element using a mapping function, then flattens the result into a new array. It is identical to a map followed by a flatten of depth 1.</p>
 </blockquote>
-<div class="highlight"><pre><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">flatten</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">flatten</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
 
   <span class="k">return</span> <span class="p">[].</span><span class="nx">concat</span><span class="p">(...</span><span class="k">this</span><span class="p">);</span>
 
@@ -95,13 +95,13 @@
 <li><p>The implementation of <code>flatten</code> takes advantage of that <code>concat</code> taking variable number of arguments and ES6 spread operator</p></li>
 <li><p>javaScript <code>Array.prototype.map</code> passes each element, its index and the array itself to the mapping function. While convenient at times, can also be troublesome and non-intuitive in some cases:</p></li>
 </ul>
-<div class="highlight"><pre><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">].</span><span class="nx">map</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">].</span><span class="nx">map</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">)</span>
 </pre></div>
 <pre><code>[[1, 0, [1,2]], [2, 1, [1,2]]]</code></pre>
 <ul>
 <li>Therefore, we implement <code>map_</code> for arrays that will only pass elements to the mapping function. From here on in this article, when <code>map</code> is mentioned/used, it implicitly refers to <code>map_</code> defined above.</li>
 </ul>
-<div class="highlight"><pre><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">].</span><span class="nx">map_</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">].</span><span class="nx">map_</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">);</span>
 </pre></div>
 <pre><code>[[1], [2]]</code></pre>
 </div>
@@ -139,7 +139,7 @@
 </g>
 </svg></span> <code>new Array(1, 2)</code>.</p>
 <p><strong>Statement 1</strong> expresses an invariant of our function <code>flatMap</code>. Given the implementation of <code>flatMap</code> and the stated pre-condition, the equivalence relationship holds true for any value of <code>x</code> and <code>f</code>. To see why this is true, let’s substitute the call to <code>flatMap</code> with its implementation details:</p>
-<div class="highlight"><pre><span class="c1">// given some x and f</span>
+<div class="highlight"><pre><span></span><span class="c1">// given some x and f</span>
 
 <span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="err">≡</span> <span class="p">[</span><span class="nx">x</span><span class="p">];</span>
 
@@ -173,7 +173,7 @@
 </g>
 </svg></span> <code>xs</code>.</p>
 <p>Informally, we can illustrate this property with some pseudo code:</p>
-<div class="highlight"><pre><span class="kd">let</span> <span class="nx">xs</span> <span class="o">=</span> <span class="p">[</span><span class="nx">x1</span><span class="p">,</span> <span class="nx">x2</span><span class="p">,</span> <span class="nx">x3</span><span class="p">];</span>
+<div class="highlight"><pre><span></span><span class="kd">let</span> <span class="nx">xs</span> <span class="o">=</span> <span class="p">[</span><span class="nx">x1</span><span class="p">,</span> <span class="nx">x2</span><span class="p">,</span> <span class="nx">x3</span><span class="p">];</span>
 
 
 
@@ -190,7 +190,7 @@
   <span class="err">≡</span> <span class="nx">xs</span>
 </pre></div>
 <p>To prove it in a slightly more rigorous manner, let’s first provide an alternative implementation of <code>flatMap</code> using recursion:</p>
-<div class="highlight"><pre><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">flatMap2</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">flatMap2</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
 
@@ -230,7 +230,7 @@
 </svg></span> <code>[]</code> (returned inside the <code>if (!this.length)</code> conditional block)</p></li>
 <li><p>Next, suppose for any array of length k (k&gt;=0), <strong>Statement 2 holds</strong>, consider array <code>xs</code> of length k+1, and substitute argument <code>f</code> in body of <code>flatMap2</code> with <code>Array.of</code>:</p></li>
 </ul>
-<div class="highlight"><pre><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap2</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap2</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">)</span>
 
   <span class="err">≡</span> <span class="p">[</span><span class="nx">x</span><span class="p">,</span> <span class="p">...</span><span class="nx">rest</span><span class="p">].</span><span class="nx">flatMap2</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="k">of</span><span class="p">)</span>  <span class="c1">// rest.length === k</span>
 
@@ -268,7 +268,7 @@
  <use xlink:href="#E1-MJMAIN-2261" x="0" y="0"/>
 </g>
 </svg></span> <code>f(x).concat(rest.flatMap(f))</code> (note <code>flatMap</code> here refers to the original, non-recursive version)</p>
-<div class="highlight"><pre><span class="c1">// xs.length &gt; 0</span>
+<div class="highlight"><pre><span></span><span class="c1">// xs.length &gt; 0</span>
 
 <span class="kd">let</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">f</span><span class="p">);</span>
 
@@ -277,12 +277,12 @@
 <span class="kd">let</span> <span class="p">[</span><span class="nx">y</span><span class="p">,</span> <span class="p">...</span><span class="nx">resty</span><span class="p">]</span> <span class="o">=</span> <span class="nx">ys</span><span class="p">;</span>
 </pre></div>
 <p>By definition of <code>map</code>:</p>
-<div class="highlight"><pre><span class="nx">resty</span> <span class="err">≡</span> <span class="nx">restx</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="nx">resty</span> <span class="err">≡</span> <span class="nx">restx</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span>
 
 <span class="nx">y</span> <span class="err">≡</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span>
 </pre></div>
 <p>Next:</p>
-<div class="highlight"><pre><span class="c1">// xs.length &gt; 0</span>
+<div class="highlight"><pre><span></span><span class="c1">// xs.length &gt; 0</span>
 
 <span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span>
 
@@ -324,7 +324,7 @@
 </g>
 </svg></span> <code>[]</code> for any <code>f</code>.</p>
 <p>This follows naturally by the definition of <code>flatMap</code> and <code>flatMap2</code>. Armed with <strong>Lemma 1</strong> and <strong>Lemma 2</strong>, we can rewrite <code>flatMap</code> conditioning on whether the array it operates on is empty (length = 0) or not:</p>
-<div class="highlight"><pre><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">flatMap</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">flatMap</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>  <span class="c1">// apply Lemma 2</span>
 
@@ -364,14 +364,14 @@
 <div id="statement-3" class="section level2">
 <h2>Statement 3</h2>
 <p>For any array <code>xs</code> and suitable function <code>f</code> and <code>g</code>:</p>
-<div class="highlight"><pre><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">)</span>
 
   <span class="err">≡</span> <span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">)</span> <span class="p">)</span>
 </pre></div>
 <div id="simple-example" class="section level3">
 <h3>Simple Example</h3>
 <p>This time, instead of immediately proving it, let’s demonstrate <strong>Statement 3</strong> with an example:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">xs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">];</span>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">xs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">];</span>
 
 
 
@@ -387,7 +387,7 @@
 
 <span class="p">}</span>
 </pre></div>
-<div class="highlight"><pre><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">);</span>
 </pre></div>
 <pre><code>[&quot;g_f1:1&quot;, 
  &quot;g_f2:1&quot;, 
@@ -395,7 +395,7 @@
  &quot;g_f2:2&quot;, 
  &quot;g_f1:3&quot;, 
  &quot;g_f2:3&quot;]</code></pre>
-<div class="highlight"><pre><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="p">{</span>
 
   <span class="k">return</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">);</span>
 
@@ -427,7 +427,7 @@
  <use xlink:href="#E1-MJMAIN-2261" x="0" y="0"/>
 </g>
 </svg></span> <code>[]</code> by <strong>Lemma 2</strong>. Now suppose it holds true for array of length k, and consider array <code>xs</code> of length k+1.</p>
-<div class="highlight"><pre><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">h</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">h</span><span class="p">)</span>
 
   <span class="err">≡</span> <span class="nx">h</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span> <span class="nx">rest</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">h</span><span class="p">)</span> <span class="p">)</span> <span class="c1">// applying Lemma 1</span>
 
@@ -436,7 +436,7 @@
   <span class="err">≡</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span> <span class="nx">rest</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">)</span> <span class="p">)</span> <span class="c1">// induction assumption</span>
 </pre></div>
 <p>Also,</p>
-<div class="highlight"><pre><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">)</span>
 
   <span class="err">≡</span> <span class="p">(</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">conat</span><span class="p">(</span> <span class="nx">rest</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">)</span> <span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">)</span> <span class="c1">// applying Lemma 1</span>
 
@@ -472,7 +472,7 @@
 <div id="associativity-chaining-and-nesting" class="section level2">
 <h2>Associativity, Chaining and Nesting</h2>
 <p>Consider this code:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">xs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">];</span>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">xs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">];</span>
 
 
 
@@ -491,7 +491,7 @@
   <span class="p">});</span>
 </pre></div>
 <p>By Associativity Law, we know we can rewrite the code as:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
 
   <span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="p">{</span>
 
@@ -518,14 +518,14 @@
 <div id="power-of-composition" class="section level2">
 <h2>Power of Composition</h2>
 <p>Now back to the examples, the intent behind both version can be more clearly demonstrated by rewriting the code with more familiar apis:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
 
   <span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 
   <span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">===</span> <span class="mi">0</span><span class="p">);</span>
 </pre></div>
 <p>Interesting enough, it seems <code>flatMap</code> can be used as a building block for both <code>map</code> and <code>filter</code>. To make this work, let’s abstract out <code>mapping</code> and <code>filtering</code> as higher order functions:</p>
-<div class="highlight"><pre><span class="kd">function</span> <span class="nx">mapping</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">mapping</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">return</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">)];</span>
 
@@ -538,7 +538,7 @@
 <span class="p">}</span>
 </pre></div>
 <p>Both functions returns functions that is suitable to use in <code>flatMap</code>, meaning that they take a single value and returns array(s). In addition, recall our function <code>h</code> when proving <strong>Statement 3</strong>, which is a function that combines <code>f</code> and <code>g</code>:</p>
-<div class="highlight"><pre><span class="kd">function</span> <span class="nx">h</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">g</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">h</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">g</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">return</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="p">{</span>
 
@@ -554,11 +554,11 @@
 <li>Let <code>f</code> and <code>g</code> and <code>h</code> be array returning functions</li>
 <li>Let <code>&gt;=&gt;</code> denote Kleisli composition</li>
 </ol>
-<div class="highlight"><pre><span class="p">(</span><span class="n">f</span> <span class="o">&gt;=&gt;</span> <span class="n">g</span><span class="p">)</span> <span class="o">&gt;=&gt;</span> <span class="n">h</span> <span class="err">≡</span>  <span class="n">f</span> <span class="o">&gt;=&gt;</span> <span class="p">(</span><span class="n">g</span> <span class="o">&gt;=&gt;</span> <span class="n">h</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="n">f</span> <span class="o">&gt;=&gt;</span> <span class="n">g</span><span class="p">)</span> <span class="o">&gt;=&gt;</span> <span class="n">h</span> <span class="err">≡</span>  <span class="n">f</span> <span class="o">&gt;=&gt;</span> <span class="p">(</span><span class="n">g</span> <span class="o">&gt;=&gt;</span> <span class="n">h</span><span class="p">)</span>
 </pre></div>
 <p>See Footnote[2] for why <strong>Statement 3<sup>*</sup></strong> is the same as <strong>Statement 3</strong>.</p>
 <p>For the rest of the article, let’s name <code>&gt;=&gt;</code> as <code>kcomp</code> (javascript does not have custom operators), and make it varadic:</p>
-<div class="highlight"><pre><span class="kd">function</span> <span class="nx">kcomp</span><span class="p">(...</span><span class="nx">funcs</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">kcomp</span><span class="p">(...</span><span class="nx">funcs</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="kr">const</span> <span class="nx">seed</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="nx">x</span><span class="p">];</span>
 
@@ -571,14 +571,14 @@
 <span class="p">}</span>
 </pre></div>
 <p>Now back again to the examples, the chaining version of computing <code>ys</code> becomes:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
 
   <span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span> <span class="nx">mapping</span><span class="p">(</span><span class="nx">x</span><span class="o">=&gt;</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="p">)</span>
 
   <span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span> <span class="nx">filtering</span><span class="p">(</span><span class="nx">x</span> <span class="o">=&gt;</span> <span class="nx">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
 </pre></div>
 <p>And the nesting version:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span>
 
   <span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">kcomp</span><span class="p">(</span>
 
@@ -589,7 +589,7 @@
   <span class="p">));</span>
 </pre></div>
 <p>Oh, wait, the nesting has gone away. Even better, we can do more:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">transformation</span> <span class="o">=</span> 
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">transformation</span> <span class="o">=</span> 
 
   <span class="nx">kcomp</span><span class="p">(</span>
 
@@ -610,7 +610,7 @@
 <span class="kr">const</span> <span class="nx">ys</span> <span class="o">=</span> <span class="nx">xs</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">transformation</span><span class="p">);</span>
 </pre></div>
 <p>This style might have reminded you of <a href="http://phuu.net/2014/08/31/csp-and-transducers.html">transducers</a>. For example using <a href="https://github.com/cognitect-labs/transducers-js"><code>transducer-js</code></a> library:</p>
-<div class="highlight"><pre><span class="kr">const</span> <span class="nx">t</span> <span class="o">=</span> <span class="nx">transducers</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">t</span> <span class="o">=</span> <span class="nx">transducers</span><span class="p">;</span>
 
 
 
@@ -641,10 +641,10 @@
 <div id="concat-and-monoids" class="section level3">
 <h3>[1] <code>concat</code> and monoids</h3>
 <p><code>Array.prototype.concat</code> has the following syntax:</p>
-<div class="highlight"><pre><span class="kd">var</span> <span class="nx">new_array</span> <span class="o">=</span> <span class="nx">old_array</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">value1</span><span class="p">[,</span> <span class="nx">value2</span><span class="p">[,</span> <span class="p">...[,</span> <span class="nx">valueN</span><span class="p">]]])</span>
+<div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">new_array</span> <span class="o">=</span> <span class="nx">old_array</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">value1</span><span class="p">[,</span> <span class="nx">value2</span><span class="p">[,</span> <span class="p">...[,</span> <span class="nx">valueN</span><span class="p">]]])</span>
 </pre></div>
 <p>It is a varadic function. To start simple, let’s consider a version of <code>concat</code> with only one argument, or the binary <code>concat</code> op:</p>
-<div class="highlight"><pre><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">concat_</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">other</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="nb">Array</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">concat_</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">other</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">other</span><span class="p">);</span>
 
@@ -747,7 +747,7 @@
 </g>
 </svg></span>.</p>
 <p>In our proof earlier, we used the following property of array concatenation:</p>
-<div class="highlight"><pre><span class="p">[].</span><span class="nx">concat</span><span class="p">(</span><span class="nx">y</span><span class="p">,</span> <span class="p">...</span><span class="nx">resty</span><span class="p">)</span> <span class="err">≡</span> <span class="nx">y</span><span class="p">.</span><span class="nx">concat</span><span class="p">(...</span><span class="nx">resty</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="p">[].</span><span class="nx">concat</span><span class="p">(</span><span class="nx">y</span><span class="p">,</span> <span class="p">...</span><span class="nx">resty</span><span class="p">)</span> <span class="err">≡</span> <span class="nx">y</span><span class="p">.</span><span class="nx">concat</span><span class="p">(...</span><span class="nx">resty</span><span class="p">)</span>
 </pre></div>
 <p>Rewrite this in a mathy notation, denote <code>[]</code> as <span class="math"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.172ex" height="2.176ex" style="vertical-align: -0.338ex" viewbox="0 -791.3 504.5 936.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -840,7 +840,7 @@
 </g>
 </svg></span></p>
 <p>We also used:</p>
-<div class="highlight"><pre><span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(...</span><span class="nx">resty</span><span class="p">)</span> 
+<div class="highlight"><pre><span></span><span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(...</span><span class="nx">resty</span><span class="p">)</span> 
 
   <span class="err">≡</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span> <span class="p">[].</span><span class="nx">concat</span><span class="p">(...</span><span class="nx">resty</span><span class="p">)</span> <span class="p">)</span>
 </pre></div>
@@ -954,10 +954,10 @@
 <div id="kleisli-composition-and-associativity-law" class="section level3">
 <h3>[2] Kleisli Composition and Associativity Law</h3>
 <p>It’s obvious that the infix notation of Kleisli Composition makes a more clear demonstration of Associativity Law. However, to stick to javaScript syntax, let’s rewrite the infix version with the <code>kcomp</code> function we have defined and used:</p>
-<div class="highlight"><pre><span class="nx">kcomp</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">g</span><span class="p">,</span> <span class="nx">h</span><span class="p">)</span> <span class="err">≡</span> <span class="nx">kcomp</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">kcomp</span><span class="p">(</span><span class="nx">g</span><span class="p">,</span> <span class="nx">h</span><span class="p">))</span>
+<div class="highlight"><pre><span></span><span class="nx">kcomp</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">g</span><span class="p">,</span> <span class="nx">h</span><span class="p">)</span> <span class="err">≡</span> <span class="nx">kcomp</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">kcomp</span><span class="p">(</span><span class="nx">g</span><span class="p">,</span> <span class="nx">h</span><span class="p">))</span>
 </pre></div>
 <p>Next, we replace function invocation with function body, both left side and right side of the above equivalence relationship evaluates to a function:</p>
-<div class="highlight"><pre><span class="nx">kcomp</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">g</span><span class="p">,</span> <span class="nx">h</span><span class="p">)</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="nx">kcomp</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">g</span><span class="p">,</span> <span class="nx">h</span><span class="p">)</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
 
   <span class="k">return</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">h</span><span class="p">);</span>
 
@@ -974,7 +974,7 @@
 <span class="p">}</span>
 </pre></div>
 <p>To highlight only the function body:</p>
-<div class="highlight"><pre><span class="c1">// kcomp(f, g, h) = function(x) {</span>
+<div class="highlight"><pre><span></span><span class="c1">// kcomp(f, g, h) = function(x) {</span>
 
   <span class="cm">/* return */</span> <span class="nx">f</span><span class="p">(</span><span class="nx">x</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">g</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">h</span><span class="p">);</span>
 
