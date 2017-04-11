@@ -10,12 +10,15 @@ var PassThrough = require('stream').PassThrough;
 var render = function() {
   return through.obj(function(file, encoding, callback) {
     var opts = {};
+    var processor;
     if(/index\.html$/.test(file.path)) {
-      opts.index = true;
+      processor = process.list;
+    } else {
+      processor = process.post;
     }
     var bufferStream = PassThrough();
     bufferStream.end(file.contents);
-    process(bufferStream, opts, function(err, htmlStr) {
+    processor(bufferStream, opts, function(err, htmlStr) {
       if(!err) {
         file.contents = new Buffer(htmlStr);
         callback(null, file);
