@@ -1,80 +1,179 @@
 <!DOCTYPE html>
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-
+<html>
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Idea &#x3E;&#x3E;= Stringify</title>
+  <link href="style/main.css" rel="stylesheet">
+  <style>
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #fefefe;
+}
+.logo {
+  background-color: #000;
+  background-image: url(https://storage.googleapis.com/stuff.yiransheng.com/yiran-cover.png);
+  background-repeat: no-repeat;
+  background-size: 100%; 
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 0;
+  box-shadow: inset 0 0 14px #000, 0 0 15px #000;
+}
+@media screen and (min-aspect-ratio: 1/1) {
+  .logo {
+    width: 100vh;
+    height: 100vh;
+    margin-left: -50vh;
+  } 
+}
+@media screen and (max-aspect-ratio: 1/1) {
+  .logo {
+    width: 100vw;
+    height: 100vw;
+    margin-left: -50vw;
+  } 
+}
+.content {
+  position: relative;
+  z-index: 10;
+  font-family:latin_modern_roman;
+}
+h1.main {
+  margin-top: 0;
+  padding-top: 1.5em;
+  padding-bottom: 0.5em;
+  text-align: center;
+  display: block;
+  width: 100%;
+  color: #ba2212;
+  font-size: 4rem;
+  font-weight: bold;
+  background: #222;;
+  text-align: center;
+}
+h1.main .symbol {
+  letter-spacing: -0.1em;
+  font-weight: 400;
+  color: #f0f0f0;
+}
+h1.main .right {
+  letter-spacing: -0.01em;
+  font-weight: 400;
+  color: #f0f0f0;
+}
+h1.main .left {
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.articles {
+  border: 1px solid #222;
+  border-radius: 2px;
+  background-color: rgba(23,44,44, .6);
+  max-width: 960px;
+  margin: auto;
+  padding: 1em;
+}
+@media screen and (min-aspect-ratio: 1/1) {
+  .articles {
+    margin-top: 50vh;    
+  }
+}
+@media screen and (max-aspect-ratio: 1/1) {
+  .articles {
+    margin-top: 20vh; 
+  }
+}
 
-<meta charset="utf-8">
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="generator" content="pandoc">
+.articles h2 a {
+  color: #ba3333;
+  cursor: pointer;
+}
+.articles h2 a:hover {
+  color: #ba2212;
+}
+.articles a,
+.articles a:hover {
+  color: #878;
+}
+.articles h2 {
+  color: #f0f0f0;
+  border-top-color: transparent;
+}
+.articles h2:before {
+  display: none;
+}
+
+.articles .section {
+  border-bottom: 1px solid #222;
+  box-shadow: 0 10px 12px -8px rgba(255,255,255,.04);
+}
+.links {
+  margin: 0 -0.25em;
+  padding: 0.25em;
+  background: rgba(0,0,0,.1);
+  border-radius: 2px;
+  box-shadow: 0 2px 3px -3px #444;
+  border-bottom: 1px solid #242424;
+  text-align: right;
+}
+.link-item:hover,
+.link-item {
+  display: inline-block;
+  padding: 0 0.25em;
+  background: none;
+  letter-spacing: 1px;
+}
+span.link-item:before {
+  content:"";
+  position: relative;
+  border-top: 1px solid transparent;
+  border-bottom: 1px dotted #222;
+  height: 1px;
+  width: 100%;
+  display: block;
+  color: #fefefe;
+}
+a.link-item:before {
+  content:"";
+  position: relative;
+  border-top: 1px solid #222;
+  border-bottom: 1px dotted #222;
+  height: 1px;
+  width: 100%;
+  display: block;
+  color: #fefefe;
+}
 
 
 
-
-<title>[Idea] >>= stringify</title>
-
-
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<link href="style/main.css" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"></head>
-
-<body><style>body{padding: 0;background: #eeeded;} .main-container {margin: 0 auto;margin-top: -20vmin;background: #fff;position: relative;border-radius: 30px 0 0 0;box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);padding: 2.4em;}header {margin:0}</style><header><div class="big"><div class="bg"></div><div class="author-name card-2">Yiran Sheng</div><div class="tagline">[Idea] >>= stringify</div></div></header>
-
-
-
-
-
-<div class="container-fluid main-container">
-
-<!-- tabsets -->
-
-
-<!-- code folding -->
-
-
-
-
-
-
-<div class="fluid-row" id="header">
-
-
-
-
-</div>
-
-
-<div id="anatomy-of-javascript-method-chaining" class="section level2">
+  </style>
+</head>
+<body>
+  <div class="logo"></div>
+  <div class="content">
+    <h1 class="main">{ <span class="left">[Idea]</span> <span class="symbol">>>=</span> <span class="right">stringify</span> }</h1>
+    <div id="posts" class="articles">
+      <div class="links">
+        <span class="link-item">Posts</span>
+        <a class="link-item" href="https://github.com/yiransheng">Github</a>  
+      </div>
+    <div id="anatomy-of-javascript-method-chaining" class="section level2">
 <h2><a href="js-chain">Anatomy of JavaScript Method Chaining</a></h2>
 <p>In this article, we will try to distill method chaining to its essence, making a distinction of mutable vs immutable chaining, and draw some parallels with composition in functional programming.</p>
 <div style="text-align:right">
 <a href="js-chain">Read</a>
 </div>
-</div>
-<div id="functional-javascript-an-example-of-equational-reasoning" class="section level2">
+</div><div id="functional-javascript-an-example-of-equational-reasoning" class="section level2">
 <h2><a href="js-functional-array">Functional JavaScript: An Example of Equational Reasoning</a></h2>
 <p>In this article, I will demonstrate equational reasoning by focus on a key data structure in javaScript: Arrays. Alternatively, proving monad laws mathematically with javaScript syntax.</p>
 <div style="text-align:right">
 <a href="js-functional-array">Read</a>
 </div>
-</div>
-<div id="test-population-median-equality-for-discrete-distributions" class="section level2">
+</div><div id="test-population-median-equality-for-discrete-distributions" class="section level2">
 <h2><a href="on-median">Test Population Median Equality for Discrete Distributions</a></h2>
 <p>Simulation based examination of various statistical tests for median equality null for discrete r.v.: T-test, Wilcox rank sum, Mood Test and Bootstrapping. Findings:</p>
 <ul>
@@ -87,23 +186,12 @@
 <div style="text-align:right">
 <a href="on-median">Read</a>
 </div>
-</div>
-<div id="obligatory-hello-world" class="section level2">
+</div><div id="obligatory-hello-world" class="section level2">
 <h2><a href="hello-world">Obligatory Hello World</a></h2>
 <div style="text-align:right">
 <a href="hello-world">Read</a>
 </div>
-</div>
-
-
-
-
-</div>
-
-
-
-<!-- dynamically load mathjax for compatibility with self-contained -->
-
-
+</div></div>
+  </div>
 </body>
 </html>
