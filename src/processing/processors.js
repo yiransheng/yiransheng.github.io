@@ -96,7 +96,9 @@ var baseTransforms = [
     if (
       node.name === "script" || node.name === "link" || node.name === "style"
     ) {
-      domutils.removeElement(node);
+      if (node.attribs['data-keep'] == null) {
+        domutils.removeElement(node);
+      }
     }
   },
   function(node) {
