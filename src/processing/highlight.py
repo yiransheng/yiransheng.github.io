@@ -34,12 +34,12 @@ if __name__ == '__main__':
     try:
         hl = main(args.lang, code)
         if args.output == 'json':
-            print json.dumps(hl)
+            print(json.dumps(hl))
         elif args.output == 'html':
-            print '<style>'
-            print hl['style']
-            print '</style>'
-            print hl['html']
+            print('<style>')
+            print(hl['style'])
+            print('</style>')
+            print(hl['html'])
         else:
             exit(0)
     except:
