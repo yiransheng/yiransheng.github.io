@@ -140,7 +140,7 @@ $(document).ready(function () {
 <aside>
 <div>
 <h4 id="side-note">Side Note</h4>
-<p>Pinch-zoom on mobile is a little bit janky, but hopefully, it’s good enough to show the gist this layout behavior.</p>
+<p>Pinch-zoom on mobile is a little bit janky, but hopefully, it’s good enough to show the gist of this layout behavior.</p>
 </div>
 </aside>
 <iframe class="embed" width="48em" src="http://write.yiransheng.com/d3-piechart-callout-layout/"></iframe>
@@ -393,15 +393,10 @@ pub struct Interval {
     if n &lt; 2 {
         return false;
     }
-    for i in 0..n {
-        for j in 0..n {
-            if i == j {
-                continue;
-            }
-            match xs[i].partial_cmp(&amp;xs[j]) {
-                Some(Greater) | Some(Less) =&gt; {}
-                _ =&gt; return true,
-            }
+    for (i, j) in (0..n).tuple_combinations() {
+        match xs[i].partial_cmp(&amp;xs[j]) {
+            Some(Greater) | Some(Less) =&gt; {}
+            _ =&gt; return true,
         }
     }
     false

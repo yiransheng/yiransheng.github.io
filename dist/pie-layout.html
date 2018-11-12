@@ -76,7 +76,7 @@
 <aside>
 <div>
 <h4 id="side-note">Side Note</h4>
-<p>Pinch-zoom on mobile is a little bit janky, but hopefully, it’s good enough to show the gist this layout behavior.</p>
+<p>Pinch-zoom on mobile is a little bit janky, but hopefully, it’s good enough to show the gist of this layout behavior.</p>
 </div>
 </aside>
 <iframe class="embed" width="48em" src="http://write.yiransheng.com/d3-piechart-callout-layout/"></iframe>
@@ -1222,23 +1222,13 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 
 <span class="w">    </span><span class="p">}</span><span class="w"></span>
 
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">0</span><span class="p">..</span><span class="n">n</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">..</span><span class="n">n</span><span class="p">).</span><span class="n">tuple_combinations</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
-<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">0</span><span class="p">..</span><span class="n">n</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">match</span><span class="w"> </span><span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">partial_cmp</span><span class="p">(</span><span class="o">&amp;</span><span class="n">xs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nb">Some</span><span class="p">(</span><span class="n">Greater</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">Less</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
 
-<span class="w">                </span><span class="k">continue</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">            </span><span class="p">}</span><span class="w"></span>
-
-<span class="w">            </span><span class="k">match</span><span class="w"> </span><span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">partial_cmp</span><span class="p">(</span><span class="o">&amp;</span><span class="n">xs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-
-<span class="w">                </span><span class="nb">Some</span><span class="p">(</span><span class="n">Greater</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">Less</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
-
-<span class="w">                </span><span class="n">_</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"></span>
-
-<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="n">_</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"></span>
 
 <span class="w">        </span><span class="p">}</span><span class="w"></span>
 

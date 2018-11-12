@@ -20,7 +20,7 @@ Recently I dug up some notes from 2 years ago, about a problem I encountered at 
 <aside>
 <div>
 #### Side Note
-Pinch-zoom on mobile is a little bit janky, but hopefully, it's good enough to show the gist this layout behavior.
+Pinch-zoom on mobile is a little bit janky, but hopefully, it's good enough to show the gist of this layout behavior.
 </div>
 </aside>
 
@@ -345,15 +345,10 @@ fn path_overlaps<W: Weighted>(xs: &[W]) -> bool {
     if n < 2 {
         return false;
     }
-    for i in 0..n {
-        for j in 0..n {
-            if i == j {
-                continue;
-            }
-            match xs[i].partial_cmp(&xs[j]) {
-                Some(Greater) | Some(Less) => {}
-                _ => return true,
-            }
+    for (i, j) in (0..n).tuple_combinations() {
+        match xs[i].partial_cmp(&xs[j]) {
+            Some(Greater) | Some(Less) => {}
+            _ => return true,
         }
     }
     false
