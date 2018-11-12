@@ -17,6 +17,13 @@ Recently I dug up some notes from 2 years ago, about a problem I encountered at 
 * Notice not all pie slices have a callout labels displayed
 * Labels are dynamically removed if available areas are too small
 
+<aside>
+<div>
+#### Side Note
+Pinch-zoom on mobile is a little bit janky, but hopefully, it's good enough to show the gist this layout behavior.
+</div>
+</aside>
+
 <iframe class="embed" width="48em" src="http://write.yiransheng.com/d3-piechart-callout-layout/" />
 
 <script data-keep="true">

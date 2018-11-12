@@ -45,6 +45,7 @@
   line-height: unit(@@class-font-size * @@class-line-height, px);
 }
 
+
 @media (min-width: 1px) {
   .line-em(1em, @line-height-sm);  
   body {
@@ -120,6 +121,18 @@
     rgba(0,0,0,0.6) 18%,
     rgba(0,0,0,0) 18%
     );
+  }
+
+  aside > div {
+      background-color: #f6f6f6;
+      padding-left: 0.5 * @line-height-em;
+      padding-right: 0.5 * @line-height-em;
+      padding-bottom: 0.5 * @line-height-em;
+      margin-bottom: 0.5 * @line-height-em;
+  }
+  aside > div > p {
+      text-indent: 0;
+      margin: 0;
   }
 }
 @media (min-width: @screen-md) {
@@ -242,6 +255,7 @@
   .table > tbody > tr > td {
       padding: 0.05 * @line-height-em;
   }
+
 }
 @media (min-width: @screen-xl) {
   .line-em(1em, @line-height-xl);  
@@ -299,6 +313,25 @@
   }
   .table > tbody > tr > td {
       padding: 0.05 * @line-height-em;
+  }
+
+}
+@media (min-width: (@screen-xl + 12em)) {
+  .line-em(1em, @line-height-xl);  
+  aside {
+      position: relative;
+      height: 0;
+      overflow: visible;
+  }
+  aside > div {
+      position: absolute;
+      background-color: #f6f6f6;
+      left: 100%;
+      top: -0.5 * @line-height-em;
+      width: ~"calc(100vw - 55em)";
+      max-width: @screen-xl - 48em - 7em;
+      padding-left: 0.5 * @line-height-em;
+      padding-right: 0.5 * @line-height-em;
   }
 }
 .highlight pre {
