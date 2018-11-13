@@ -1,3 +1,14 @@
+## [Pie Chart Callout Layout with Graph Algorithms](pie-layout)
+
+A small exercise on a simple graph algorithm, addressing the problem of dynamic pie chart label layout: given a set of vertically overlapping labels with some non-negative weights associated with them, return a subset, such that:
+
+1. Labels in the subset do not overlap with each other
+2. Maximizes sum of weights among all non-overlapping subsets 
+
+
+<div style="text-align:right">[Read](pie-layout)</div>
+
+
 ## [Anatomy of JavaScript Method Chaining](js-chain)
 
 In this article, we will try to distill method chaining to its essence, making a distinction of mutable vs immutable chaining, and draw some parallels with composition in functional programming.

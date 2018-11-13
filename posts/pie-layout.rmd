@@ -167,7 +167,7 @@ It gives a very succinct solution, keyword _dynamic programming_:
 3. Pick the path from `node_j` that has the largest accumulated weight `w_j`, and mark the total weight up to `node_i` as `w_j` + `weight(node_i)`
 4. Continue until reaching `end_node`
 
-Pausing for a second, it's very easy to identify this is essentially the same dynamic programming solution to the longest increasing sequence problem - a popular algorithum tutorial topic. There is a more efficient ($O(n\log(n))$) [solution](https://en.wikipedia.org/wiki/Longest_increasing_subsequence), but it's a bit over my head. It would be interesting to know if that could be adapted for the labels layout challenge at hand.
+Pausing for a second, it's very easy to identify this is essentially the same dynamic programming solution to the longest increasing sequence problem - a popular algorithm tutorial topic. There is a more efficient ($O(n\log(n))$) [solution](https://en.wikipedia.org/wiki/Longest_increasing_subsequence), but it's a bit over my head. It would be interesting to know if that could be adapted for the labels layout challenge at hand.
 
 
 
@@ -175,7 +175,7 @@ Pausing for a second, it's very easy to identify this is essentially the same dy
 
 I chose rust for implementing this for two reasons:
 
-1. I have been learning rust for quite a while now, it's fun and additcting
+1. I have been learning rust for quite a while now, it's fun and addicting
 2. rust has a `PartialOrd` trait that's particularly suitable in expressing this problem
 
 To illustrate the second point, I used this trait to represent an input label/weighted interval:
@@ -339,7 +339,7 @@ impl Weighted for Interval {
 
 ## Testing with Quickcheck
 
-When it comes to testing, the first thing we'd like to verify: the solution set indeed does not overlap. Recall from ealier, this condition is formularized using $\prec$ relation:
+When it comes to testing, the first thing we'd like to verify: the solution set indeed does not overlap. Recall from earlier, this condition is formularized using $\prec$ relation:
 
 $$
 \forall X_i, X_j\in \mathbf{X} \quad X_i \prec X_j \text{ or } X_j \prec X_i \text{ if } i \neq j
@@ -369,7 +369,6 @@ fn path_overlaps<W: Weighted>(xs: &[W]) -> bool {
 I had used a different struct than `Interval` in tests. It was named `WeightedSpan`, and is identical to `Interval` - except using `u32` for `lower` and `upper` fields. Please forgive this inconsistency throughout this section. 
 </div>
 </aside>
-
 [Quickcheck](https://docs.rs/quickcheck/0.7.2/quickcheck/) is a very useful and fun crate for randomized property testing. Here, we will use it to generate random sets of `Interval`s with arbitrary positions and sizes. Next we check each solution produced from them does not overlap, using `path_overlaps` function we just wrote.
 
 
@@ -388,7 +387,7 @@ quickcheck! {
 
 For this to work, we need to implement the `Arbitrary` trait from `quickcheck` - basically to specify how to randomly generate individual `WeightedSpan`s. Since quickcheck implements `Arbitrary` for `Vec<T>` if `T: Arbitrary`, it is sufficient to perform this test. 
 
-Next, we would also like to know our algorithm produces a solution with best possible total weight. This is hard to verify for arbitrary inputs, however, we could do a comparision with a brute force solver for small enough input sizes. The brute force appoach is of course, to check all subsets of input spans. 
+Next, we would also like to know our algorithm produces a solution with best possible total weight. This is hard to verify for arbitrary inputs, however, we could do a comparison with a brute force solver for small enough input sizes. The brute force approach is of course, to check all subsets of input spans. 
 
 I have used `SmallVec<[WeightedSpan; 16]>` for this task. [smallvec](https://crates.io/crates/smallvec) crate provides array backed `Vec`-like structs that is suitable for this use case. To enumerate through all subsets for any collection of arbitrary 16 spans, we use all `u16` values (65536 total) to serve as bit masks. This function below performs the exhaustive search using some basic iterator operations.
 
@@ -426,3 +425,7 @@ quickcheck! {
 ```
 
 With relative little effort, we now have a fairly good test suite that gives us some confidence about the algorithm. In fact, when making the demo, it worked the first time after I got all rust tests to pass. In general, I had way more bugs on js side creating it, and the wasm code has been much more solid.
+
+## End Note
+
+If you finished reading this, I hope it has been interesting. Whenever someone claims frontend developers don't need algorithm or data structure knowledge, this has been my go to counter example. The code for this small project is on [github here](https://github.com/yiransheng/d3-piechart-callout-layout). It was a fun weekend exercise. 

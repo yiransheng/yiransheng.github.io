@@ -922,7 +922,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <li>Pick the path from <code>node_j</code> that has the largest accumulated weight <code>w_j</code>, and mark the total weight up to <code>node_i</code> as <code>w_j</code> + <code>weight(node_i)</code></li>
 <li>Continue until reaching <code>end_node</code></li>
 </ol>
-<p>Pausing for a second, it’s very easy to identify this is essentially the same dynamic programming solution to the longest increasing sequence problem - a popular algorithum tutorial topic. There is a more efficient (<span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="11.54ex" height="2.843ex" style="vertical-align: -0.838ex" viewbox="0 -863.1 4968.7 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<p>Pausing for a second, it’s very easy to identify this is essentially the same dynamic programming solution to the longest increasing sequence problem - a popular algorithm tutorial topic. There is a more efficient (<span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="11.54ex" height="2.843ex" style="vertical-align: -0.838ex" viewbox="0 -863.1 4968.7 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMATHI-4F" d="M740 435Q740 320 676 213T511 42T304 -22Q207 -22 138 35T51 201Q50 209 50 244Q50 346 98 438T227 601Q351 704 476 704Q514 704 524 703Q621 689 680 617T740 435ZM637 476Q637 565 591 615T476 665Q396 665 322 605Q242 542 200 428T157 216Q157 126 200 73T314 19Q404 19 485 98T608 313Q637 408 637 476Z"/>
 <path stroke-width="1" id="E1-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"/>
@@ -952,7 +952,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <h2>Brief Look at the Code</h2>
 <p>I chose rust for implementing this for two reasons:</p>
 <ol style="list-style-type: decimal">
-<li>I have been learning rust for quite a while now, it’s fun and additcting</li>
+<li>I have been learning rust for quite a while now, it’s fun and addicting</li>
 <li>rust has a <code>PartialOrd</code> trait that’s particularly suitable in expressing this problem</li>
 </ol>
 <p>To illustrate the second point, I used this trait to represent an input label/weighted interval:</p>
@@ -1177,7 +1177,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 </div>
 <div id="testing-with-quickcheck" class="section level2">
 <h2>Testing with Quickcheck</h2>
-<p>When it comes to testing, the first thing we’d like to verify: the solution set indeed does not overlap. Recall from ealier, this condition is formularized using <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.808ex" height="1.843ex" style="vertical-align: -0.338ex" viewbox="0 -647.8 778.5 793.3" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<p>When it comes to testing, the first thing we’d like to verify: the solution set indeed does not overlap. Recall from earlier, this condition is formularized using <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.808ex" height="1.843ex" style="vertical-align: -0.338ex" viewbox="0 -647.8 778.5 793.3" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMAIN-227A" d="M84 249Q84 262 91 266T117 270Q120 270 126 270T137 269Q388 273 512 333T653 512Q657 539 676 539Q685 538 689 532T694 520V515Q689 469 672 431T626 366T569 320T500 286T435 265T373 249Q379 248 404 242T440 233T477 221T533 199Q681 124 694 -17Q694 -41 674 -41Q658 -41 653 -17Q646 41 613 84T533 154T418 197T284 220T137 229H114Q104 229 98 230T88 235T84 249Z"/>
 </defs>
@@ -1300,7 +1300,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <span class="p">}</span><span class="w"></span>
 </pre></div>
 <p>For this to work, we need to implement the <code>Arbitrary</code> trait from <code>quickcheck</code> - basically to specify how to randomly generate individual <code>WeightedSpan</code>s. Since quickcheck implements <code>Arbitrary</code> for <code>Vec&lt;T&gt;</code> if <code>T: Arbitrary</code>, it is sufficient to perform this test.</p>
-<p>Next, we would also like to know our algorithm produces a solution with best possible total weight. This is hard to verify for arbitrary inputs, however, we could do a comparision with a brute force solver for small enough input sizes. The brute force appoach is of course, to check all subsets of input spans.</p>
+<p>Next, we would also like to know our algorithm produces a solution with best possible total weight. This is hard to verify for arbitrary inputs, however, we could do a comparison with a brute force solver for small enough input sizes. The brute force approach is of course, to check all subsets of input spans.</p>
 <p>I have used <code>SmallVec&lt;[WeightedSpan; 16]&gt;</code> for this task. <a href="https://crates.io/crates/smallvec">smallvec</a> crate provides array backed <code>Vec</code>-like structs that is suitable for this use case. To enumerate through all subsets for any collection of arbitrary 16 spans, we use all <code>u16</code> values (65536 total) to serve as bit masks. This function below performs the exhaustive search using some basic iterator operations.</p>
 <div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">solve_brute</span><span class="p">(</span><span class="n">spans</span>: <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
@@ -1352,6 +1352,10 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <span class="p">}</span><span class="w"></span>
 </pre></div>
 <p>With relative little effort, we now have a fairly good test suite that gives us some confidence about the algorithm. In fact, when making the demo, it worked the first time after I got all rust tests to pass. In general, I had way more bugs on js side creating it, and the wasm code has been much more solid.</p>
+</div>
+<div id="end-note" class="section level2">
+<h2>End Note</h2>
+<p>If you finished reading this, I hope it has been interesting. Whenever someone claims frontend developers don’t need algorithm or data structure knowledge, this has been my go to counter example. The code for this small project is on <a href="https://github.com/yiransheng/d3-piechart-callout-layout">github here</a>. It was a fun weekend exercise.</p>
 </div>
 
 
