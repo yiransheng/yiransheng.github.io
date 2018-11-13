@@ -158,7 +158,7 @@ plot(g, asp=0.3, layout=l, vertex.size=18, vertex.color=c("lightgrey","white","w
 
 The problem becomes finding a path from `start_node` to `end_node`, with largest sum of node weights -  a variant of the longest path problem.
 
-A quick good search for "longest path graph" points to this link: http://www.mathcs.emory.edu/~cheung/Courses/171/Syllabus/11-Graph/Docs/longest-path-in-dag.pdf
+A quick google search for "longest path graph" points to this link: http://www.mathcs.emory.edu/~cheung/Courses/171/Syllabus/11-Graph/Docs/longest-path-in-dag.pdf
 
 It gives a very succinct solution, keyword _dynamic programming_:
 
