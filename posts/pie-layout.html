@@ -131,7 +131,7 @@ $(document).ready(function () {
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>Recently I dug up some notes from 2 years ago, about a problem I encountered at work. It is a challenge for responsiveness layout for a simple visualization type: pie chart. Here’s a quick demo:</p>
+<p>Recently I dug up some notes from 2 years ago, about a problem I encountered at a previous job. It is a challenge of responsiveness layout for a simple visualization type: pie chart. Here’s a quick demo:</p>
 <ul>
 <li>Try resize the chart area (make it smaller)</li>
 <li>Notice not all pie slices have a callout labels displayed</li>
@@ -143,7 +143,7 @@ $(document).ready(function () {
 <p>Pinch-zoom on mobile is a little bit janky, but hopefully, it’s good enough to show the gist of this layout behavior.</p>
 </div>
 </aside>
-<iframe class="embed" width="48em" src="http://write.yiransheng.com/d3-piechart-callout-layout/"></iframe>
+<iframe class="embed" width="48em" src="./d3-piechart-callout-layout/"></iframe>
 <script data-keep="true">
 function resize(node) {
   if (!node) {
@@ -169,7 +169,7 @@ resizeAll();
 document.addEventListener('resize', requestIdleCallback ? function () { requestIdleCallback(resizeAll); } : resizeAll);
 </script>
 <p>The code for this d3 chart is adapted from: <a href="http://bl.ocks.org/dbuezas/9306799" class="uri">http://bl.ocks.org/dbuezas/9306799</a></p>
-<p>We had found a pretty good divide and conquer solution, and iterated on it quite a bit. However, going through my notes, I have came up another formulation and solution for this problem, albeit, with worse time complexity. This new idea is based on a graph representation of the problem, I find it quite neat (though I am certain this has been well-covered in CS literatures).</p>
+<p>We had found a pretty good divide and conquer solution, and iterated on it quite a bit. However, going through my notes, I have come up another formulation for this problem, albeit, with worse time complexity. This new idea is to model it as a graph, I find it quite neat (though I am certain this problem and its more generalized forms have been well-covered in CS literatures).</p>
 <p>I wrote this version of the solution in <code>rust</code> and <code>WebAssembly</code>, and it is used in the demo above.</p>
 </div>
 <div id="problem-description" class="section level2">
@@ -182,9 +182,9 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <p>In context of pie charts, it makes sense we would prefer labels for slices with larger arcs. People probably usually want to know about components with the largest shares among the total. Alternatively, we may want to ignore the share of pie for each label, and aim to maximize number of labels kept.</p>
 <p>In both situations, we could provide a weight function for each label (using integer as weights for simplicity): <span class="math display">\[
 w: \text{Label} \rightarrow \mathbb{N}
-\]</span> For maximizing remaining number of labels , this function is simply a constant function: <span class="math display">\[
+\]</span>. For maximizing remaining number of labels , this function is simply a constant function: <span class="math display">\[
 w(L) := 1
-\]</span> The inputs (labels) can be represented as a set of 1-d intervals, corresponding to their y coordinates. Given a set <span class="math inline">\(\mathbf{L}\)</span> of weighted labels , we want to find a non-overlapping subset of <span class="math inline">\(\mathbf{L}\)</span>: <span class="math display">\[
+\]</span>. The inputs (labels) can be represented as a set of 1-d intervals, corresponding to their y coordinates. Given a set <span class="math inline">\(\mathbf{L}\)</span> of weighted labels , we want to find a non-overlapping subset of <span class="math inline">\(\mathbf{L}\)</span>: <span class="math display">\[
 \mathbf{X} = \arg\max_{\mathbf{X} \subset \mathbf{L}} \Sigma_{X_i \in \mathbf{X}}w(X_i) \\
 \]</span></p>
 <p>where</p>
@@ -206,7 +206,7 @@ I_c = [1, 3] \\
 <p><span class="math display">\[
 \forall I_1 = [a, b], I_2 = [c, d] \quad I_1 \prec I_2 \iff c &gt;= b
 \]</span></p>
-<p>Clearly, <span class="math inline">\(I_a \prec I_b \implies I_a \nsim I_b\)</span>. Also, <span class="math inline">\(I_a \nsim I_b \implies I_a \prec I_b \text{ or } I_b \prec I_a\)</span>. The <span class="math inline">\(\prec\)</span> relation sates the right hand side interval strictly follows the left hand side without any overlaps. And it’s easy to verify <span class="math inline">\(\prec\)</span> is in fact transitive. Furthermore <span class="math inline">\(\prec\)</span> is not defined for two overlapping intervals.</p>
+<p>Clearly, <span class="math inline">\(I_a \prec I_b \implies I_a \nsim I_b\)</span>. Also, <span class="math inline">\(I_a \nsim I_b \implies I_a \prec I_b \text{ or } I_b \prec I_a\)</span>. The <span class="math inline">\(\prec\)</span> relation states the right hand side interval strictly follows the left hand side without any overlaps. And it’s easy to verify <span class="math inline">\(\prec\)</span> is transitive. Furthermore <span class="math inline">\(\prec\)</span> is not defined for two overlapping intervals.</p>
 <p>What’s good about <span class="math inline">\(\prec\)</span>, well, it is a strict partial order:</p>
 <ul>
 <li>It’s <em>irreflexive</em>, that is <span class="math inline">\(I \prec I\)</span> is not defined for any interval (an interval always overlaps with itself)</li>
@@ -245,25 +245,26 @@ I_c = [1, 3] \\
 <p>A quick good search for “longest path graph” points to this link: <a href="http://www.mathcs.emory.edu/~cheung/Courses/171/Syllabus/11-Graph/Docs/longest-path-in-dag.pdf" class="uri">http://www.mathcs.emory.edu/~cheung/Courses/171/Syllabus/11-Graph/Docs/longest-path-in-dag.pdf</a></p>
 <p>It gives a very succinct solution, keyword <em>dynamic programming</em>:</p>
 <ol style="list-style-type: decimal">
-<li>Conduct a topological sort on the graph, finding out a linearized order of its nodes</li>
+<li>Conduct a topological sort on the graph, to find out a linearized order of its nodes</li>
 <li>Finding a path with largest node weights ending at <code>node_i</code> requires finding paths ending in all its predecessors <code>node_j</code> with same property up to <code>j</code> (based on the linearized order)</li>
 <li>Pick the path from <code>node_j</code> that has the largest accumulated weight <code>w_j</code>, and mark the total weight up to <code>node_i</code> as <code>w_j</code> + <code>weight(node_i)</code></li>
 <li>Continue until reaching <code>end_node</code></li>
 </ol>
+<p>Pausing for a second, it’s very easy to identify this is essentially the same dynamic programming solution to the longest increasing sequence problem - a popular algorithum tutorial topic. There is a more efficient (<span class="math inline">\(O(n\log(n))\)</span>) <a href="https://en.wikipedia.org/wiki/Longest_increasing_subsequence">solution</a>, but it’s a bit over my head. It would be interesting to know if that could be adapted for the labels layout challenge at hand.</p>
 </div>
-<div id="actual-code" class="section level2">
-<h2>Actual Code</h2>
+<div id="brief-look-at-the-code" class="section level2">
+<h2>Brief Look at the Code</h2>
 <p>I chose rust for implementing this for two reasons:</p>
 <ol style="list-style-type: decimal">
 <li>I have been learning rust for quite a while now, it’s fun and additcting</li>
-<li>rust has a <code>PartialOrd</code> trait that’s particularly suitable representing this problem</li>
+<li>rust has a <code>PartialOrd</code> trait that’s particularly suitable in expressing this problem</li>
 </ol>
 <p>To illustrate the second point, I used this trait to represent an input label/weighted interval:</p>
 <pre class="rust"><code>trait Weighted: PartialOrd {
     fn weight(&amp;self) -&gt; u32;
 }</code></pre>
-<p>Three lines of code and that’s it, all the solution code just needs to work with this trait generically, and does not even to have any notion of intervals or labels.</p>
-<p>Here is entry function, it returns a list of indices to keep:</p>
+<p>Three lines of code and that’s it, all the solution code just needs to work with this trait in a generic manner, and does not even need to have any notion of intervals or labels.</p>
+<p>Here is the entry function, it returns a list of indices to keep:</p>
 <pre class="rust"><code>fn solve&lt;W: Weighted&gt;(inputs: &amp;[W]) -&gt; Vec&lt;uszie&gt; {
     let g = build_graph(inputs);
     g.longest_path()
@@ -291,7 +292,7 @@ fn build_graph&lt;W: Weighted&gt;(inputs: &amp;[W]) -&gt; Graph {
 <p>All nodes’ <code>dist</code> field are initialized to be 0, and its <code>path_predecessor</code> as <code>None</code>. Calling <code>longest_path</code> method consumes the graph, runs the dynamic programming loop, and populates these fields for each node in linear (<code>O(V + E)</code>) time.</p>
 <div id="topological-sort" class="section level3">
 <h3>Topological Sort</h3>
-<p>I have tried a few graph algorithm crate for this task, and ended up picking <a href="https://docs.rs/pathfinding/1.0.4/pathfinding/directed/topological_sort/fn.topological_sort.html">pathfinding</a>, as it is easiest to use, and has an unassuming api - just a plain function, not requiring any specific graph representation or traits implementations.</p>
+<p>I have tried a few graph algorithm crates for this task, and ended up picking <a href="https://docs.rs/pathfinding/1.0.4/pathfinding/directed/topological_sort/fn.topological_sort.html">pathfinding</a>, as it is easiest to use, and has an unassuming api - just a plain function, not requiring any specific graph representation or traits implementations.</p>
 <p>These few lines of code does the job:</p>
 <pre class="rust"><code>impl Graph {
     fn longest_path(mut self) -&gt; Vec&lt;usize&gt; {
@@ -354,7 +355,7 @@ pub struct Interval {
     upper: f64,
     weight: u32,
 }</code></pre>
-<p>There is no <code>StrictPartialOrd</code> trait in <code>rust</code>, thus we’d settle for using <code>PartialOrd</code>, which requires <code>PartialEq</code>, and thankfully it’s auto<code>derive</code>able. Next, we provide our <code>partial_cmp</code> implementation,</p>
+<p>There is no <code>StrictPartialOrd</code> trait in <code>rust</code>, thus we’d settle for using <code>PartialOrd</code>, which requires <code>PartialEq</code>, and thankfully it’s auto-<code>derive</code>-able. Next, we provide our <code>partial_cmp</code> implementation,</p>
 <pre class="rust"><code>impl PartialOrd for Interval {
     fn partial_cmp(&amp;self, other: &amp;Self) -&gt; Option&lt;Ordering&gt; {
         match self.upper.partial_cmp(&amp;other.lower) {
@@ -383,11 +384,13 @@ pub struct Interval {
     }
 }</code></pre>
 </div>
-<div id="test-with-quickcheck" class="section level2">
-<h2>Test with Quickcheck</h2>
+<div id="testing-with-quickcheck" class="section level2">
+<h2>Testing with Quickcheck</h2>
+<p>When it comes to testing, the first thing we’d like to verify: the solution set indeed does not overlap. Recall from ealier, this condition is formularized using <span class="math inline">\(\prec\)</span> relation:</p>
 <p><span class="math display">\[
 \forall X_i, X_j\in \mathbf{X} \quad X_i \prec X_j \text{ or } X_j \prec X_i \text{ if } i \neq j
 \]</span></p>
+<p>In terms of code, this translates quite directly. Here, we use <code>tuple_combinations</code> from <code>itertools</code> crate to enumerate over pairs of indices.</p>
 <pre class="rust"><code>fn path_overlaps&lt;W: Weighted&gt;(xs: &amp;[W]) -&gt; bool {
     let n = xs.len();
     if n &lt; 2 {
@@ -401,15 +404,13 @@ pub struct Interval {
     }
     false
 }</code></pre>
-<pre class="rust"><code>fn solve_brute(spans: SmallSpans&lt;WeightedSpan&gt;) -&gt; SmallSpans&lt;WeightedSpan&gt; {
-    (0..u16::max_value())
-        .map(|mask| spans.subset(mask))
-        .filter(|subset| !path_overlaps(subset.as_slice()))
-        .max_by_key(|subset| score(subset.as_slice()))
-        .unwrap_or(SmallSpans {
-            spans: SmallVec::new(),
-        })
-}</code></pre>
+<aside>
+<div>
+<h4 id="side-note-1">Side Note</h4>
+<p>I had used a different struct than <code>Interval</code> in tests. It was named <code>WeightedSpan</code>, and is identical to <code>Interval</code> - except using <code>u32</code> for <code>lower</code> and <code>upper</code> fields. Please forgive this inconsistency throughout this section.</p>
+</div>
+</aside>
+<p><a href="https://docs.rs/quickcheck/0.7.2/quickcheck/">Quickcheck</a> is a very useful and fun crate for randomized property testing. Here, we will use it to generate random sets of <code>Interval</code>s with arbitrary positions and sizes. Next we check each solution produced from them does not overlap, using <code>path_overlaps</code> function we just wrote.</p>
 <pre class="rust"><code>quickcheck! {
     fn removes_overlapping_spans(spans: Vec&lt;WeightedSpan&gt;) -&gt; bool {
         let g = build_graph(&amp;spans);
@@ -419,8 +420,22 @@ pub struct Interval {
 
         !path_overlaps(&amp;retained_spans)
     }
+}</code></pre>
+<p>For this to work, we need to implement the <code>Arbitrary</code> trait from <code>quickcheck</code> - basically to specify how to randomly generate individual <code>WeightedSpan</code>s. Since quickcheck implements <code>Arbitrary</code> for <code>Vec&lt;T&gt;</code> if <code>T: Arbitrary</code>, it is sufficient to perform this test.</p>
+<p>Next, we would also like to know our algorithm produces a solution with best possible total weight. This is hard to verify for arbitrary inputs, however, we could do a comparision with a brute force solver for small enough input sizes. The brute force appoach is of course, to check all subsets of input spans.</p>
+<p>I have used <code>SmallVec&lt;[WeightedSpan; 16]&gt;</code> for this task. <a href="https://crates.io/crates/smallvec">smallvec</a> crate provides array backed <code>Vec</code>-like structs that is suitable for this use case. To enumerate through all subsets for any collection of arbitrary 16 spans, we use all <code>u16</code> values (65536 total) to serve as bit masks. This function below performs the exhaustive search using some basic iterator operations.</p>
+<pre class="rust"><code>fn solve_brute(spans: SmallSpans&lt;WeightedSpan&gt;) -&gt; SmallSpans&lt;WeightedSpan&gt; {
+    (0..u16::max_value())
+        .map(|mask| spans.subset(mask))
+        .filter(|subset| !path_overlaps(subset.as_slice()))
+        .max_by_key(|subset| score(subset.as_slice()))
+        .unwrap_or(SmallSpans {
+            spans: SmallVec::new(),
+        })
+}</code></pre>
+<p>Since previous <code>quickcheck</code> test ensures our algorithm does not produce any solution that overlaps, this time, we just need to check its total weight is optimal. There’s no need to require an identical solution to the brute force outcome, as there could be multiple solutions sharing the same score.</p>
+<pre class="rust"><code>quickcheck! {
     fn check_correctness(spans: SmallSpans&lt;WeightedSpan&gt;) -&gt; bool {
-        // this takes a minute to run
         let g = build_graph(spans.as_slice());
         let path = g.longest_path();
         let retained_spans: Vec&lt;_&gt; =
@@ -434,9 +449,7 @@ pub struct Interval {
         score_1 == score_2
     }
 }</code></pre>
-</div>
-<div id="divide-and-conquer-solution" class="section level2">
-<h2>Divide and Conquer Solution</h2>
+<p>With relative little effort, we now have a fairly good test suite that gives us some confidence about the algorithm. In fact, when making the demo, it worked the first time after I got all rust tests to pass. In general, I had way more bugs on js side creating it, and the wasm code has been much more solid.</p>
 </div>
 
 

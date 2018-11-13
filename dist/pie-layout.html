@@ -67,7 +67,7 @@
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>Recently I dug up some notes from 2 years ago, about a problem I encountered at work. It is a challenge for responsiveness layout for a simple visualization type: pie chart. Here’s a quick demo:</p>
+<p>Recently I dug up some notes from 2 years ago, about a problem I encountered at a previous job. It is a challenge of responsiveness layout for a simple visualization type: pie chart. Here’s a quick demo:</p>
 <ul>
 <li>Try resize the chart area (make it smaller)</li>
 <li>Notice not all pie slices have a callout labels displayed</li>
@@ -79,7 +79,7 @@
 <p>Pinch-zoom on mobile is a little bit janky, but hopefully, it’s good enough to show the gist of this layout behavior.</p>
 </div>
 </aside>
-<iframe class="embed" width="48em" src="http://write.yiransheng.com/d3-piechart-callout-layout/"></iframe>
+<iframe class="embed" width="48em" src="./d3-piechart-callout-layout/"></iframe>
 <script data-keep="true">
 function resize(node) {
   if (!node) {
@@ -105,7 +105,7 @@ resizeAll();
 document.addEventListener('resize', requestIdleCallback ? function () { requestIdleCallback(resizeAll); } : resizeAll);
 </script>
 <p>The code for this d3 chart is adapted from: <a href="http://bl.ocks.org/dbuezas/9306799" class="uri">http://bl.ocks.org/dbuezas/9306799</a></p>
-<p>We had found a pretty good divide and conquer solution, and iterated on it quite a bit. However, going through my notes, I have came up another formulation and solution for this problem, albeit, with worse time complexity. This new idea is based on a graph representation of the problem, I find it quite neat (though I am certain this has been well-covered in CS literatures).</p>
+<p>We had found a pretty good divide and conquer solution, and iterated on it quite a bit. However, going through my notes, I have come up another formulation for this problem, albeit, with worse time complexity. This new idea is to model it as a graph, I find it quite neat (though I am certain this problem and its more generalized forms have been well-covered in CS literatures).</p>
 <p>I wrote this version of the solution in <code>rust</code> and <code>WebAssembly</code>, and it is used in the demo above.</p>
 </div>
 <div id="problem-description" class="section level2">
@@ -141,7 +141,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
  <use xlink:href="#E1-MJMAIN-2192" x="4233" y="0"/>
  <use xlink:href="#E1-MJAMS-4E" x="5512" y="0"/>
 </g>
-</svg></span> For maximizing remaining number of labels , this function is simply a constant function: <span class="math display"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="9.964ex" height="2.843ex" style="vertical-align: -0.838ex" viewbox="0 -863.1 4290.1 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+</svg></span>. For maximizing remaining number of labels , this function is simply a constant function: <span class="math display"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="9.964ex" height="2.843ex" style="vertical-align: -0.838ex" viewbox="0 -863.1 4290.1 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMATHI-77" d="M580 385Q580 406 599 424T641 443Q659 443 674 425T690 368Q690 339 671 253Q656 197 644 161T609 80T554 12T482 -11Q438 -11 404 5T355 48Q354 47 352 44Q311 -11 252 -11Q226 -11 202 -5T155 14T118 53T104 116Q104 170 138 262T173 379Q173 380 173 381Q173 390 173 393T169 400T158 404H154Q131 404 112 385T82 344T65 302T57 280Q55 278 41 278H27Q21 284 21 287Q21 293 29 315T52 366T96 418T161 441Q204 441 227 416T250 358Q250 340 217 250T184 111Q184 65 205 46T258 26Q301 26 334 87L339 96V119Q339 122 339 128T340 136T341 143T342 152T345 165T348 182T354 206T362 238T373 281Q402 395 406 404Q419 431 449 431Q468 431 475 421T483 402Q483 389 454 274T422 142Q420 131 420 107V100Q420 85 423 71T442 42T487 26Q558 26 600 148Q609 171 620 213T632 273Q632 306 619 325T593 357T580 385Z"/>
 <path stroke-width="1" id="E1-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"/>
@@ -162,7 +162,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 </g>
  <use xlink:href="#E1-MJMAIN-31" x="3789" y="0"/>
 </g>
-</svg></span> The inputs (labels) can be represented as a set of 1-d intervals, corresponding to their y coordinates. Given a set <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.608ex" height="2.176ex" style="vertical-align: -0.338ex" viewbox="0 -791.3 692.5 936.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+</svg></span>. The inputs (labels) can be represented as a set of 1-d intervals, corresponding to their y coordinates. Given a set <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.608ex" height="2.176ex" style="vertical-align: -0.338ex" viewbox="0 -791.3 692.5 936.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMAINB-4C" d="M643 285Q641 280 629 148T612 4V0H39V62H147V624H39V686H51Q75 683 228 683Q415 685 425 686H439V624H304V62H352H378Q492 62 539 138Q551 156 558 178T569 214T576 255T581 289H643V285Z"/>
 </defs>
@@ -688,14 +688,14 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
  <use xlink:href="#E1-MJMAIN-227A" x="0" y="0"/>
 </g>
-</svg></span> relation sates the right hand side interval strictly follows the left hand side without any overlaps. And it’s easy to verify <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.808ex" height="1.843ex" style="vertical-align: -0.338ex" viewbox="0 -647.8 778.5 793.3" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+</svg></span> relation states the right hand side interval strictly follows the left hand side without any overlaps. And it’s easy to verify <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.808ex" height="1.843ex" style="vertical-align: -0.338ex" viewbox="0 -647.8 778.5 793.3" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMAIN-227A" d="M84 249Q84 262 91 266T117 270Q120 270 126 270T137 269Q388 273 512 333T653 512Q657 539 676 539Q685 538 689 532T694 520V515Q689 469 672 431T626 366T569 320T500 286T435 265T373 249Q379 248 404 242T440 233T477 221T533 199Q681 124 694 -17Q694 -41 674 -41Q658 -41 653 -17Q646 41 613 84T533 154T418 197T284 220T137 229H114Q104 229 98 230T88 235T84 249Z"/>
 </defs>
 <g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
  <use xlink:href="#E1-MJMAIN-227A" x="0" y="0"/>
 </g>
-</svg></span> is in fact transitive. Furthermore <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.808ex" height="1.843ex" style="vertical-align: -0.338ex" viewbox="0 -647.8 778.5 793.3" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+</svg></span> is transitive. Furthermore <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.808ex" height="1.843ex" style="vertical-align: -0.338ex" viewbox="0 -647.8 778.5 793.3" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMAIN-227A" d="M84 249Q84 262 91 266T117 270Q120 270 126 270T137 269Q388 273 512 333T653 512Q657 539 676 539Q685 538 689 532T694 520V515Q689 469 672 431T626 366T569 320T500 286T435 265T373 249Q379 248 404 242T440 233T477 221T533 199Q681 124 694 -17Q694 -41 674 -41Q658 -41 653 -17Q646 41 613 84T533 154T418 197T284 220T137 229H114Q104 229 98 230T88 235T84 249Z"/>
 </defs>
@@ -917,18 +917,43 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <p>A quick good search for “longest path graph” points to this link: <a href="http://www.mathcs.emory.edu/~cheung/Courses/171/Syllabus/11-Graph/Docs/longest-path-in-dag.pdf" class="uri">http://www.mathcs.emory.edu/~cheung/Courses/171/Syllabus/11-Graph/Docs/longest-path-in-dag.pdf</a></p>
 <p>It gives a very succinct solution, keyword <em>dynamic programming</em>:</p>
 <ol style="list-style-type: decimal">
-<li>Conduct a topological sort on the graph, finding out a linearized order of its nodes</li>
+<li>Conduct a topological sort on the graph, to find out a linearized order of its nodes</li>
 <li>Finding a path with largest node weights ending at <code>node_i</code> requires finding paths ending in all its predecessors <code>node_j</code> with same property up to <code>j</code> (based on the linearized order)</li>
 <li>Pick the path from <code>node_j</code> that has the largest accumulated weight <code>w_j</code>, and mark the total weight up to <code>node_i</code> as <code>w_j</code> + <code>weight(node_i)</code></li>
 <li>Continue until reaching <code>end_node</code></li>
 </ol>
+<p>Pausing for a second, it’s very easy to identify this is essentially the same dynamic programming solution to the longest increasing sequence problem - a popular algorithum tutorial topic. There is a more efficient (<span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="11.54ex" height="2.843ex" style="vertical-align: -0.838ex" viewbox="0 -863.1 4968.7 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<path stroke-width="1" id="E1-MJMATHI-4F" d="M740 435Q740 320 676 213T511 42T304 -22Q207 -22 138 35T51 201Q50 209 50 244Q50 346 98 438T227 601Q351 704 476 704Q514 704 524 703Q621 689 680 617T740 435ZM637 476Q637 565 591 615T476 665Q396 665 322 605Q242 542 200 428T157 216Q157 126 200 73T314 19Q404 19 485 98T608 313Q637 408 637 476Z"/>
+<path stroke-width="1" id="E1-MJMAIN-28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"/>
+<path stroke-width="1" id="E1-MJMATHI-6E" d="M21 287Q22 293 24 303T36 341T56 388T89 425T135 442Q171 442 195 424T225 390T231 369Q231 367 232 367L243 378Q304 442 382 442Q436 442 469 415T503 336T465 179T427 52Q427 26 444 26Q450 26 453 27Q482 32 505 65T540 145Q542 153 560 153Q580 153 580 145Q580 144 576 130Q568 101 554 73T508 17T439 -10Q392 -10 371 17T350 73Q350 92 386 193T423 345Q423 404 379 404H374Q288 404 229 303L222 291L189 157Q156 26 151 16Q138 -11 108 -11Q95 -11 87 -5T76 7T74 17Q74 30 112 180T152 343Q153 348 153 366Q153 405 129 405Q91 405 66 305Q60 285 60 284Q58 278 41 278H27Q21 284 21 287Z"/>
+<path stroke-width="1" id="E1-MJMAIN-6C" d="M42 46H56Q95 46 103 60V68Q103 77 103 91T103 124T104 167T104 217T104 272T104 329Q104 366 104 407T104 482T104 542T103 586T103 603Q100 622 89 628T44 637H26V660Q26 683 28 683L38 684Q48 685 67 686T104 688Q121 689 141 690T171 693T182 694H185V379Q185 62 186 60Q190 52 198 49Q219 46 247 46H263V0H255L232 1Q209 2 183 2T145 3T107 3T57 1L34 0H26V46H42Z"/>
+<path stroke-width="1" id="E1-MJMAIN-6F" d="M28 214Q28 309 93 378T250 448Q340 448 405 380T471 215Q471 120 407 55T250 -10Q153 -10 91 57T28 214ZM250 30Q372 30 372 193V225V250Q372 272 371 288T364 326T348 362T317 390T268 410Q263 411 252 411Q222 411 195 399Q152 377 139 338T126 246V226Q126 130 145 91Q177 30 250 30Z"/>
+<path stroke-width="1" id="E1-MJMAIN-67" d="M329 409Q373 453 429 453Q459 453 472 434T485 396Q485 382 476 371T449 360Q416 360 412 390Q410 404 415 411Q415 412 416 414V415Q388 412 363 393Q355 388 355 386Q355 385 359 381T368 369T379 351T388 325T392 292Q392 230 343 187T222 143Q172 143 123 171Q112 153 112 133Q112 98 138 81Q147 75 155 75T227 73Q311 72 335 67Q396 58 431 26Q470 -13 470 -72Q470 -139 392 -175Q332 -206 250 -206Q167 -206 107 -175Q29 -140 29 -75Q29 -39 50 -15T92 18L103 24Q67 55 67 108Q67 155 96 193Q52 237 52 292Q52 355 102 398T223 442Q274 442 318 416L329 409ZM299 343Q294 371 273 387T221 404Q192 404 171 388T145 343Q142 326 142 292Q142 248 149 227T179 192Q196 182 222 182Q244 182 260 189T283 207T294 227T299 242Q302 258 302 292T299 343ZM403 -75Q403 -50 389 -34T348 -11T299 -2T245 0H218Q151 0 138 -6Q118 -15 107 -34T95 -74Q95 -84 101 -97T122 -127T170 -155T250 -167Q319 -167 361 -139T403 -75Z"/>
+<path stroke-width="1" id="E1-MJMAIN-29" d="M60 749L64 750Q69 750 74 750H86L114 726Q208 641 251 514T294 250Q294 182 284 119T261 12T224 -76T186 -143T145 -194T113 -227T90 -246Q87 -249 86 -250H74Q66 -250 63 -250T58 -247T55 -238Q56 -237 66 -225Q221 -64 221 250T66 725Q56 737 55 738Q55 746 60 749Z"/>
+</defs>
+<g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
+ <use xlink:href="#E1-MJMATHI-4F" x="0" y="0"/>
+ <use xlink:href="#E1-MJMAIN-28" x="763" y="0"/>
+ <use xlink:href="#E1-MJMATHI-6E" x="1153" y="0"/>
+<g transform="translate(1920,0)">
+ <use xlink:href="#E1-MJMAIN-6C"/>
+ <use xlink:href="#E1-MJMAIN-6F" x="278" y="0"/>
+ <use xlink:href="#E1-MJMAIN-67" x="779" y="0"/>
+</g>
+ <use xlink:href="#E1-MJMAIN-28" x="3199" y="0"/>
+ <use xlink:href="#E1-MJMATHI-6E" x="3589" y="0"/>
+ <use xlink:href="#E1-MJMAIN-29" x="4189" y="0"/>
+ <use xlink:href="#E1-MJMAIN-29" x="4579" y="0"/>
+</g>
+</svg></span>) <a href="https://en.wikipedia.org/wiki/Longest_increasing_subsequence">solution</a>, but it’s a bit over my head. It would be interesting to know if that could be adapted for the labels layout challenge at hand.</p>
 </div>
-<div id="actual-code" class="section level2">
-<h2>Actual Code</h2>
+<div id="brief-look-at-the-code" class="section level2">
+<h2>Brief Look at the Code</h2>
 <p>I chose rust for implementing this for two reasons:</p>
 <ol style="list-style-type: decimal">
 <li>I have been learning rust for quite a while now, it’s fun and additcting</li>
-<li>rust has a <code>PartialOrd</code> trait that’s particularly suitable representing this problem</li>
+<li>rust has a <code>PartialOrd</code> trait that’s particularly suitable in expressing this problem</li>
 </ol>
 <p>To illustrate the second point, I used this trait to represent an input label/weighted interval:</p>
 <div class="highlight"><pre><span></span><span class="k">trait</span><span class="w"> </span><span class="n">Weighted</span>: <span class="nb">PartialOrd</span> <span class="p">{</span><span class="w"></span>
@@ -937,8 +962,8 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 
 <span class="p">}</span><span class="w"></span>
 </pre></div>
-<p>Three lines of code and that’s it, all the solution code just needs to work with this trait generically, and does not even to have any notion of intervals or labels.</p>
-<p>Here is entry function, it returns a list of indices to keep:</p>
+<p>Three lines of code and that’s it, all the solution code just needs to work with this trait in a generic manner, and does not even need to have any notion of intervals or labels.</p>
+<p>Here is the entry function, it returns a list of indices to keep:</p>
 <div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">solve</span><span class="o">&lt;</span><span class="n">W</span>: <span class="nc">Weighted</span><span class="o">&gt;</span><span class="p">(</span><span class="n">inputs</span>: <span class="kp">&amp;</span><span class="p">[</span><span class="n">W</span><span class="p">])</span><span class="w"> </span>-&gt; <span class="nb">Vec</span><span class="o">&lt;</span><span class="n">uszie</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">build_graph</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span><span class="w"></span>
@@ -987,7 +1012,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <p>All nodes’ <code>dist</code> field are initialized to be 0, and its <code>path_predecessor</code> as <code>None</code>. Calling <code>longest_path</code> method consumes the graph, runs the dynamic programming loop, and populates these fields for each node in linear (<code>O(V + E)</code>) time.</p>
 <div id="topological-sort" class="section level3">
 <h3>Topological Sort</h3>
-<p>I have tried a few graph algorithm crate for this task, and ended up picking <a href="https://docs.rs/pathfinding/1.0.4/pathfinding/directed/topological_sort/fn.topological_sort.html">pathfinding</a>, as it is easiest to use, and has an unassuming api - just a plain function, not requiring any specific graph representation or traits implementations.</p>
+<p>I have tried a few graph algorithm crates for this task, and ended up picking <a href="https://docs.rs/pathfinding/1.0.4/pathfinding/directed/topological_sort/fn.topological_sort.html">pathfinding</a>, as it is easiest to use, and has an unassuming api - just a plain function, not requiring any specific graph representation or traits implementations.</p>
 <p>These few lines of code does the job:</p>
 <div class="highlight"><pre><span></span><span class="k">impl</span><span class="w"> </span><span class="n">Graph</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
@@ -1102,7 +1127,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 
 <span class="p">}</span><span class="w"></span>
 </pre></div>
-<p>There is no <code>StrictPartialOrd</code> trait in <code>rust</code>, thus we’d settle for using <code>PartialOrd</code>, which requires <code>PartialEq</code>, and thankfully it’s auto<code>derive</code>able. Next, we provide our <code>partial_cmp</code> implementation,</p>
+<p>There is no <code>StrictPartialOrd</code> trait in <code>rust</code>, thus we’d settle for using <code>PartialOrd</code>, which requires <code>PartialEq</code>, and thankfully it’s auto-<code>derive</code>-able. Next, we provide our <code>partial_cmp</code> implementation,</p>
 <div class="highlight"><pre><span></span><span class="k">impl</span><span class="w"> </span><span class="nb">PartialOrd</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Interval</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
 <span class="w">    </span><span class="k">fn</span> <span class="nf">partial_cmp</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">other</span>: <span class="kp">&amp;</span><span class="nc">Self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Option</span><span class="o">&lt;</span><span class="n">Ordering</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1150,8 +1175,16 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 <span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
-<div id="test-with-quickcheck" class="section level2">
-<h2>Test with Quickcheck</h2>
+<div id="testing-with-quickcheck" class="section level2">
+<h2>Testing with Quickcheck</h2>
+<p>When it comes to testing, the first thing we’d like to verify: the solution set indeed does not overlap. Recall from ealier, this condition is formularized using <span class="math inline"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1.808ex" height="1.843ex" style="vertical-align: -0.338ex" viewbox="0 -647.8 778.5 793.3" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<path stroke-width="1" id="E1-MJMAIN-227A" d="M84 249Q84 262 91 266T117 270Q120 270 126 270T137 269Q388 273 512 333T653 512Q657 539 676 539Q685 538 689 532T694 520V515Q689 469 672 431T626 366T569 320T500 286T435 265T373 249Q379 248 404 242T440 233T477 221T533 199Q681 124 694 -17Q694 -41 674 -41Q658 -41 653 -17Q646 41 613 84T533 154T418 197T284 220T137 229H114Q104 229 98 230T88 235T84 249Z"/>
+</defs>
+<g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)">
+ <use xlink:href="#E1-MJMAIN-227A" x="0" y="0"/>
+</g>
+</svg></span> relation:</p>
 <p><span class="math display eq"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="42.994ex" height="2.843ex" style="vertical-align: -1.005ex" viewbox="0 -791.3 18511.3 1223.9" role="img" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <path stroke-width="1" id="E1-MJMAIN-2200" d="M0 673Q0 684 7 689T20 694Q32 694 38 680T82 567L126 451H430L473 566Q483 593 494 622T512 668T519 685Q524 694 538 694Q556 692 556 674Q556 670 426 329T293 -15Q288 -22 278 -22T263 -15Q260 -11 131 328T0 673ZM414 410Q414 411 278 411T142 410L278 55L414 410Z"/>
@@ -1212,6 +1245,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
  <use xlink:href="#E1-MJMATHI-6A" x="18098" y="0"/>
 </g>
 </svg></span></p>
+<p>In terms of code, this translates quite directly. Here, we use <code>tuple_combinations</code> from <code>itertools</code> crate to enumerate over pairs of indices.</p>
 <div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">path_overlaps</span><span class="o">&lt;</span><span class="n">W</span>: <span class="nc">Weighted</span><span class="o">&gt;</span><span class="p">(</span><span class="n">xs</span>: <span class="kp">&amp;</span><span class="p">[</span><span class="n">W</span><span class="p">])</span><span class="w"> </span>-&gt; <span class="kt">bool</span> <span class="p">{</span><span class="w"></span>
 
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xs</span><span class="p">.</span><span class="n">len</span><span class="p">();</span><span class="w"></span>
@@ -1238,24 +1272,13 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 
 <span class="p">}</span><span class="w"></span>
 </pre></div>
-<div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">solve_brute</span><span class="p">(</span><span class="n">spans</span>: <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-
-<span class="w">    </span><span class="p">(</span><span class="mi">0</span><span class="p">..</span><span class="kt">u16</span>::<span class="n">max_value</span><span class="p">())</span><span class="w"></span>
-
-<span class="w">        </span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">mask</span><span class="o">|</span><span class="w"> </span><span class="n">spans</span><span class="p">.</span><span class="n">subset</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span><span class="w"></span>
-
-<span class="w">        </span><span class="p">.</span><span class="n">filter</span><span class="p">(</span><span class="o">|</span><span class="n">subset</span><span class="o">|</span><span class="w"> </span><span class="o">!</span><span class="n">path_overlaps</span><span class="p">(</span><span class="n">subset</span><span class="p">.</span><span class="n">as_slice</span><span class="p">()))</span><span class="w"></span>
-
-<span class="w">        </span><span class="p">.</span><span class="n">max_by_key</span><span class="p">(</span><span class="o">|</span><span class="n">subset</span><span class="o">|</span><span class="w"> </span><span class="n">score</span><span class="p">(</span><span class="n">subset</span><span class="p">.</span><span class="n">as_slice</span><span class="p">()))</span><span class="w"></span>
-
-<span class="w">        </span><span class="p">.</span><span class="n">unwrap_or</span><span class="p">(</span><span class="n">SmallSpans</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-
-<span class="w">            </span><span class="n">spans</span>: <span class="nc">SmallVec</span>::<span class="n">new</span><span class="p">(),</span><span class="w"></span>
-
-<span class="w">        </span><span class="p">})</span><span class="w"></span>
-
-<span class="p">}</span><span class="w"></span>
-</pre></div>
+<aside>
+<div>
+<h4 id="side-note-1">Side Note</h4>
+<p>I had used a different struct than <code>Interval</code> in tests. It was named <code>WeightedSpan</code>, and is identical to <code>Interval</code> - except using <code>u32</code> for <code>lower</code> and <code>upper</code> fields. Please forgive this inconsistency throughout this section.</p>
+</div>
+</aside>
+<p><a href="https://docs.rs/quickcheck/0.7.2/quickcheck/">Quickcheck</a> is a very useful and fun crate for randomized property testing. Here, we will use it to generate random sets of <code>Interval</code>s with arbitrary positions and sizes. Next we check each solution produced from them does not overlap, using <code>path_overlaps</code> function we just wrote.</p>
 <div class="highlight"><pre><span></span><span class="n">quickcheck</span><span class="o">!</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
 <span class="w">    </span><span class="k">fn</span> <span class="nf">removes_overlapping_spans</span><span class="p">(</span><span class="n">spans</span>: <span class="nb">Vec</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">bool</span> <span class="p">{</span><span class="w"></span>
@@ -1274,9 +1297,33 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 
 <span class="w">    </span><span class="p">}</span><span class="w"></span>
 
-<span class="w">    </span><span class="k">fn</span> <span class="nf">check_correctness</span><span class="p">(</span><span class="n">spans</span>: <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">bool</span> <span class="p">{</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+<p>For this to work, we need to implement the <code>Arbitrary</code> trait from <code>quickcheck</code> - basically to specify how to randomly generate individual <code>WeightedSpan</code>s. Since quickcheck implements <code>Arbitrary</code> for <code>Vec&lt;T&gt;</code> if <code>T: Arbitrary</code>, it is sufficient to perform this test.</p>
+<p>Next, we would also like to know our algorithm produces a solution with best possible total weight. This is hard to verify for arbitrary inputs, however, we could do a comparision with a brute force solver for small enough input sizes. The brute force appoach is of course, to check all subsets of input spans.</p>
+<p>I have used <code>SmallVec&lt;[WeightedSpan; 16]&gt;</code> for this task. <a href="https://crates.io/crates/smallvec">smallvec</a> crate provides array backed <code>Vec</code>-like structs that is suitable for this use case. To enumerate through all subsets for any collection of arbitrary 16 spans, we use all <code>u16</code> values (65536 total) to serve as bit masks. This function below performs the exhaustive search using some basic iterator operations.</p>
+<div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">solve_brute</span><span class="p">(</span><span class="n">spans</span>: <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
-<span class="w">        </span><span class="c1">// this takes a minute to run</span>
+<span class="w">    </span><span class="p">(</span><span class="mi">0</span><span class="p">..</span><span class="kt">u16</span>::<span class="n">max_value</span><span class="p">())</span><span class="w"></span>
+
+<span class="w">        </span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">mask</span><span class="o">|</span><span class="w"> </span><span class="n">spans</span><span class="p">.</span><span class="n">subset</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span><span class="w"></span>
+
+<span class="w">        </span><span class="p">.</span><span class="n">filter</span><span class="p">(</span><span class="o">|</span><span class="n">subset</span><span class="o">|</span><span class="w"> </span><span class="o">!</span><span class="n">path_overlaps</span><span class="p">(</span><span class="n">subset</span><span class="p">.</span><span class="n">as_slice</span><span class="p">()))</span><span class="w"></span>
+
+<span class="w">        </span><span class="p">.</span><span class="n">max_by_key</span><span class="p">(</span><span class="o">|</span><span class="n">subset</span><span class="o">|</span><span class="w"> </span><span class="n">score</span><span class="p">(</span><span class="n">subset</span><span class="p">.</span><span class="n">as_slice</span><span class="p">()))</span><span class="w"></span>
+
+<span class="w">        </span><span class="p">.</span><span class="n">unwrap_or</span><span class="p">(</span><span class="n">SmallSpans</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">spans</span>: <span class="nc">SmallVec</span>::<span class="n">new</span><span class="p">(),</span><span class="w"></span>
+
+<span class="w">        </span><span class="p">})</span><span class="w"></span>
+
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+<p>Since previous <code>quickcheck</code> test ensures our algorithm does not produce any solution that overlaps, this time, we just need to check its total weight is optimal. There’s no need to require an identical solution to the brute force outcome, as there could be multiple solutions sharing the same score.</p>
+<div class="highlight"><pre><span></span><span class="n">quickcheck</span><span class="o">!</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">fn</span> <span class="nf">check_correctness</span><span class="p">(</span><span class="n">spans</span>: <span class="nc">SmallSpans</span><span class="o">&lt;</span><span class="n">WeightedSpan</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">bool</span> <span class="p">{</span><span class="w"></span>
 
 <span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">build_graph</span><span class="p">(</span><span class="n">spans</span><span class="p">.</span><span class="n">as_slice</span><span class="p">());</span><span class="w"></span>
 
@@ -1304,9 +1351,7 @@ document.addEventListener('resize', requestIdleCallback ? function () { requestI
 
 <span class="p">}</span><span class="w"></span>
 </pre></div>
-</div>
-<div id="divide-and-conquer-solution" class="section level2">
-<h2>Divide and Conquer Solution</h2>
+<p>With relative little effort, we now have a fairly good test suite that gives us some confidence about the algorithm. In fact, when making the demo, it worked the first time after I got all rust tests to pass. In general, I had way more bugs on js side creating it, and the wasm code has been much more solid.</p>
 </div>
 
 
