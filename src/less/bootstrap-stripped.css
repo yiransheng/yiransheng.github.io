@@ -255,7 +255,7 @@ blockquote p:last-child {
 code,
 pre {
   /* font-family: Menlo, Monaco, Consolas, "Courier New", monospace; */
-  font-family: 'Roboto Mono', Consolas, "Courier New", monospace;
+  font-family: 'Fira Code', 'Roboto Mono', Consolas, "Courier New", monospace;
 }
 
 code {

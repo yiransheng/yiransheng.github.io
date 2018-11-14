@@ -82,11 +82,13 @@ var baseTransforms = [
       return makeDOM(
         streamFromString(
           '<link href="style/main.css" rel="stylesheet" type="text/css">' +
-            "<link href='https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext' rel='stylesheet' type='text/css'>"
+            "<link href='https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext' rel='stylesheet' type='text/css'>" +
+          '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.206/distr/fira_code.css">',
         )
       ).bind(link => {
         domutils.appendChild(node, link[0]);
         domutils.appendChild(node, link[1]);
+        domutils.appendChild(node, link[2]);
         return Cont.unit();
       });
     }
