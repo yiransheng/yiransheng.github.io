@@ -147,16 +147,23 @@ iframe.embed {
 
 .nav-back {
   position: absolute;
-  top: 0.75rem;
+  top: 1.5rem;
+  left: 1rem;
   padding: 0 0.25rem;
   z-index: 10;
 
-  opacity: 0.4;
+
+  a { 
+    opacity: 0.25;
+    background-image: none;
+  }
+
+  a:hover {
+    opacity: 0.4;
+  }
 
   svg {
-    height: 1.6rem;
-    position: relative;
-    top: 0.05rem;
+    height: 3em;
 
     path {
       fill: #222234;
