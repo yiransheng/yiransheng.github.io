@@ -5,6 +5,10 @@ A small exercise on a simple graph algorithm, addressing the problem of dynamic 
 1. Labels in the subset do not overlap with each other
 2. Maximizes sum of weights among all non-overlapping subsets 
 
+<center>
+![](pngs/pie.png)
+</center>
+
 
 <div style="text-align:right">[Read](pie-layout)</div>
 
@@ -35,6 +39,11 @@ Simulation based examination of various statistical tests for median equality nu
 * When population mean and population median can be assumed to be equal, T Test is very robust despite its obvious theoretical shortcomings
 
 * Wilcox rank sum test is a general close second following T Test, and has good robustness
+
+<center>
+![](pngs/median_tests.png)
+</center>
+
 
 <div style="text-align:right">[Read](on-median)</div>
 
