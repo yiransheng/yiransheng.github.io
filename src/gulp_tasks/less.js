@@ -24,6 +24,8 @@ module.exports = function(config) {
         baseDir: path.dirname(config.src.less) + '/',
         maxSize: 32 * 1024,
         debug : true
+      }).on('error', function(err) {
+        console.error('Inline Base64 error:', err);
       }))
       .pipe(cssmin({compatibility: 'ie8', keepSpecialComments: 0}).on('error', function(err) {
         console.log('CSS min failed', err);
