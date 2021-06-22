@@ -1,0 +1,617 @@
+---
+title: "Analyzing Hacker News Front Page Activities"
+author: "Yiran Sheng"
+output:
+  html_document:
+    toc: true
+    df_print: paged
+---
+
+## Introduction
+
+A little over a year ago, I did this project: https://github.com/yiransheng/hn-activities-in-bq
+
+To summarize, it's basically a cron job (running on [webtask](https://webtask.io/)) which queries HN api for certain front page story stats twice an hour. Results are streamed into Google BigQuery. The [README](https://github.com/yiransheng/hn-activities-in-bq/blob/master/README.md) over there provides a little bit more information and simple guides if you want to run it yourself.
+
+Since then, this little script (although I had quite a bit of trouble to shrink down the size of its deployed version, due to bloated Google npm packages) has been running over a year. The BigQuery table currently sits at 30 something MB! Quite some "big" data befitting its storage. Jokes aside, hourly stats of every 30 frontpage stories over an year is actually a meaningful dataset to run some fun analysis on - something this post aims to be a first of.
+
+I had hacked together a [Jupyter Notebook](https://nbviewer.jupyter.org/github/yiransheng/hn-activities-in-bq/blob/master/analyze/HN%20Activities.ipynb) back then, visualizing a few hours worth of data. If you want get a quick look at the dataset, I suggest head over there (or stay here, as we are getting into it right afterwards).
+
+By the way, this is an RMarkdown notebook, and let's start by importing some essential packages:
+```{r, setup, message=F}
+library(tidyverse)
+library(tsibble)
+library(ggthemes)
+library(broom)
+library(pander)
+```
+
+## The Dataset
+
+I have exported the BigQuery table as csv, a quick look at this file:
+```{bash}
+wc -l bq-hnactivity.stats.csv
+```
+
+Almost a third of a million rows, not too shabby. Reading it into a dataframe, while specifying all column types:
+
+<aside>
+<div>
+### Side Note
+Field `story_createdat` and other timestamps fields have different formats, this was due to the former originates from [HN api](https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty), which has a lower resolution (rounded to seconds). Other timestamps were all `new Date()` in javaScript from webtask script.
+</div>
+</aside>
+
+```{r}
+interval.format <- "%F %H:%M:%OS UTC"
+created.format <- "%F %H:%M:%S UTC"
+
+hnstats <- read_csv("bq-hnactivity.stats.csv",
+  locale = locale(tz='UTC'),
+  col_types=cols(
+    task_id             = col_character(),
+    story_id            = col_character(),
+    story_createdat     = col_datetime(format=created.format),
+    story_point_begin   = col_integer(),
+    story_point_delta   = col_integer(),
+    interval_begin      = col_datetime(format=interval.format),
+    interval_end        = col_datetime(format=interval.format),
+    comment_count_begin = col_integer(),
+    comment_count_delta = col_integer(),
+    story_rank_begin    = col_integer(),
+    story_rank_end      = col_integer()
+  ))
+
+hnstats$interval_duration <-
+  difftime(hnstats$interval_end, hnstats$interval_begin)
+```
+
+What is this `_begin` and `_delta` business? To quote how I wrote it back then:
+
+> Every hour (or determined by other CRON configurations) the script takes _two_ 15-seconds-apart snapshots of Hacker News frontpage statistics (top 25 stories and their rank, story point and comment count)
+
+The basic idea is trying to capture an upvote or a comment as it happens and reflect it in the dataset. To truly analyze this type of realtime traffic, ideally, I should perform these quries every 15 seconds. Well, I didn't want to bankrrupt myself... therefore this slight addition of 15-seconds apart snapshots on an the much less frequent hourly jobs. 
+
+### Clean Up
+
+The dataset is mostly clean, the webtask script handles errors as strictly as it could, and makes sure no `NA` / `NaN` values are committed to BigQuery. However there is a small issue within the dataset, in terms of `interval_duration` column (time difference between two snapshot queries): 
+
+```{r}
+pander(summary(
+  as.numeric(hnstats$interval_duration, units = "secs")
+))
+```
+
+A few rows of data that had non-15-second intervals during my testing phase made it into the dataset (I was testing out 10-second and 30-second intervals, adjusting for webtask's timeout setting). Here we filter these out, and make sure all remaining intervals are within $\pm10$ ms of 15 seconds.
+
+```{r}
+INTERVAL_DURATION <- as.difftime(15, units = "secs")
+
+ε.interval_duration <- as.difftime(0.01, units = "secs")
+
+hnstats %>% filter(
+  interval_duration >= INTERVAL_DURATION - ε.interval_duration &
+    interval_duration <= INTERVAL_DURATION + ε.interval_duration
+) -> hnstats
+
+hnstats
+```
+
+## Lifecycle of a Popular Story
+
+To warm up, we will follow a single popular story through its lifetime on HN front page, and visualize how it garnered upvotes and climbed ranks. To do this, let's quickly collect top 10 stories by their number of occurrences in the dataset:
+
+```{r}
+story_ids <- hnstats %>%
+  group_by(story_id) %>%
+  summarize(n = n()) %>%
+  top_n(10, n) %>%
+  arrange(-n)
+story_ids$link <- paste("https://news.ycombinator.com/item?id=",
+  story_ids$story_id,
+  sep = ""
+)
+pander(story_ids)
+```
+
+Story `r story_ids$story_id[1]` was seen `r story_ids$n[1]` times - roughly `r round(story_ids$n[1] / 24)` days on the front page, an eternity on this high-traffic site.
+
+Plotting its rank over time:
+
+```{r}
+hnstats %>%
+  filter(story_id == story_ids$story_id[1]) %>%
+  select(
+    interval_begin,
+    story_createdat,
+    story_point_begin,
+    comment_count_begin,
+    story_rank_begin
+  ) %>%
+  arrange(interval_begin) -> single_story
+
+single_story %>%
+  ggplot(., aes(
+    x = as.numeric(interval_begin - story_createdat, units = "hours"),
+    y = factor(story_rank_begin, levels = c(30:1)),
+    group = 1
+  )) +
+  geom_line(stat = "identity") +
+  geom_point(size = 2) +
+  ylab("Story Rank") +
+  xlab("Story age (hours)") +
+  theme_tufte(base_size = 15)
+```
+
+Note the first time this story appears in the dataset, it had already been crowned the top spot (rank 1). Most likely, it graduated the `new` category onto frontpage within an hour of its submission (barring any data collection errors causing my script to miss it). It remained as number-one story for close to 20 hours before dropping in rank steadily. Just around a full 24 hours later after its first frontpage appearance (when most stories retire from frontpage), it jumped back from bottom of the page to the middle, and enjoyed roughly another day of exposure, before finally fading away. We will see this "second wind" pattern again on an aggregate level later.
+
+Additionally, here's its comment count and story points over time:
+
+```{r}
+single_story %>%
+  gather(metric, value, story_point_begin:comment_count_begin) %>%
+  ggplot(., aes(
+    as.numeric(interval_begin - story_createdat, units = "hours"), value
+  )) +
+  facet_wrap(~metric) +
+  geom_line() +
+  geom_point(size = 1) +
+  xlab("Story age (hours)") +
+  theme_tufte(base_size = 15)
+```
+
+## Heatmapping Front Page Activities
+
+Now, let's use the collected delta metrics on comments and upvotes. This section is mostly visualizing obvious patterns we would expect from a high-traffic news list. To begin with, a tally of observed comments and upvotes (for better contrast shading is done on log scale).
+
+
+```{r}
+hnstats %>%
+  ggplot(., aes(factor(story_point_delta), factor(comment_count_delta))) +
+  geom_tile(stat = "bin_2d", color = "#c0c0c0") +
+  scale_fill_gradient(low = "white", high = "#595959", trans = "log10") +
+  xlab("story_point_delta") +
+  ylab("comment_count_delta") +
+  theme_tufte(base_size = 15)
+```
+
+As expected, most common group is the $(0, 0)$ tile where the sampling script failed to capture any metric changes.
+
+Next, we will focus on a subset with positive `story_point_delta` captured in their 15-second interval - and plot a heatmap of upvotes by rank (this time using linear shading scale). This offers a nice statistical picture of front page upvotes.
+
+```{r}
+hnstats %>%
+  filter(story_point_delta > 0) %>%
+  ggplot(., aes(factor(story_point_delta), factor(story_rank_begin, levels = seq(30, 1, -1)))) +
+  geom_tile(stat = "bin_2d", color = "#c0c0c0") +
+  scale_fill_gradient(low = "white", high = "#595959") +
+  xlab("Upvotes / 15s") +
+  ylab("Story Rank") +
+  theme_tufte(base_size = 15)
+```
+
+A similar pattern manifests itself for comments: 
+
+```{r}
+hnstats %>%
+   filter(comment_count_delta != 0) %>%
+   ggplot(., aes(factor(comment_count_delta), factor(story_rank_begin, levels=seq(30, 1, -1)))) +
+   geom_tile(stat="bin_2d", color="#c0c0c0") +
+   scale_fill_gradient(low = "white", high = "#595959") +
+   xlab("Comments / 15s") + 
+   ylab("Story Rank") + 
+   theme_tufte(base_size = 15)
+```
+
+## Best Submission Hours
+
+It won't be a proper HN analysis without answering the dire question of when the best time is to post to HN. So let's take a stab at it. The dataset is grouped by `story_id` below, and we record the timestamp a given story is first and last seen on the front page.
+
+
+```{r}
+stories <- hnstats %>%
+  group_by(story_id) %>%
+  summarize(
+    first_seen = min(interval_begin),
+    last_seen = max(interval_begin),
+    created_at = median(story_createdat)
+  ) %>%
+  mutate(frontpage_duration = last_seen - first_seen)
+```
+
+Keep in mind, the computed `frontpage_duration` column is just an estimation. As data is only collected hourly, any story lasted less than an hour will be have an 0 value for this field. We do not have the exact time stamp when a story pops up and dropps off the frontpage. With that said, it's useful to examine the distribution of `frontpage_duration`anyway:
+
+```{r}
+stories %>%
+  ggplot(., aes(x = as.numeric(frontpage_duration, units = "hours"))) +
+  geom_histogram(binwidth = 0.5) +
+  xlab("Front page duration (hours)") +
+  theme_tufte(base_size = 15)
+```
+
+Interestingly, there is a bimodal pattern here. A interpretation can be made here for the "second wind" effect. Front page stories exist in two clusters, some dropped off after no more than 20 hours, but another significant portion remained there a bit longer. The 12 hour mark seems to be the separation point - something I suspect is determined by internal HN rank algorithm. 
+
+Now onto the main task. By design, all stories in this dataset are front page stories. Therefore, to simply group them by hour of creation tells us which hour-of-day contributed the most to the front page entries. We make a quick function to plot this information, for parametrized timezones. 
+
+```{r}
+best_submission_hour <- function(tz, xlab, ylab) {
+  hour_fmt <- "%H"
+  df <- stories %>%
+    mutate(
+      created_hour = strftime(created_at, hour_fmt, tz = tz)
+    ) %>%
+    group_by(created_hour) %>%
+    summarise(count = n())
+
+  df$created_hour <- as.POSIXct(df$created_hour, format = hour_fmt, tz = tz)
+
+  ggplot(df, aes(created_hour, count, fill = count)) +
+    scale_x_datetime(date_labels = "%I:%M %p") +
+    scale_fill_gradient(low = "#595959", high = "#ee5959", guide = FALSE) +
+    geom_bar(stat = "identity") +
+    xlab(xlab) + ylab(ylab) +
+    theme_tufte(base_size = 15)
+}
+```
+
+For UTC:
+
+```{r}
+best_submission_hour('UTC', 'Submission hour (UTC Time)', "Count")
+```
+
+This seems to be consistent with some previous findings on this topic. For example, to quote [this article](https://medium.com/@mi.schaefer/what-is-the-best-time-to-post-to-hacker-news-829fad3eac71), 
+
+> ...each hour of the day (UTC). We can see that, on average, between 5 PM and 6 PM was the most active hour of the day.
+
+And the same plot for `America/Los_Angeles` timezone, where a large portion of the HN audience resides. Note this is not a simple shift of previous plot, due to day light saving time.
+
+```{r}
+best_submission_hour('America/Los_Angeles', 'Submission hour (California Time)', "Count")
+```
+
+Pause for a second, have you noticed something problematic here though? Yeah, that's right - a thread of [Survivor Bias](https://en.wikipedia.org/wiki/Survivorship_bias) sneaked in! This dataset consists only of front page stories, we have no clue about the submission volume by hour. For instance, around UTC 6:00 PM, could simply be when most submissions are made - thus producing the largest amount of front page stories. To get a sense of what time of day a random submission has the highest chance of making it to the front page, this dataset by itself is definitely not enough.
+
+Fortunately, an estimation can be make by leveraging the public Hacker News Dataset (`bigquery-public-data.hacker_news.stories` on Google BigQuery). It is cutoff at 2015 era though. By using information from it, we are assuming the submission volume pattern with respect to hour of day has not changed significantly since then. To produce the data we need, this SQL query is used (and exported as a csv file):
+
+```sql
+SELECT
+  EXTRACT(hour
+  FROM
+    time_ts AT TIME ZONE "UTC") AS time_of_day,
+  COUNT(DISTINCT(id)) AS submission_count
+FROM
+  `bigquery-public-data.hacker_news.stories`
+GROUP BY
+  time_of_day
+```
+
+The same query is also peformed for `America/Los_Angeles` timezone, here we read in both csv files.
+
+```{r}
+submissions_by_hour = read_csv("hn_submissions_by_hour.csv")
+submissions_by_hour %>%
+  filter(!is.na(time_of_day)) %>%
+  mutate(hour = str_pad(time_of_day, 2, pad="0")) -> submissions_by_hour
+
+submissions_by_ca_hour = read_csv("hn_submissions_by_ca_hour.csv")
+submissions_by_ca_hour %>%
+  filter(!is.na(ca_time_of_day)) %>%
+  mutate(hour = str_pad(ca_time_of_day, 2, pad="0")) -> submissions_by_ca_hour
+```
+
+Modifying our plot function a bit, and this time, we will plot `front page count / submission_count` on the `y` axis - a ratio hopefully would be proportion to the probability of a random submission landing on front page:
+
+```{r}
+real_best_submission_hour <- function(tz, join_with, xlab, ylab) {
+  hour_fmt <- '%H'
+  
+  df <- stories %>%
+    mutate(
+      created_hour=strftime(created_at, hour_fmt, tz=tz)
+    ) %>%
+    group_by(created_hour) %>%
+    summarise(count=n()) %>%
+    left_join(join_with, by=c("created_hour" = "hour"))
+  
+  df$created_hour=as.POSIXct(df$created_hour, format=hour_fmt, tz=tz)
+  
+  ggplot(df, aes(created_hour, count / submission_count, fill=count / submission_count)) +
+    scale_x_datetime(date_labels="%I:%M %p") +
+    scale_fill_gradient(low = "#595959", high = "#ee5959", guide=FALSE) +
+    geom_bar(stat="identity") +
+    xlab(xlab) + ylab(ylab) +
+    theme_tufte(base_size = 15)
+}
+```
+
+For UTC:
+
+```{r}
+real_best_submission_hour('UTC', submissions_by_hour, "Submission hour (UTC Time)", "Relative Front Page Prob.")
+```
+
+For California time:
+
+```{r}
+real_best_submission_hour('America/Los_Angeles',
+                          submissions_by_ca_hour,
+                          'Submission hour (California Time)', "Relative Front Page Prob.")
+```
+
+Very interestingly, the "wavy" pattern from absolute front page story count plots disappeared, instead, a single narrower peak stands above an otherwise roughly uniform line. So it seems 3:00AM  -  5:00AM California time gives you the best shots at the front page, when choosing when to submit. Wait until everybody else is asleep!
+
+
+
+## Rolling Story Counts
+
+In this section, we will take a look at another measure of front page activity levels - rolling unique story count over last 12 hours. At any given time, we do a tally of number of unique stories observed over the prior 12-hour period. Exploratory analysis so far hints at a time-of-day effect, we will keep that in mind as well.
+
+Some data preparation, sort the dataset by time.
+
+```{r}
+hnstats %>%
+ arrange(interval_begin) %>%
+ select(story_id, interval_begin) -> story_id_by_time
+```
+
+Next, we do a rolling count distinct aggregation (or _windowing_ in the SQL world). 
+
+```{r}
+count_distinct_id <- function(ids, ts, ...) {
+  last_t <- max(ts)
+  first_t <- last_t - as.difftime(12, units = "hours")
+  keep <- ts >= first_t
+  n_distinct(ids[keep], na.rm = T)
+}
+
+# up to 30 stories per collection, and keep datums
+# from the last 15 collections 
+WINDOW_WIDTH <- 30 * 15
+
+story_id_by_time$story_counts_rolling_12h <- slide2_int(
+  pull(story_id_by_time, story_id),
+  pull(story_id_by_time, interval_begin),
+  .f = count_distinct_id,
+  .size = WINDOW_WIDTH,
+)
+
+story_id_by_time %>%
+  group_by(interval_begin) %>%
+  summarise(story_counts_rolling_12h = last(story_counts_rolling_12h)) -> story_counts
+```
+
+Plot the entire year worth of data:
+
+```{r}
+story_counts %>%
+  ggplot(aes(x = interval_begin, y = story_counts_rolling_12h)) +
+  ylab("Rolling 12h Front Page Story Count") + xlab("") +
+  geom_line() +
+  theme_tufte(base_size = 15)
+```
+
+Just eyeballing it, this series definitely seems [stationary](https://en.wikipedia.org/wiki/Stationary_process). The front page lists 30 stories, but at any given time it cycles through between roughly 50 - 90 stories over an 12-hour period.
+
+Stationarity is quite important for time series data, so we will take a quick break from exploratory analysis and perform an [unit root test](https://en.wikipedia.org/wiki/Unit_root_test). If rolling story count is stationary, it is implied that its mean and variance did not change overtime.
+
+To interpret, for example, if HN has changed its ranking algorithm to give a bigger penalty to story age or HN readship has increased greatly (or shifted in demographics), we would expect a shift in rolling story count pattern overtime - and observed series would've been non-stationary. We will use [Augmented Dickey–Fuller test](https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test) to find out whether this might've been the case.
+
+```{r}
+library(tseries)
+
+s <- story_counts %>% na.omit() %>% pull(story_counts_rolling_12h)
+
+pander(adf.test(s))
+```
+
+Our hypothetical structural changes did not seem to have occurred over the last year - but we need to perform the same tests on other metrics (comment count and story points) as well. In future part of this series, we will probably get into that. 
+
+Zoom the previous plot in a bit for a better view:
+
+
+```{r}
+story_counts %>%
+  slice(c(500:700)) %>%
+  ggplot(aes(x = interval_begin, y = story_counts_rolling_12h)) +
+  ylab("Rolling 12h Front Page Story Count") + xlab("") +
+  geom_line() +
+  theme_tufte(base_size = 15)
+```
+
+This is an arbitrary slice of the data. Note the obvious cyclic pattern is pretty much by construction. Each story is counted by 12 sliding windows (x-axis), thus we have build-in autocorrelation in this series. Nonetheless, this is clear evidence of time-of-day effect. 
+
+Mean rolling story count by hour of day (UTC) also shows it:
+
+```{r}
+story_counts %>%
+  mutate(
+    hour_of_day = factor(
+      strftime(interval_begin, "%H", tz = "UTC")
+    )
+  ) %>%
+  group_by(hour_of_day) %>%
+  summarise(story_counts_rolling_12h = mean(story_counts_rolling_12h, na.rm = T)) %>%
+  ggplot(., aes(x = hour_of_day, y = story_counts_rolling_12h)) +
+  geom_bar(stat = "identity") +
+  ylab("Story Count over Last 12h") + xlab("Hour of Day (UTC)") +
+  theme_tufte(base_size = 15)
+```
+
+Let's pick the hour with highest story volume vs lowest volume, remove autocorrelation by choosing a larger time step, and plotting the entire dataset, the gap is quite visible.
+
+
+```{r}
+story_counts %>%
+  mutate(
+    hour_of_day = factor(
+      strftime(interval_begin, "%H", tz = "UTC")
+    )
+  ) %>%
+  filter(hour_of_day == "11" | hour_of_day == "00") %>%
+  ggplot(aes(
+    x = interval_begin,
+    y = story_counts_rolling_12h,
+    linetype = hour_of_day
+  )) +
+  geom_line() +
+  ylab("Tiling Story Count over Last 12h") + xlab("") +
+  theme_tufte(base_size = 15)
+```
+
+```{r}
+set.seed(123)
+
+rank_combos <- hnstats %>%
+  mutate(id=as.integer(story_id)) %>%
+  split(.$task_id) %>% 
+  map_dfr(function (xs) {
+    pairs <- expand.grid(xs$id, xs$id)
+    pairs$task_id <- xs$task_id[1]
+    pairs
+  }) %>%
+  # sample_n(1000000L) %>%
+  rename(story_id=Var1, story_id1=Var2) %>%
+  filter(story_id != story_id1)
+```
+
+```{r}
+hnstats %>%
+  mutate(
+    age = as.numeric(interval_begin - story_createdat, units = "hours"),
+    story_id = as.integer(story_id)
+  ) %>%
+  select(task_id, story_id, story_point_begin, comment_count_begin, age, story_rank_begin) -> point_stats
+```
+
+```{r}
+library(RcppCNPy)
+```
+
+```{r}
+rank_combos %>%
+  left_join(point_stats, by = c("task_id" = "task_id", "story_id" = "story_id")) %>%
+  left_join(point_stats, by = c("task_id" = "task_id", "story_id1" = "story_id")) %>%
+  # filter(abs(story_rank_begin.x - story_rank_begin.y) > 10) %>%
+  mutate(out_ranks = as.numeric(story_rank_begin.x <= story_rank_begin.y), id = row_number()) %>%
+  select(
+    id,
+    out_ranks,
+    age.x,
+    story_point_begin.x,
+    comment_count_begin.x,
+    age.y,
+    story_point_begin.y,
+    comment_count_begin.y
+  ) -> paired_stories
+```
+
+```{r}
+x.mat <- paired_stories %>%
+  select(
+    age.x,
+    story_point_begin.x,
+    age.y,
+    story_point_begin.y
+  ) %>%
+  as.matrix(.)
+
+y.vec <- paired_stories$out_ranks
+```
+
+```{r}
+npySave("xs.npy", x.mat)
+npySave("ys.npy", y.vec)
+```
+
+```{r}
+train <- paired_stories %>% sample_frac(.70)
+test  <- anti_join(paired_stories, train, by = 'id')
+```
+
+```{r}
+library(Rtsne)
+
+paired_stories %>% sample_n(1000) -> plot_data
+
+plot_data %>%
+  select(-out_ranks, -id) %>% 
+  Rtsne(.) -> tsne
+
+plot_data$Y1 <- tsne$Y[ ,1]
+plot_data$Y2 <- tsne$Y[, 2]
+```
+
+```{r}
+plot_data %>%
+  ggplot(., aes(log(age.x + 2) - log(age.y + 2), log(story_point_begin.x) - log(story_point_begin.y),  shape=out_ranks, color=out_ranks)) + 
+  geom_point() +
+  theme_tufte(base_size = 15) 
+```
+
+```{r}
+library(ranger)
+library(AUC)
+```
+
+```{r}
+glm.fit <- glm(
+  out_ranks ~ log(age.x) + log(story_point_begin.x) + log(age.y) + log(story_point_begin.y),
+  data = train,
+  family = binomial(link = "logit")
+)
+```
+
+```{r}
+svm.fit <- svm(
+  out_ranks ~ log(age.x) + log(story_point_begin.x) + log(age.y) + log(story_point_begin.y),
+  data = train %>% sample_n(2000),
+  kernel="sigmoid"
+)
+```
+
+```{r}
+ypred <- predict(svm.fit , test, type="response")
+ytest <- pull(test, out_ranks)
+
+print("Error Rate")
+mean(ypred != ytest)
+```
+
+
+
+```{r}
+plot(roc(ypred, ytest))
+```
+
+```{r}
+scored_pairs <- paired_stories %>%
+  mutate(
+    score_x = (story_point_begin.x - 1) / (age.x + 2)^1.8,
+    score_y = (story_point_begin.y - 1) / (age.y + 2)^1.8,
+    out_ranks_by_score = factor(score_x > score_y)
+  )
+```
+
+```{r}
+print("Error Rate:")
+mean(scored_pairs$out_ranks_by_score != scored_pairs$out_ranks)
+```
+
+```{r}
+rf.fit <- ranger(
+  out_ranks ~ age.x + story_point_begin.x + age.y + story_point_begin.y,
+  num.trees = 250,
+  data = train
+)
+```
+
+```{r}
+ypred <- predict(rf.fit, test, type = 'response')
+ytest <- pull(test, out_ranks)
+```
+
+```{r}
+print("Error Rate:")
+mean(ypred$predictions != ytest)
+```
