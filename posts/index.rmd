@@ -1,3 +1,11 @@
+## [Analyzing Hacker News Front Page Activities](hnstats)
+
+Random and mildly interesting exploratory analysis and visualizations on Hack News activity data.
+
+<center>
+![](pngs/hnhour.png)
+</center>
+
 ## [Pie Chart Callout Layout with Graph Algorithms](pie-layout)
 
 A small exercise on a simple graph algorithm, addressing the problem of dynamic pie chart label layout: given a set of vertically overlapping labels with some non-negative weights associated with them, return a subset, such that:
