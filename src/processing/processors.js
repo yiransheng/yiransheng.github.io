@@ -1,9 +1,5 @@
 var fs = require("fs");
 
-var argv = require("yargs").option("html", {
-  alias: "h",
-  default: ""
-}).argv;
 
 var _ = require("lodash");
 var Stream = require("stream");
@@ -24,35 +20,26 @@ mjAPI.start();
 
 var Cont = require("./cont");
 
-var makeDOM = Cont.cpsify(parseStream, true);
+var makeDOM = Cont.cpsify(parseStream, false);
 var tranverseDOM = Cont.cpsify(tranverse);
 function htmlDOM(inputStream, opts, callback) {
   var originalDOM = makeDOM(inputStream);
   var transforms = baseTransforms.concat([]);
   return Cont.callCC(finish => {
     return originalDOM.bind(dom => {
-      var counter = 1;
       return tranverseDOM(dom).bind(step => {
+        if (step.node.__end) {
+          return finish(dom);
+        }
         var node = step.node;
         var cont = Cont.unit();
-        if (step.stage === "pre") {
-          counter++;
-          return Cont.empty;
-        } else {
-          transforms.forEach(function(t) {
-            var _cont = t(node);
-            if (_cont) {
-              cont = cont.bind(() => _cont);
-            }
-          });
-          return cont.bind(() => {
-            counter--;
-            if (node === _.last(dom)) {
-              counter--;
-            }
-            return counter === 0 ? finish(dom) : Cont.empty;
-          });
-        }
+        transforms.forEach(function(t) {
+          var _cont = t(node);
+          if (_cont) {
+            cont = cont.bind(() => _cont);
+          }
+        });
+        return cont; 
       });
     });
   });
@@ -60,12 +47,13 @@ function htmlDOM(inputStream, opts, callback) {
 
 function html(inputStream, opts, callback) {
   htmlDOM(inputStream, opts, callback)
-    .map(function(dom) {
-      return domutils.getOuterHTML(dom);
-    })
     .runCont(function(err, data) {
       if (!err) {
-        callback(null, data);
+        if (data) {
+          setTimeout(() => {
+            callback(null, domutils.getOuterHTML(data));
+          }, 200);
+        }
       } else {
         if (err.toString() !== "Error: Cont. Error") {
           console.error(err);
@@ -89,6 +77,7 @@ var baseTransforms = [
         domutils.appendChild(node, link[0]);
         domutils.appendChild(node, link[1]);
         domutils.appendChild(node, link[2]);
+
         return Cont.unit();
       });
     }
@@ -108,7 +97,11 @@ var baseTransforms = [
 				</div>
         `.trim())
       ).bind(link => {
-        domutils.prepend(node.children[0], link[0]);
+        if (node.children.length) {
+          domutils.prepend(node.children[0], link[0]);
+        } else {
+          domutils.appendChild(node, link[0]);
+        }
         return Cont.unit();
       });
     }
@@ -198,24 +191,17 @@ function streamFromString(str) {
 
 function tranverse(root, callback) {
   var stack = Array.isArray(root) ? root.concat([]) : [root];
+  stack.push({ __end: true });
   stack.reverse();
+
   var node;
   while (stack.length) {
     node = stack.pop();
-    if (!node.sentinel) {
-      callback && callback(null, { stage: "pre", node: node, root: root });
-    } else {
-      callback &&
-        callback(null, { stage: "post", node: node.sentinel, root: root });
-    }
+    callback && callback(null, { node: node, root: root });
+
     if (node && Array.isArray(node.children)) {
       node.children.forEach(function(child) {
         stack.push(child);
-      });
-    }
-    if (!node.sentinel) {
-      stack.push({
-        sentinel: node
       });
     }
   }
