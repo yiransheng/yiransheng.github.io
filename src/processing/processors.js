@@ -52,7 +52,7 @@ function html(inputStream, opts, callback) {
         if (data) {
           setTimeout(() => {
             callback(null, domutils.getOuterHTML(data));
-          }, 200);
+          }, 1000);
         }
       } else {
         if (err.toString() !== "Error: Cont. Error") {
