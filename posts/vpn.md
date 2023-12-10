@@ -1,7 +1,7 @@
 ---
 title: "Write a Toy VPN in Rust"
 author: "Yiran Sheng"
-date: "11/12/2023"
+date: "12/11/2023"
 output:
   html_document:
     toc: true
@@ -11,7 +11,7 @@ output:
 ## The First Step
 
 
-### Preliminaries
+### Preliminaries: Environment Setup
 
 Before we dive into the heart of our toy VPN application, let's set the stage. Picture this: you've got a shiny VPN application, but how do you know it really works? Testing it in the wilds of the internet is like learning to swim by jumping into the deep end – possible, but probably not a great idea. So, we're going to start by simulating a more controlled environment.
 
@@ -182,7 +182,7 @@ A `Peer` for now is just a wrapper around its endpoint, which is an `Option<Sock
 
 To explain why `endpoint` is an `Option`, on the server side, our VPN application boots up without knowledge of its peer's IP address. This mirrors common real-world VPN scenarios where the server has a known public IP, but the client IPs, often home computers, are dynamically assigned by ISPs and not static. Consequently, clients must initiate the contact. When the server receives incoming connection attempts from clients (in our minimal setup, a single client), it responds and decides whether to authorize or reject these connections. Only after this handshake does a steady state emerge, with both the client and server aware of each other's addresses, allowing for the free flow of data packets.
 
-### Two loops
+### Two main loops
 
 The core logic of our application revolves around two essential loops:
 
@@ -408,7 +408,7 @@ A checkpoint of `wontun` can be browsed at: [Github link](https://github.com/yir
 
 With a proof of concept implemented, we are now ready to move on for some architecture improvements. Our end goal is to support a multitude of peers and intricate routing mechanisms (like `wireguard`).  To accomplish that, the VPN application likely needs to manage an unbounded set of UDP connections (there will still be only one `tun` interface however). The current implementation, spawning two threads per peer, is charmingly simple but, let's face it, not quite fit for the big leagues in terms of scalability. Enter `epoll` and non-blocking IO—our tools of choice for the next phase. We will not be changing the application's behavior just yet, instead our goal is to replace the two main loops with a single `epoll` backed event loop.
 
-### A Preview
+### Quick Preview
 
 We will cover the following topics in this section:
 
@@ -493,7 +493,7 @@ To avoid unsafe code, our `wontun` application will utilize a tailor-made `Token
 
 Finally, for sending data through `UdpSocket` and `Iface`, it's worth noting that these operations are generally non-blocking. To keep our implementation straightforward, we will register only read interests (`EPOLLIN`) with `epoll`. Consequently, data sending will occur directly within the read handlers, simplifying the logic and avoiding the need for managing writable state or additional `epoll` flags for output operations. This choice helps streamline the event handling process, focusing on efficiently managing incoming data and responding promptly.
 
-### The `Poll` wrapper
+### The `Poll` Wrapper
 
 We introduce the `Poll` wrapper, a crucial component for managing `epoll` interactions more effectively. We utilize the `nix` crate, which provides a safe interface to the underlying `epoll` system calls in Linux. The wrapper we build around `nix::sys::epoll::Epoll` is designed to simplify our interactions with `epoll`.
 
@@ -588,5 +588,293 @@ impl Poll {
 
 As you can tell, there isn't all that much going on. We just wrap the original `new`, `add`, `delete` and `wait` methods with trivial type conversions added. The small customizations are:
 
-* In `wait`, wait for one event at a time (`epoll_wait` sys cal can return a list of ready events using the out parameter pattern through the`&mut events` argument)
+* In `wait`, wait for one event at a time (`epoll_wait` sys call can return a list of ready events using the out parameter pattern through the`&mut events` argument)
 * Use a `Token` type for event identification as explained previously
+
+
+### Revised `Device` Type
+
+It's time for the core types from the first section to get an upgrade:
+
+```rust
+pub struct Device {
+    udp: Arc<UdpSocket>,
+    iface: Iface,
+    peer: Peer,
+    poll: Poll,
+
+    use_connected_peer: bool,
+    listen_port: u16,
+}
+
+pub struct Peer {
+    endpoint: RwLock<Endpoint>,
+}
+
+#[derive(Default)]
+pub struct Endpoint {
+    pub addr: Option<SocketAddrV4>,
+    pub conn: Option<Arc<UdpSocket>>,
+}
+
+```
+
+Some key changes:
+
+1. **Incorporating `Poll`**: The `Device` now includes a `Poll` instance, allowing it to interact efficiently with the `epoll` mechanism.
+2. **Enhanced Endpoint Type**: Previously, an endpoint was simply represented as an `Option<SocketAddrV4>`. Now, it's a full-fledged `Endpoint` struct, accommodating an additional field `conn: Option<Arc<UdpSocket>>`.
+3. **Use of Arc and RwLock**: The introduction of `Arc` (Atomic Reference Counting) and `RwLock` (Read-Write Lock) indicates a shift towards thread-safe operations. 
+
+The big picture idea is the concept of using a "connected peer". This applies to `wontun` on the server side. Previously, we used a single `UdpSocket` for receiving and sending data, this is possible because `UdpSocket`s are connectionless. Now, once a client peer connects to the server, we shall open a new `UdpSocket` and connect it to the client's (public) IP address and port.
+
+In networking, UDP sockets can operate in two modes: connected and disconnected (or bind-only).
+
+- **Disconnected/Bind-Only UDP Sockets**: These are the traditional form of UDP sockets. They are not connected to a specific remote address. Instead, each I/O operation on the socket requires specifying the target address for sending data. This mode is flexible as it allows a single socket to communicate with multiple peers, but it requires the application to manage the mapping between messages and their destinations or sources.
+- **Connected UDP Sockets**: When a UDP socket is "connected" to a specific remote address and port, it can **only send to and receive from that particular address**. This restriction simplifies the I/O operations since the target/source address need not be specified with each operation. For `wontun` on the server side, this approach means that once a client establishes a connection, the server opens a new, dedicated UDP socket connected to the client's public IP and port. This setup streamlines communication with individual clients, once we start introducing more peers into the system, this setup would greatly simply state management and packet routing.
+
+In conclusion, now for each `Device` instance, there will be three IO resources in the loop: the `tun` interface, a disconnected `UdpSocket` to handle the initial client handshake, and a connected peer `UdpSocket` to transmit subsequent data packets over.
+
+### Port Reuse
+
+With the introduction of a second `UdpSocket` in our system, we encounter a challenge: we have only one port available for listening. Attempting to bind another `UdpSocket` to this same port would normally result in an `EADDRINUSE` IO error. A solution exists in the form of port reuse, enabled by the `SO_REUSEADDR` socket option.
+
+`SO_REUSEADDR` is a socket option that influences how the underlying operating system manages socket bindings, particularly regarding address and port reuse. System Calls Associated with `SO_REUSEADDR`:
+
+1. **setsockopt**: This is the primary system call used to enable the `SO_REUSEADDR` option on a socket. It's used to set options at the socket level and is called after socket creation but before binding the socket to an address with `bind`.
+2. **bind**: This system call assigns a local protocol address to a socket. With `SO_REUSEADDR` enabled, the `bind` call allows a new socket to be bound to a port already in use by another socket.
+
+The standard Rust `UdpSocket` library doesn't directly support `SO_REUSEADDR`, so we turn to the [`socket2`](https://crates.io/crates/socket2) crate for this functionality. Here's how it's done:
+
+```rust
+fn new_udp_socket(port: u16) -> io::Result<UdpSocket> {
+    let socket_addr = SocketAddr::from(([0, 0, 0, 0], port));
+
+    let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
+
+    socket.set_reuse_address(true)?;
+    socket.set_nonblocking(true)?;
+
+    socket.bind(&socket_addr.into())?;
+
+    Ok(socket.into())
+}
+
+impl Peer {
+    fn connect_endpoint(&self, port: u16) -> io::Result<Arc<UdpSocket>> {
+        let mut endpoint = self.endpoint.write();
+        let addr = endpoint.addr.unwrap();
+
+        assert!(endpoint.conn.is_none());
+
+        let conn = new_udp_socket(port)?;
+        conn.connect(addr)?;
+        let conn = Arc::new(conn);
+
+        endpoint.conn = Some(Arc::clone(&conn));
+
+        Ok(conn)
+    }
+}
+```
+
+Note there's a modern alternative to `SO_REUSEADDR` in Linux kernel >=3.9 that is `SO_REUSEPORT`, which does a bit more magic:
+
+> For UDP sockets, it tries to distribute datagrams evenly, for TCP listening sockets, it tries to distribute incoming connect requests (those accepted by calling `accept()`) evenly across all the sockets that share the same address and port combination.
+
+Source: https://stackoverflow.com/questions/14388706/how-do-so-reuseaddr-and-so-reuseport-differ
+
+The `socket2`'s `set_reuse_address` api supports `SO_REUSEADDR` only. If desired, we can invoke `setsockopt` sys call on the `socket2::Socket`'s file descriptor directly. For now `SO_REUSEADDR` will do, we just need to make sure our handlers for either `UdpSocket` can handle incoming datagrams correctly.
+
+### The Startup and the Handlers
+
+```rust
+pub fn start(&self) -> io::Result<()> {
+    self.poll
+        .register_read(Token::Sock(SockID::Disconnected), self.udp.as_ref())?;
+
+    let tun_fd = unsafe { BorrowedFd::borrow_raw(self.iface.as_raw_fd()) };
+    self.poll.register_read::<_, SockID>(Token::Tun, &tun_fd)?;
+
+    self.initiate_handshake()
+}
+```
+
+Upon initialization, the `Device` is configured with a listening `UdpSocket` (`self.udp`) and a `tun` interface (`self.iface`). Both of these are registered with the `epoll` instance (`self.poll`) to monitor for readable events. This setup ensures that our application is immediately ready to handle incoming data on both the `tun` interface and the UDP socket.
+
+The handler for reading from `self.iface` is similar to the code we had at POC stage (it is helpful to refer back to the [event loop](#quick-preview) shown earlier for details on how we call this handler): 
+
+```rust
+fn handle_tun(&self, thread_data: &mut ThreadData) -> io::Result<()> {
+    let buf = &mut thread_data.src_buf[..];
+    while let Ok(nbytes) = self.iface.recv(buf) {
+        let endpoint = self.peer.endpoint();
+        // ignore send errors
+        let _send_result = if let Some(ref conn) = endpoint.conn {
+            conn.send(&buf[..nbytes])
+        } else if let Some(ref addr) = endpoint.addr {
+            self.udp.send_to(&buf[..nbytes], addr)
+        } else {
+            Ok(0)
+        };
+    }
+
+    Ok(())
+}
+```
+
+If our peer is connected, we prefer to send data over the connected `UdpSocket`. Otherwise, we will use the main listening socket `self.udp` and a `send_to` call.
+
+Handling incoming data from a connected peer's `UdpSocket` is also straightforward:
+
+```rust
+fn handle_connected_peer(
+    &self,
+    sock: &UdpSocket,
+    thread_data: &mut ThreadData,
+) -> io::Result<()> {
+    let buf = &mut thread_data.src_buf[..];
+    while let Ok(nbytes) = sock.recv(&mut buf[..]) {
+        let _ = self.iface.send(&buf[..nbytes]);
+    }
+
+    Ok(())
+}
+```
+
+Handling incoming data from the default, disconnected socket is a bit more involved:
+
+```rust
+fn handle_udp(&self, sock: &UdpSocket, thread_data: &mut ThreadData) -> io::Result<()> {
+    let buf = &mut thread_data.src_buf[..];
+    while let Ok((nbytes, peer_addr)) = sock.recv_from(&mut buf[..]) {
+        if let SocketAddr::V4(peer_addr_v4) = peer_addr {
+            if &buf[..nbytes] == b"hello?" {
+                eprintln!("received handshake..");
+
+                let (endpoint_changed, conn) = self.peer.set_endpoint(peer_addr_v4);
+                if let Some(conn) = conn {
+                    self.poll.delete(conn.as_ref()).expect("epoll delete");
+                    drop(conn);
+                }
+
+                if endpoint_changed && self.use_connected_peer {
+                    match self.peer.connect_endpoint(self.listen_port) {
+                        Ok(conn) => {
+                            self.poll
+                            .register_read(Token::Sock(SockID::ConnectedPeer), &*conn)
+                            .expect("epoll add");
+                        }
+                        Err(err) => {
+                            eprintln!("error connecting to peer: {:?}", err);
+                        }
+                    }
+                }
+                continue;
+            }
+            let _ = self.iface.send(&buf[..nbytes]);
+        }
+    }
+
+    Ok(())
+}
+```
+
+The primary task here is to manage the handshake process, marked by a simple "hello?" message. The function retrieves the client's IP address and updates the peer endpoint accordingly. If the application is configured to use a connected socket (`self.use_connected_peer`), it establishes a new connected `UdpSocket` for the peer, enhancing the efficiency of the communication channel. Key points:
+
+* The `recv_from` call captures the client's address (`peer_addr_v4`), enabling the server to respond appropriately. 
+* Next, the call to `self.peer.set_endpoint` update's the peer endpoint address, and returns if it had a different address and a previous connected `UdpSocket` is any.
+  * This is the reason we introduced a `RwLock` in `Peer.endpoint`, we need write access to `&self.peer` here, accommodating dynamic changes in the connected client's address.
+  * If a prior `endpoint.conn` exists, we remove it from the `epoll` set and `drop` it.
+* If the device is configured to use connected socket (`self.use_connected_peer`), we create a connected `UdpSocket` (returned from `peer.connect_endpoint` call), reusing the same listening port configured on the device.
+  * And we add this newly created `UdpSocket` to `self.epoll` set.
+  * Note we use a `Token::Sock(SockID::ConnectedPeer)` to register the read interest, to distinguish from the `Token::Sock(SockID::Disconnected)` for the default listening `UdpSocket` registered in startup code (`start` method).
+
+### That's all and the Final Code
+
+```rust
+impl Device {
+    pub fn new(config: DeviceConfig) -> io::Result<Self> {
+        // ... omitted
+    }
+
+    pub fn wait(&self) {
+        let mut t = ThreadData {
+            src_buf: [0; BUF_SIZE],
+        };
+
+        while let Ok(token) = self.poll.wait() {
+            match token {
+                Token::Tun => {
+                    if let Err(err) = self.handle_tun(&mut t) {
+                        eprintln!("tun error: {:?}", err);
+                    }
+                }
+                Token::Sock(SockID::Disconnected) => {
+                    if let Err(err) = self.handle_udp(&self.udp, &mut t) {
+                        eprintln!("udp error: {:?}", err);
+                    }
+                }
+                Token::Sock(SockID::ConnectedPeer) => {
+                    if let Some(conn) = self.peer.endpoint().conn.as_deref() {
+                        if let Err(err) = self.handle_connected_peer(conn, &mut t) {
+                            eprintln!("udp error: {:?}", err);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn start(&self) -> io::Result<()> {
+        // omitted...
+    }
+    
+    fn handle_tun(&self, thread_data: &mut ThreadData) -> io::Result<()> {
+        // omitted...
+    }
+
+    fn handle_connected_peer(
+        &self,
+        sock: &UdpSocket,
+        thread_data: &mut ThreadData,
+    ) -> io::Result<()> {
+        // omitted...
+    }
+    
+    fn handle_udp(&self, sock: &UdpSocket, thread_data: &mut ThreadData) -> io::Result<()> {
+        // omitted...
+    }
+    
+    fn initiate_handshake(&self) -> io::Result<()> {
+        let msg = b"hello?";
+
+        let endpoint = self.peer.endpoint();
+        if let Some(ref conn) = endpoint.conn {
+            conn.send(msg)?;
+        } else if let Some(ref addr) = endpoint.addr {
+            self.udp.send_to(msg, addr)?;
+        };
+
+        Ok(())
+    }
+}
+```
+
+```rust
+fn run(peer: Option<SocketAddrV4>) -> io::Result<()> {
+    let conf = DeviceConfig::new(
+        /* use_connected_peer: */ peer.is_none(),
+        /* listen_port: */ 19988, 
+        /* tun_name: */ "tun0",
+        /* peer_addr: */ peer
+    );
+
+    let dev = Device::new(conf)?;
+    dev.start()?;
+    dev.wait();
+
+    Ok(())
+}
+```
+
+Use the same setup and shell scripts as [before](#put-it-all-together), we can verify things are still in working condition. We have successfully refactored `wontun` to use `epoll` and connected sockets. A checkpoint of `wontun` can be browsed at: [Github link](https://github.com/yiransheng/wontun/tree/a6a5306c4f91203713c52736f29caa474083a8fe).
