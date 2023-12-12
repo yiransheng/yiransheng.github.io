@@ -456,7 +456,7 @@ pub fn wait(&self) {
 
 ### Epoll Basics
 
-`epoll` is an I/O event notification facility in Linux, designed to efficiently monitor multiple file descriptors. It's especially useful in applications where you need to handle numerous simultaneous socket connections.
+`epoll` is an IO event notification facility in Linux, designed to efficiently monitor multiple file descriptors. It's especially useful in applications where you need to handle numerous simultaneous socket connections.
 
 At its core, `epoll` operates using three main system calls:
 
@@ -466,24 +466,14 @@ At its core, `epoll` operates using three main system calls:
 
 The `epoll` [man page](// https://man7.org/linux/man-pages/man7/epoll.7.html) is fairly comprehensive and relatively easy to follow, please give it a read.
 
-In applications using `epoll`, a central event loop continuously calls `epoll_wait` to monitor for events. When an event occurs, such as a `UdpSocket` becoming readable, the application executes relevant non-blocking I/O operations on the corresponding file descriptor.
-
-The event data in `epoll` is encapsulated in a `struct epoll_event`, which contains two key pieces of information:
-
-1. **epoll_event.event**: This field holds the `epoll` flags, which signal the type of event. Common flags include `EPOLLIN` for readability and `EPOLLOUT` for writability of a file descriptor.
-2. **data**: This is a user-defined `u64` value, set during the `epoll_ctl` call and returned by `epoll_wait`. It helps the application identify which file descriptor or resource the event is associated with.
-
-Traditionally, in languages like C, the `epoll_event.data` is often used to store a pointer to a callback function that should be executed in response to the event. However, in Rust, this approach would require unsafe code to cast a `Box<dyn FnMut(_)>` to and from a `u64`, which can be risky and complex.
-
-
-In applications using `epoll`, a central event loop continuously calls `epoll_wait` to monitor for events. When an event occurs, such as a `UdpSocket` becoming readable, the application executes relevant non-blocking I/O operations on the corresponding file descriptor.
-
 ### Understanding `epoll_event`
 
+In applications using `epoll`, a central event loop continuously calls `epoll_wait` to monitor for events. When an event occurs, such as a `UdpSocket` becoming readable, the application executes relevant non-blocking IO operations on the corresponding file descriptor.
+
 The event data in `epoll` is encapsulated in a `struct epoll_event`, which contains two key pieces of information:
 
 1. **epoll_event.event**: This field holds the `epoll` flags, which signal the type of event. Common flags include `EPOLLIN` for readability and `EPOLLOUT` for writability of a file descriptor.
-2. **data**: This is a user-defined `u64` value, set during the `epoll_ctl` call and returned by `epoll_wait`. It helps the application identify which file descriptor or resource the event is associated with.
+2. **epoll_event.data**: This is a user-defined `u64` value, set during the `epoll_ctl` call and returned by `epoll_wait`. It helps the application identify which file descriptor or resource the event is associated with.
 
 ### Handling Callbacks in Rust
 
@@ -629,8 +619,8 @@ The big picture idea is the concept of using a "connected peer". This applies to
 
 In networking, UDP sockets can operate in two modes: connected and disconnected (or bind-only).
 
-- **Disconnected/Bind-Only UDP Sockets**: These are the traditional form of UDP sockets. They are not connected to a specific remote address. Instead, each I/O operation on the socket requires specifying the target address for sending data. This mode is flexible as it allows a single socket to communicate with multiple peers, but it requires the application to manage the mapping between messages and their destinations or sources.
-- **Connected UDP Sockets**: When a UDP socket is "connected" to a specific remote address and port, it can **only send to and receive from that particular address**. This restriction simplifies the I/O operations since the target/source address need not be specified with each operation. For `wontun` on the server side, this approach means that once a client establishes a connection, the server opens a new, dedicated UDP socket connected to the client's public IP and port. This setup streamlines communication with individual clients, once we start introducing more peers into the system, this setup would greatly simply state management and packet routing.
+- **Disconnected/Bind-Only UDP Sockets**: These are the traditional form of UDP sockets. They are not connected to a specific remote address. Instead, each IO operation on the socket requires specifying the target address for sending data. This mode is flexible as it allows a single socket to communicate with multiple peers, but it requires the application to manage the mapping between messages and their destinations or sources.
+- **Connected UDP Sockets**: When a UDP socket is "connected" to a specific remote address and port, it can **only send to and receive from that particular address**. This restriction simplifies the IO operations since the target/source address need not be specified with each operation. For `wontun` on the server side, this approach means that once a client establishes a connection, the server opens a new, dedicated UDP socket connected to the client's public IP and port. This setup streamlines communication with individual clients, once we start introducing more peers into the system, this setup would greatly simply state management and packet routing.
 
 In conclusion, now for each `Device` instance, there will be three IO resources in the loop: the `tun` interface, a disconnected `UdpSocket` to handle the initial client handshake, and a connected peer `UdpSocket` to transmit subsequent data packets over.
 

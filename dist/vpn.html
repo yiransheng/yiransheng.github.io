@@ -11,7 +11,7 @@
 
 <meta name="author" content="Yiran Sheng">
 
-<meta name="date" content="2023-11-12">
+<meta name="date" content="2023-12-11">
 
 <title>Write a Toy VPN in Rust</title>
 
@@ -78,7 +78,7 @@
 
 <h1 class="title toc-ignore">Write a Toy VPN in Rust</h1>
 <h4 class="author">Yiran Sheng</h4>
-<h4 class="date">11/12/2023</h4>
+<h4 class="date">12/11/2023</h4>
 
 </div>
 
@@ -894,7 +894,7 @@ this <code>wait</code> loop in multiple threads concurrently</li>
 </div>
 <div id="epoll-basics" class="section level3">
 <h3>Epoll Basics</h3>
-<p><code>epoll</code> is an I/O event notification facility in Linux,
+<p><code>epoll</code> is an IO event notification facility in Linux,
 designed to efficiently monitor multiple file descriptors. It’s
 especially useful in applications where you need to handle numerous
 simultaneous socket connections.</p>
@@ -919,37 +919,14 @@ and the associated file descriptor.</li>
 <p>The <code>epoll</code> <a href="//%20https://man7.org/linux/man-pages/man7/epoll.7.html">man
 page</a> is fairly comprehensive and relatively easy to follow, please
 give it a read.</p>
-<p>In applications using <code>epoll</code>, a central event loop
-continuously calls <code>epoll_wait</code> to monitor for events. When
-an event occurs, such as a <code>UdpSocket</code> becoming readable, the
-application executes relevant non-blocking I/O operations on the
-corresponding file descriptor.</p>
-<p>The event data in <code>epoll</code> is encapsulated in a
-<code>struct epoll_event</code>, which contains two key pieces of
-information:</p>
-<ol style="list-style-type: decimal">
-<li><strong>epoll_event.event</strong>: This field holds the
-<code>epoll</code> flags, which signal the type of event. Common flags
-include <code>EPOLLIN</code> for readability and <code>EPOLLOUT</code>
-for writability of a file descriptor.</li>
-<li><strong>data</strong>: This is a user-defined <code>u64</code>
-value, set during the <code>epoll_ctl</code> call and returned by
-<code>epoll_wait</code>. It helps the application identify which file
-descriptor or resource the event is associated with.</li>
-</ol>
-<p>Traditionally, in languages like C, the <code>epoll_event.data</code>
-is often used to store a pointer to a callback function that should be
-executed in response to the event. However, in Rust, this approach would
-require unsafe code to cast a <code>Box&lt;dyn FnMut(_)&gt;</code> to
-and from a <code>u64</code>, which can be risky and complex.</p>
-<p>In applications using <code>epoll</code>, a central event loop
-continuously calls <code>epoll_wait</code> to monitor for events. When
-an event occurs, such as a <code>UdpSocket</code> becoming readable, the
-application executes relevant non-blocking I/O operations on the
-corresponding file descriptor.</p>
 </div>
 <div id="understanding-epoll_event" class="section level3">
 <h3>Understanding <code>epoll_event</code></h3>
+<p>In applications using <code>epoll</code>, a central event loop
+continuously calls <code>epoll_wait</code> to monitor for events. When
+an event occurs, such as a <code>UdpSocket</code> becoming readable, the
+application executes relevant non-blocking IO operations on the
+corresponding file descriptor.</p>
 <p>The event data in <code>epoll</code> is encapsulated in a
 <code>struct epoll_event</code>, which contains two key pieces of
 information:</p>
@@ -958,10 +935,10 @@ information:</p>
 <code>epoll</code> flags, which signal the type of event. Common flags
 include <code>EPOLLIN</code> for readability and <code>EPOLLOUT</code>
 for writability of a file descriptor.</li>
-<li><strong>data</strong>: This is a user-defined <code>u64</code>
-value, set during the <code>epoll_ctl</code> call and returned by
-<code>epoll_wait</code>. It helps the application identify which file
-descriptor or resource the event is associated with.</li>
+<li><strong>epoll_event.data</strong>: This is a user-defined
+<code>u64</code> value, set during the <code>epoll_ctl</code> call and
+returned by <code>epoll_wait</code>. It helps the application identify
+which file descriptor or resource the event is associated with.</li>
 </ol>
 </div>
 <div id="handling-callbacks-in-rust" class="section level3">
@@ -1250,7 +1227,7 @@ disconnected (or bind-only).</p>
 <ul>
 <li><strong>Disconnected/Bind-Only UDP Sockets</strong>: These are the
 traditional form of UDP sockets. They are not connected to a specific
-remote address. Instead, each I/O operation on the socket requires
+remote address. Instead, each IO operation on the socket requires
 specifying the target address for sending data. This mode is flexible as
 it allows a single socket to communicate with multiple peers, but it
 requires the application to manage the mapping between messages and
@@ -1258,14 +1235,14 @@ their destinations or sources.</li>
 <li><strong>Connected UDP Sockets</strong>: When a UDP socket is
 “connected” to a specific remote address and port, it can <strong>only
 send to and receive from that particular address</strong>. This
-restriction simplifies the I/O operations since the target/source
-address need not be specified with each operation. For
-<code>wontun</code> on the server side, this approach means that once a
-client establishes a connection, the server opens a new, dedicated UDP
-socket connected to the client’s public IP and port. This setup
-streamlines communication with individual clients, once we start
-introducing more peers into the system, this setup would greatly simply
-state management and packet routing.</li>
+restriction simplifies the IO operations since the target/source address
+need not be specified with each operation. For <code>wontun</code> on
+the server side, this approach means that once a client establishes a
+connection, the server opens a new, dedicated UDP socket connected to
+the client’s public IP and port. This setup streamlines communication
+with individual clients, once we start introducing more peers into the
+system, this setup would greatly simply state management and packet
+routing.</li>
 </ul>
 <p>In conclusion, now for each <code>Device</code> instance, there will
 be three IO resources in the loop: the <code>tun</code> interface, a
