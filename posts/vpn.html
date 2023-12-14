@@ -1669,6 +1669,8 @@ Overview</a></li>
 Identities</a></li>
 <li><a href="#the-dual-purposes-of-allowedips" id="toc-the-dual-purposes-of-allowedips">The Dual Purposes of
 <code>AllowedIPs</code></a></li>
+<li><a href="#peer-selection" id="toc-peer-selection"><code>Peer</code>
+Selection</a></li>
 </ul></li>
 </ul>
 </div>
@@ -2953,6 +2955,73 @@ destination address.</li>
 Ensures that incoming packets are from an allowed source before
 forwarding them to the <code>tun</code> interface.</li>
 </ol>
+<p>And we are ready to state our second problem: <code>Peer</code>
+selection for IO events on both <code>tun</code> and
+<code>UdpSocket</code>s, which we will address first in the next
+sub-section.</p>
+</div>
+<div id="peer-selection" class="section level3">
+<h3><code>Peer</code> Selection</h3>
+<p>For outgoing traffic, we make the following changes to our
+<code>Device</code> type:</p>
+<pre class="rust"><code>struct Device {
+    // ...
+    peers_by_ip: AllowedIps&lt;Arc&lt;Peer&gt;&gt;,
+}</code></pre>
+<p>In <code>handle_tun</code>:</p>
+<pre class="rust"><code>fn handle_tun(&amp;self, thread_data: &amp;mut ThreadData) -&gt; io::Result&lt;()&gt; {
+    let src_buf = &amp;mut thread_data.src_buf[..];
+    while let Ok(nbytes) = self.iface.recv(src_buf) {
+        let (src, dst) = match etherparse::Ipv4HeaderSlice::from_slice(&amp;src_buf[..nbytes]) {
+            Ok(iph) =&gt; {
+                let src = iph.source_addr();
+                let dst = iph.destination_addr();
+                (src, dst)
+            }
+            _ =&gt; continue,
+        };
+        let Some(peer) = self.peers_by_ip.get(dst.into()) else {
+            continue;
+        };
+        todo!(&quot;use peer&quot;);
+    }
+
+    Ok(())
+}</code></pre>
+<p>For incoming traffic,</p>
+<pre class="rust"><code>struct Device {
+    // ...
+    peers_by_index: Vec&lt;Arc&lt;Peer&gt;&gt;,
+}</code></pre>
+<p>…and make changes to <code>handle_udp</code>:</p>
+<pre class="rust"><code>
+fn handle_udp(&amp;self, sock: &amp;UdpSocket, thread_data: &amp;mut ThreadData) -&gt; io::Result&lt;()&gt; {
+    let src_buf = &amp;mut thread_data.src_buf[..];
+    while let Ok((nbytes, peer_addr)) = sock.recv_from(&amp;mut src_buf[..]) {
+        let SocketAddr::V4(peer_addr) = peer_addr else {
+            // Ipv4 only
+            continue;
+        };
+        let Ok(packet) = Packet::parse_from(&amp;src_buf[..nbytes]) else {
+            continue;
+        };
+        let peer = match packet {
+            // ... other variants of our new protocol
+            Packet::Data(ref msg) =&gt; {
+                self.peers_by_index.get(msg.sender_idx as usize)
+            }
+        };
+        let Some(peer) = peer else {
+            continue;
+        };
+        todo!(&quot;use peer&quot;)
+    }
+    
+    Ok(())
+}</code></pre>
+<p>OK, now it is time to dive into the proposed <code>Packet</code>
+<code>enum</code> and design a new VPN protocol that addresses both of
+our problems outline in previous sub-sections.</p>
 </div>
 </div>
 

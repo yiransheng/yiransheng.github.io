@@ -1048,3 +1048,82 @@ To summarize, `AllowedIPs` in our VPN application achieves two key objectives:
 
 1. **Peer Selection for Outgoing Packets**: Determines which peer an outgoing IP packet should be routed to based on its destination address.
 2. **Source Address Filtering for Incoming Packets**: Ensures that incoming packets are from an allowed source before forwarding them to the `tun` interface.
+
+And we are ready to state our second problem: `Peer` selection for IO events on both `tun` and `UdpSocket`s, which we will address first in the next sub-section.
+
+### `Peer` Selection
+
+For outgoing traffic, we make the following changes to our `Device` type:
+
+```rust
+struct Device {
+    // ...
+    peers_by_ip: AllowedIps<Arc<Peer>>,
+}
+```
+
+In `handle_tun`:
+
+```rust
+fn handle_tun(&self, thread_data: &mut ThreadData) -> io::Result<()> {
+    let src_buf = &mut thread_data.src_buf[..];
+    while let Ok(nbytes) = self.iface.recv(src_buf) {
+        let (src, dst) = match etherparse::Ipv4HeaderSlice::from_slice(&src_buf[..nbytes]) {
+            Ok(iph) => {
+                let src = iph.source_addr();
+                let dst = iph.destination_addr();
+                (src, dst)
+            }
+            _ => continue,
+        };
+        let Some(peer) = self.peers_by_ip.get(dst.into()) else {
+            continue;
+        };
+        todo!("use peer");
+    }
+
+    Ok(())
+}
+```
+
+For incoming traffic, 
+
+```rust
+struct Device {
+    // ...
+    peers_by_index: Vec<Arc<Peer>>,
+}
+```
+
+...and make changes to `handle_udp`:
+
+```rust
+
+fn handle_udp(&self, sock: &UdpSocket, thread_data: &mut ThreadData) -> io::Result<()> {
+    let src_buf = &mut thread_data.src_buf[..];
+    while let Ok((nbytes, peer_addr)) = sock.recv_from(&mut src_buf[..]) {
+        let SocketAddr::V4(peer_addr) = peer_addr else {
+            // Ipv4 only
+            continue;
+        };
+        let Ok(packet) = Packet::parse_from(&src_buf[..nbytes]) else {
+            continue;
+        };
+        let peer = match packet {
+            // ... other variants of our new protocol
+            Packet::Data(ref msg) => {
+                self.peers_by_index.get(msg.sender_idx as usize)
+            }
+        };
+        let Some(peer) = peer else {
+            continue;
+        };
+        todo!("use peer")
+    }
+    
+    Ok(())
+}
+```
+
+OK, now it is time to dive into the proposed `Packet` `enum` and design a new VPN protocol that addresses both of our problems outline in previous sub-sections.
+
