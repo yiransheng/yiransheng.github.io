@@ -1671,6 +1671,14 @@ Identities</a></li>
 <code>AllowedIPs</code></a></li>
 <li><a href="#peer-selection" id="toc-peer-selection"><code>Peer</code>
 Selection</a></li>
+<li><a href="#the-protocol" id="toc-the-protocol">The Protocol</a></li>
+<li><a href="#delegation-of-responsibilities-peer-vs.-device" id="toc-delegation-of-responsibilities-peer-vs.-device">Delegation of
+Responsibilities: <code>Peer</code> vs. <code>Device</code></a></li>
+<li><a href="#driving-the-state-machine" id="toc-driving-the-state-machine">Driving the State Machine</a></li>
+<li><a href="#parse-configurations" id="toc-parse-configurations">Parse
+Configurations</a></li>
+<li><a href="#updated-main-function" id="toc-updated-main-function">Updated <code>main</code>
+function</a></li>
 </ul></li>
 </ul>
 </div>
@@ -3033,7 +3041,509 @@ fn handle_udp(&amp;self, sock: &amp;UdpSocket, thread_data: &amp;mut ThreadData)
 }</code></pre>
 <p>OK, now it is time to dive into the proposed <code>Packet</code>
 <code>enum</code> and design a new VPN protocol that addresses both of
-our problems outline in previous sub-sections.</p>
+our problems outlined in previous sub-sections.</p>
+</div>
+<div id="the-protocol" class="section level3">
+<h3>The Protocol</h3>
+<p>Without further ado, here’s a state machine diagram for our simple
+protocol (yet a huge step up from the a single “hello?” message). The
+solid edges indicate state transitions and are labeled with the
+associated events that triggers them. The dotted edges point to a side
+effect or local mutation when the associated state is first transitioned
+to.</p>
+<p><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj48IS0tIEdlbmVyYXRlZCBieSBncmFwaHZpeiB2ZXJzaW9uIDIuNDAuMSAoMjAxNjEyMjUuMDMwNCkKIC0tPjwhLS0gVGl0bGU6IGZpbml0ZV9zdGF0ZV9tYWNoaW5lIFBhZ2VzOiAxIC0tPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgd2lkdGg9IjU5NHB0IiBoZWlnaHQ9IjU2N3B0IiB2aWV3Qm94PSIwLjAwIDAuMDAgNTk0LjAxIDU2Ni43MCI+CjxnIGlkPSJncmFwaDAiIGNsYXNzPSJncmFwaCIgdHJhbnNmb3JtPSJzY2FsZSgxIDEpIHJvdGF0ZSgwKSB0cmFuc2xhdGUoNCA1NjIuNzAyMykiPgo8dGl0bGU+ZmluaXRlX3N0YXRlX21hY2hpbmU8L3RpdGxlPgo8cG9seWdvbiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9InRyYW5zcGFyZW50IiBwb2ludHM9Ii00LDQgLTQsLTU2Mi43MDIzIDU5MC4wMTM1LC01NjIuNzAyMyA1OTAuMDEzNSw0IC00LDQiLz4KPCEtLSBOb25lIC0tPgo8ZyBpZD0ibm9kZTEiIGNsYXNzPSJub2RlIj4KPHRpdGxlPk5vbmU8L3RpdGxlPgo8ZWxsaXBzZSBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIGN4PSIyMTAuNDIwNSIgY3k9Ii01MjIuNzUwNyIgcng9IjMxLjkwODUiIHJ5PSIzMS45MDg1Ii8+CjxlbGxpcHNlIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgY3g9IjIxMC40MjA1IiBjeT0iLTUyMi43NTA3IiByeD0iMzUuOTAzMSIgcnk9IjM1LjkwMzEiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iMjEwLjQyMDUiIHk9Ii01MTguNTUwNyIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5Ob25lPC90ZXh0Pgo8L2c+CjwhLS0gSGFuZHNoYWtlU2VudCAtLT4KPGcgaWQ9Im5vZGUzIiBjbGFzcz0ibm9kZSI+Cjx0aXRsZT5IYW5kc2hha2VTZW50PC90aXRsZT4KPGVsbGlwc2UgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBjeD0iMTIxLjQyMDUiIGN5PSItMzQ0LjEzNCIgcng9IjcxLjIwOTQiIHJ5PSI3MS4yMDk0Ii8+Cjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjEyMS40MjA1IiB5PSItMzM5LjkzNCIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5IYW5kc2hha2VTZW50PC90ZXh0Pgo8L2c+CjwhLS0gTm9uZSYjNDU7Jmd0O0hhbmRzaGFrZVNlbnQgLS0+CjxnIGlkPSJlZGdlMSIgY2xhc3M9ImVkZ2UiPgo8dGl0bGU+Tm9uZS0mZ3Q7SGFuZHNoYWtlU2VudDwvdGl0bGU+CjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgZD0iTTE3Ny4wMjg3LC01MDguNzk4NkMxNjAuMTkxOCwtNDk5LjkzMDMgMTQxLjE4OSwtNDg2LjcxMjQgMTMwLjgwODksLTQ2OC43OTkyIDEyMy4yMjEyLC00NTUuNzA1IDExOS4wNzAzLC00NDAuNDk1NCAxMTcuMDQ3LC00MjUuMjk0MSIvPgo8cG9seWdvbiBmaWxsPSIjMDAwMDAwIiBzdHJva2U9IiMwMDAwMDAiIHBvaW50cz0iMTIwLjUyNjMsLTQyNC45MTIyIDExNi4wMDk5LC00MTUuMzI4MyAxMTMuNTYzOSwtNDI1LjYzNjkgMTIwLjUyNjMsLTQyNC45MTIyIi8+Cjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjIwMy43MjYzIiB5PSItNDU2LjE5OTIiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+U2VuZChQYWNrZXQ6OkhhbmRzaGFrZSk8L3RleHQ+CjwvZz4KPCEtLSBIYW5kc2hha2VSZWNlaXZlZCAtLT4KPGcgaWQ9Im5vZGU0IiBjbGFzcz0ibm9kZSI+Cjx0aXRsZT5IYW5kc2hha2VSZWNlaXZlZDwvdGl0bGU+CjxlbGxpcHNlIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgY3g9IjMyMS40MjA1IiBjeT0iLTM0NC4xMzQiIHJ4PSI4OS43MzA2IiByeT0iODkuNzMwNiIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSIzMjEuNDIwNSIgeT0iLTMzOS45MzQiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+SGFuZHNoYWtlUmVjZWl2ZWQ8L3RleHQ+CjwvZz4KPCEtLSBOb25lJiM0NTsmZ3Q7SGFuZHNoYWtlUmVjZWl2ZWQgLS0+CjxnIGlkPSJlZGdlMiIgY2xhc3M9ImVkZ2UiPgo8dGl0bGU+Tm9uZS0mZ3Q7SGFuZHNoYWtlUmVjZWl2ZWQ8L3RpdGxlPgo8cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIGQ9Ik0yNDAuNjM5MSwtNTAyLjk3MjRDMjUyLjc5MTcsLTQ5My43ODE1IDI2Ni4xMDMsLTQ4MS45Njg1IDI3NS40MjA1LC00NjguNzk5MiAyODEuNjk0NCwtNDU5LjkzMTcgMjg3LjIxNjYsLTQ1MC4xMDg3IDI5Mi4wNTEzLC00MzkuOTgxOCIvPgo8cG9seWdvbiBmaWxsPSIjMDAwMDAwIiBzdHJva2U9IiMwMDAwMDAiIHBvaW50cz0iMjk1LjM1NjcsLTQ0MS4xNjc1IDI5Ni4zLC00MzAuNjE0OCAyODguOTgxOCwtNDM4LjI3NiAyOTUuMzU2NywtNDQxLjE2NzUiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iMzU4LjExMDYiIHk9Ii00NTYuMTk5MiIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5SZWN2KFBhY2tldDo6SGFuZHNoYWtlKTwvdGV4dD4KPC9nPgo8IS0tIENvbm5lY3RlZCAtLT4KPGcgaWQ9Im5vZGUyIiBjbGFzcz0ibm9kZSI+Cjx0aXRsZT5Db25uZWN0ZWQ8L3RpdGxlPgo8ZWxsaXBzZSBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIGN4PSIxNjYuNDIwNSIgY3k9Ii0xNDUuMTM0NCIgcng9IjUyLjE4MTEiIHJ5PSI1Mi4xODExIi8+CjxlbGxpcHNlIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgY3g9IjE2Ni40MjA1IiBjeT0iLTE0NS4xMzQ0IiByeD0iNTYuMTY5MyIgcnk9IjU2LjE2OTMiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iMTY2LjQyMDUiIHk9Ii0xNDAuOTM0NCIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5Db25uZWN0ZWQ8L3RleHQ+CjwvZz4KPCEtLSBzZWxmLnNldF9yZW1vdGVfaWR4X2Zyb20oUGFja2V0OjpIYW5kU2hha2VSZXNwb25zZSkgLS0+CjxnIGlkPSJub2RlNiIgY2xhc3M9Im5vZGUiPgo8dGl0bGU+c2VsZi5zZXRfcmVtb3RlX2lkeF9mcm9tKFBhY2tldDo6SGFuZFNoYWtlUmVzcG9uc2UpPC90aXRsZT4KPHBvbHlnb24gZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBwb2ludHM9IjMzMi43NjE1LC0zNiAuMDc5NSwtMzYgLjA3OTUsMCAzMzIuNzYxNSwwIDMzMi43NjE1LC0zNiIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSIxNjYuNDIwNSIgeT0iLTEzLjgiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+c2VsZi5zZXRfcmVtb3RlX2lkeF9mcm9tKFBhY2tldDo6SGFuZFNoYWtlUmVzcG9uc2UpPC90ZXh0Pgo8L2c+CjwhLS0gQ29ubmVjdGVkJiM0NTsmZ3Q7c2VsZi5zZXRfcmVtb3RlX2lkeF9mcm9tKFBhY2tldDo6SGFuZFNoYWtlUmVzcG9uc2UpIC0tPgo8ZyBpZD0iZWRnZTYiIGNsYXNzPSJlZGdlIj4KPHRpdGxlPkNvbm5lY3RlZC0mZ3Q7c2VsZi5zZXRfcmVtb3RlX2lkeF9mcm9tKFBhY2tldDo6SGFuZFNoYWtlUmVzcG9uc2UpPC90aXRsZT4KPHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2UtZGFzaGFycmF5PSIxLDUiIGQ9Ik0xNjYuNDIwNSwtODguNjMxQzE2Ni40MjA1LC03My45NjE0IDE2Ni40MjA1LC01OC43ODM3IDE2Ni40MjA1LC00Ni4yNzUyIi8+Cjxwb2x5Z29uIGZpbGw9IiMwMDAwMDAiIHN0cm9rZT0iIzAwMDAwMCIgcG9pbnRzPSIxNjkuOTIwNiwtNDYuMDQ5NyAxNjYuNDIwNSwtMzYuMDQ5NyAxNjIuOTIwNiwtNDYuMDQ5NyAxNjkuOTIwNiwtNDYuMDQ5NyIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSIyNzIuNTUyNCIgeT0iLTU4LjIiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+IGlmIHRyYW5zaXRpb25lZF9mcm9tKEhhbmRzaGFrZVNlbnQpPC90ZXh0Pgo8L2c+CjwhLS0gSGFuZHNoYWtlU2VudCYjNDU7Jmd0O0Nvbm5lY3RlZCAtLT4KPGcgaWQ9ImVkZ2UzIiBjbGFzcz0iZWRnZSI+Cjx0aXRsZT5IYW5kc2hha2VTZW50LSZndDtDb25uZWN0ZWQ8L3RpdGxlPgo8cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIGQ9Ik05Ny4zMjY1LC0yNzcuMTg0OEM5My44NjkyLC0yNTguMTI5MiA5My40ODQ3LC0yMzcuNjI2OSAxMDAuMzg1MywtMjE5LjQ2ODkgMTA0LjMyOTEsLTIwOS4wOTEzIDExMC40NTg5LC0xOTkuMjM2NSAxMTcuNDI3NiwtMTkwLjI5NjciLz4KPHBvbHlnb24gZmlsbD0iIzAwMDAwMCIgc3Ryb2tlPSIjMDAwMDAwIiBwb2ludHM9IjEyMC4zMjY5LC0xOTIuMjgzOCAxMjQuMDI0NiwtMTgyLjM1NTIgMTE0Ljk0MjQsLTE4Ny44MTA5IDEyMC4zMjY5LC0xOTIuMjgzOCIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSIxOTkuOTM4MSIgeT0iLTIyMy42Njg5IiBmb250LWZhbWlseT0iVGltZXMsc2VyaWYiIGZvbnQtc2l6ZT0iMTQuMDAiIGZpbGw9IiMwMDAwMDAiPlJlY3YoUGFja2V0OjpIYW5kc2hha2VSZXNwb25zZSk8L3RleHQ+CjwvZz4KPCEtLSBIYW5kc2hha2VSZWNlaXZlZCYjNDU7Jmd0O0Nvbm5lY3RlZCAtLT4KPGcgaWQ9ImVkZ2U0IiBjbGFzcz0iZWRnZSI+Cjx0aXRsZT5IYW5kc2hha2VSZWNlaXZlZC0mZ3Q7Q29ubmVjdGVkPC90aXRsZT4KPHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBkPSJNMzE1LjU0OTQsLTI1NC40MTI4QzMxMS45NzMxLC0yNDEuOTQwMSAzMDYuODA1MywtMjI5Ljg1ODkgMjk5LjQyMDUsLTIxOS40Njg5IDI4Mi4zNjAxLC0xOTUuNDY1NiAyNTQuOTg1NCwtMTc4LjI4MTMgMjI5LjQ5MzgsLTE2Ni41MjQ2Ii8+Cjxwb2x5Z29uIGZpbGw9IiMwMDAwMDAiIHN0cm9rZT0iIzAwMDAwMCIgcG9pbnRzPSIyMzAuNzcyNSwtMTYzLjI2MzQgMjIwLjIxLC0xNjIuNDM2MiAyMjcuOTUxMiwtMTY5LjY2OTcgMjMwLjc3MjUsLTE2My4yNjM0Ii8+Cjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjM2My4yMjYzIiB5PSItMjIzLjY2ODkiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+UmVjdihQYWNrZXQ6OkRhdGEpPC90ZXh0Pgo8L2c+CjwhLS0gc2VsZi5zZXRfcmVtb3RlX2lkeF9mcm9tKFBhY2tldDo6SGFuZFNoYWtlKSAtLT4KPGcgaWQ9Im5vZGU1IiBjbGFzcz0ibm9kZSI+Cjx0aXRsZT5zZWxmLnNldF9yZW1vdGVfaWR4X2Zyb20oUGFja2V0OjpIYW5kU2hha2UpPC90aXRsZT4KPHBvbHlnb24gZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBwb2ludHM9IjU4Ni4xMDY2LC0xNjMuMTM0NCAzMDYuNzM0NCwtMTYzLjEzNDQgMzA2LjczNDQsLTEyNy4xMzQ0IDU4Ni4xMDY2LC0xMjcuMTM0NCA1ODYuMTA2NiwtMTYzLjEzNDQiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iNDQ2LjQyMDUiIHk9Ii0xNDAuOTM0NCIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5zZWxmLnNldF9yZW1vdGVfaWR4X2Zyb20oUGFja2V0OjpIYW5kU2hha2UpPC90ZXh0Pgo8L2c+CjwhLS0gSGFuZHNoYWtlUmVjZWl2ZWQmIzQ1OyZndDtzZWxmLnNldF9yZW1vdGVfaWR4X2Zyb20oUGFja2V0OjpIYW5kU2hha2UpIC0tPgo8ZyBpZD0iZWRnZTUiIGNsYXNzPSJlZGdlIj4KPHRpdGxlPkhhbmRzaGFrZVJlY2VpdmVkLSZndDtzZWxmLnNldF9yZW1vdGVfaWR4X2Zyb20oUGFja2V0OjpIYW5kU2hha2UpPC90aXRsZT4KPHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2UtZGFzaGFycmF5PSIxLDUiIGQ9Ik0zOTIuNDE4OCwtMjg4LjY2NTNDNDA3Ljg1MjUsLTI3My4yOTUgNDIyLjUwNzEsLTI1NS40OTQ3IDQzMi40MjA1LC0yMzYuMjY4OSA0NDIuNDYzMywtMjE2Ljc5MjIgNDQ1Ljc2ODgsLTE5Mi4wODU1IDQ0Ni42NzA2LC0xNzMuMzExNyIvPgo8cG9seWdvbiBmaWxsPSIjMDAwMDAwIiBzdHJva2U9IiMwMDAwMDAiIHBvaW50cz0iNDUwLjE2OTcsLTE3My4zOTEyIDQ0Ni45NTQ0LC0xNjMuMjk2IDQ0My4xNzI1LC0xNzMuMTkyOSA0NTAuMTY5NywtMTczLjM5MTIiLz4KPC9nPgo8L2c+Cjwvc3ZnPg==" /></p>
+<p><strong>The blessed path</strong></p>
+<ul>
+<li>Client sends a <code>Packet::Handshake</code> and enters the
+<code>HandshakeSent</code> state.</li>
+<li>Sever receives the <code>Packet::Handshake</code>, replies with a
+<code>Packet::HandshakeResponse</code> and enters the
+<code>HandshakeReceived</code> state. At the same time, server updates
+its <code>remote_idx</code> from the handshake message payload.</li>
+<li>Client receives the <code>Packet::HandshakeResponse</code> packet,
+enters the <code>Connected</code> state. In addition, it updates the
+<code>remote_idx</code> from the handshake response’s payload.</li>
+<li>Once server receives the first <code>Packet::Data</code> message, it
+enters the <code>Connected</code> state as well.</li>
+</ul>
+<p>Note at the end of this short journey, both the client and the server
+would have their <code>remote_idx</code> configured properly, and
+subsequent data packets will include a
+<code>sender_idx = remote_idx</code> for peer selections as we have
+shown in the previous sub-section.</p>
+<p>There are many failure modes of this protocol. For example it does
+not account for packet losses and has no timeout or expiration
+mechanisms. For other, it doesn’t not account for nodes crashes and
+restarts, if the client restarts and re-sends a
+<code>Packet::Handshake</code>, the server rudely ignores it.
+Furthermore, it requires asymmetric roles between two nodes, if both
+nodes act like clients and initializes by sending handshakes, the
+situation deadlocks and neither party can proceed.</p>
+<p>We will gloss over these issues. In our controlled environment
+(reliable local, docker virtual networks) and asymmetric client/server
+configurations, we favor simplicity over robustness.</p>
+</div>
+<div id="delegation-of-responsibilities-peer-vs.-device" class="section level3">
+<h3>Delegation of Responsibilities: <code>Peer</code>
+vs. <code>Device</code></h3>
+<p>In our previous stage, the <code>Deivice</code> handles almost all
+the routing logic. Right now, we are expanding the protocol and
+introducing more states, we would shift more responsibilities to
+<code>Peer</code>. The desired end result is the <code>Device</code>
+will only be responsible for driving the main event loop and peer
+lookup, the state machine and identity management will be delegated to
+<code>Peer</code>.</p>
+<p>First of all, let’s lay out the <code>Packet</code> data type
+(<code>packet.rs</code>):</p>
+<pre class="rust"><code>#[derive(Debug)]
+pub enum Packet&lt;&#39;a&gt; {
+    HandshakeInit(HandshakeInit&lt;&#39;a&gt;),
+    HandshakeResponse(HandshakeResponse),
+    Data(PacketData&lt;&#39;a&gt;),
+    Empty,
+}
+
+#[derive(Debug)]
+pub struct HandshakeInit&lt;&#39;a&gt; {
+    pub sender_name: PeerName&lt;&amp;&#39;a [u8]&gt;,
+    pub assigned_idx: u32,
+}
+
+#[derive(Debug)]
+pub struct HandshakeResponse {
+    pub assigned_idx: u32,
+    pub sender_idx: u32,
+}
+
+#[derive(Debug)]
+pub struct PacketData&lt;&#39;a&gt; {
+    pub sender_idx: u32,
+    pub data: &amp;&#39;a [u8],
+}</code></pre>
+<p>And the <code>enum</code> for handshake states:</p>
+<pre class="rust"><code>#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum HandshakeState {
+    None,
+    HandshakeSent,
+    HandshakeReceived { remote_idx: u32 },
+    Connected { remote_idx: u32 },
+}</code></pre>
+<p>This is stored in the <code>Peer</code> struct:</p>
+<pre class="rust"><code>pub struct Peer {
+    local_idx: u32,
+    handshake_state: RwLock&lt;HandshakeState&gt;,
+    endpoint: RwLock&lt;Endpoint&gt;,
+    allowed_ips: AllowedIps&lt;()&gt;,
+}</code></pre>
+<p>The main public api of <code>Peer</code> is:</p>
+<pre class="rust"><code>pub enum Action&lt;&#39;a&gt; {
+    WriteToTunn(&amp;&#39;a [u8], Ipv4Addr),
+    WriteToNetwork(&amp;&#39;a [u8]),
+    None,
+}
+
+impl Peer {
+    pub fn handle_incoming_packet&lt;&#39;a&gt;(
+        &amp;self, 
+        packet: Packet&lt;&#39;a&gt;,
+        dst: &amp;&#39;a mut [u8]
+    ) -&gt; Action&lt;&#39;a&gt; {
+        match packet {
+            Packet::Empty =&gt; Action::None,
+            Packet::HandshakeInit(msg) =&gt; self.handle_handshake_init(msg, dst),
+            Packet::HandshakeResponse(msg) =&gt; self.handle_handshake_response(msg, dst),
+            Packet::Data(msg) =&gt; self.handle_packet_data(msg, dst),
+        }
+    }
+}</code></pre>
+<p>The return type <code>Action</code> communicates to the driver what
+action to take in response to this <code>Packet</code>, with three
+possibilities:</p>
+<ul>
+<li>Do nothing</li>
+<li>Send some data back to the <code>UdpSocket</code> this
+<code>Packet</code> arrived from</li>
+<li>Send data to <code>tun</code> interface</li>
+</ul>
+<p>The three private handlers <code>handle_handshake_init</code>,
+<code>handle_handshake_response</code> and
+<code>handle_packet_data</code> codifies the state machine we covered
+earlier.</p>
+<pre class="rust"><code>fn handle_handshake_init&lt;&#39;a&gt;(&amp;self, msg: HandshakeInit&lt;&#39;a&gt;, dst: &amp;&#39;a mut [u8]) -&gt; Action&lt;&#39;a&gt; {
+    let mut state = self.handshake_state.write();
+    if let HandshakeState::None = &amp;*state {
+        *state = HandshakeState::HandshakeReceived {
+            remote_idx: msg.assigned_idx,
+        };
+        drop(state);
+
+        let local_idx = self.local_idx;
+        let response = HandshakeResponse {
+            assigned_idx: local_idx,
+            sender_idx: msg.assigned_idx,
+        };
+        let n = response.format(dst);
+        Action::WriteToNetwork(&amp;dst[..n])
+    } else {
+        Action::None
+    }
+}</code></pre>
+<p>The line <code>let n = response.format(dst)</code> formats a
+<code>HandshakeResponse</code> into raw bytes in the <code>dst</code>
+buffer, and the main <code>Device</code> driver loop is responsible
+taking the <code>Action</code> returned here and send
+<code>&amp;dst[..n]</code> over UDP.</p>
+<pre class="rust"><code>fn handle_handshake_response&lt;&#39;a&gt;(
+    &amp;self,
+    msg: HandshakeResponse,
+    dst: &amp;&#39;a mut [u8],
+) -&gt; Action&lt;&#39;a&gt; {
+    let mut state = self.handshake_state.write();
+    if let HandshakeState::HandshakeSent = &amp;*state {
+        *state = HandshakeState::Connected {
+            remote_idx: msg.assigned_idx,
+        };
+        drop(state);
+
+        self.encapsulate(&amp;[], dst)
+    } else {
+        Action::None
+    }
+}</code></pre>
+<p><code>encapsulate</code> is a helper method that returns a
+<code>Action::WriteToNetwork</code> value. This call here means we are
+replying immediately with an empty data packet so that the server can
+enter a <code>Connected</code> state right away as well.</p>
+<pre class="rust"><code>fn handle_packet_data&lt;&#39;a&gt;(&amp;self, msg: PacketData&lt;&#39;a&gt;, _dst: &amp;&#39;a mut [u8]) -&gt; Action&lt;&#39;a&gt; {
+    let state = self.handshake_state.read();
+    match &amp;*state {
+        HandshakeState::Connected { .. } =&gt; (),
+        HandshakeState::HandshakeReceived { remote_idx } =&gt; {
+            let remote_idx = *remote_idx;
+            drop(state);
+
+            let mut state = self.handshake_state.write();
+            *state = HandshakeState::Connected { remote_idx };
+        }
+        _ =&gt; return Action::None,
+    };
+    match etherparse::Ipv4HeaderSlice::from_slice(msg.data) {
+        Ok(iph) =&gt; {
+            let src = iph.source_addr();
+            Action::WriteToTunn(msg.data, src)
+        }
+        _ =&gt; Action::None,
+    }
+}</code></pre>
+<p>Key points:</p>
+<ul>
+<li>Unlike other handlers, we call <code>RwLock::read</code> instead of
+<code>RwLock::write</code>. This handler is on a hot path, and is called
+repeatedly for data packets. In a future multi-threaded setting, calling
+<code>write</code> would starve other competing threads, reducing
+overall throughput.</li>
+<li>We also inspect the packet data and parses its IPv4 header, and
+return the source address for the driver loop to filter packets on.</li>
+</ul>
+<p>Lastly, our <code>send_handshake</code> method to kick start
+everything:</p>
+<pre class="rust"><code>pub fn send_handshake&lt;&#39;a&gt;(
+    &amp;self,
+    sender_name: PeerName&lt;&amp;[u8]&gt;,
+    dst: &amp;&#39;a mut [u8],
+) -&gt; Action&lt;&#39;a&gt; {
+    let mut state = self.handshake_state.write();
+    let endpoint_set = { self.endpoint().addr.is_some() };
+    if HandshakeState::None == *state &amp;&amp; endpoint_set {
+        let packet = HandshakeInit {
+            sender_name,
+            assigned_idx: self.local_idx(),
+        };
+        let n = packet.format(dst);
+
+        *state = HandshakeState::HandshakeSent;
+        
+        Action::WriteToNetwork(&amp;dst[..n])
+    } else {
+        Action::None
+    }
+}</code></pre>
+<p>Note we only send handshakes (by returning
+<code>Action::WriteToNetwork</code>) if the endpoint is set on this peer
+(client situation). In the driver code, we loop through all peers and
+call <code>send_handshake</code> with the device’s name, and only those
+peers with known endpoints would have packets sent to them.</p>
+<pre class="rust"><code>struct Device {
+    name: PeerName,
+}
+
+impl Device {
+    pub fn start(&amp;self) -&gt; io::Result&lt;()&gt; {
+        self.poll
+            .register_read(Token::Sock(SockID::Disconnected), self.udp.as_ref())?;
+
+        let tun_fd = unsafe { BorrowedFd::borrow_raw(self.iface.as_raw_fd()) };
+        self.poll.register_read::&lt;_, SockID&gt;(Token::Tun, &amp;tun_fd)?;
+
+        let mut buf = [0u8; BUF_SIZE];
+        for (_, peer) in self.peers_by_name.iter() {
+            match peer.send_handshake(self.name.as_ref(), &amp;mut buf) {
+                Action::WriteToTunn(data, src_addr) =&gt; {
+                    if peer.is_allowed_ip(src_addr) {
+                        let _ = self.iface.send(data);
+                    }
+                }
+                Action::WriteToNetwork(data) =&gt; {
+                    let _ = self.send_over_udp(peer, data);
+                }
+                Action::None =&gt; (),
+            }
+        }
+
+        Ok(())
+    }
+}</code></pre>
+</div>
+<div id="driving-the-state-machine" class="section level3">
+<h3>Driving the State Machine</h3>
+<p>That about covers everything on the <code>Peer</code> side, moving on
+to the <code>Device</code> side, and we complete the partial code shown
+earlier:</p>
+<pre class="rust"><code>struct Device {
+    // ...
+    peers_by_name: HashMap&lt;PeerName, Arc&lt;Peer&gt;&gt;,
+}
+
+impl Device {    
+    fn handle_udp(&amp;self, sock: &amp;UdpSocket, thread_data: &amp;mut ThreadData) -&gt; io::Result&lt;()&gt; {
+        let src_buf = &amp;mut thread_data.src_buf[..];
+        while let Ok((nbytes, peer_addr)) = sock.recv_from(&amp;mut src_buf[..]) {
+            let SocketAddr::V4(peer_addr) = peer_addr else {
+                continue;
+            };
+            let Ok(packet) = Packet::parse_from(&amp;src_buf[..nbytes]) else {
+                continue;
+            };
+            let peer = match packet {
+                Packet::Empty =&gt; continue,
+                Packet::HandshakeInit(ref msg) =&gt; {
+                    self.peers_by_name.get(msg.sender_name.as_slice())
+                }
+                Packet::HandshakeResponse(ref msg) =&gt; {
+                    self.peers_by_index.get(msg.sender_idx as usize)
+                }
+                Packet::Data(ref msg) =&gt; {
+                    self.peers_by_index.get(msg.sender_idx as usize)
+                }
+            };
+            let Some(peer) = peer else {
+                continue;
+            };
+
+            let (endpoint_changed, conn) = peer.set_endpoint(peer_addr);
+            if let Some(conn) = conn {
+                self.poll.delete(conn.as_ref()).expect(&quot;epoll delete&quot;);
+                drop(conn);
+            }
+            if endpoint_changed &amp;&amp; self.use_connected_peer {
+                match peer.connect_endpoint(self.listen_port) {
+                    Ok(conn) =&gt; {
+                        self.poll
+                            .register_read(
+                                Token::Sock(SockID::ConnectedPeer(peer.local_idx())),
+                                &amp;*conn,
+                            )
+                            .expect(&quot;epoll add&quot;);
+                    }
+                    Err(err) =&gt; {
+                        eprintln!(&quot;error connecting to peer: {:?}&quot;, err);
+                    }
+                }
+            }
+
+            match peer.handle_incoming_packet(packet, &amp;mut thread_data.dst_buf) {
+                Action::WriteToTunn(data, src_addr) =&gt; {
+                    if peer.is_allowed_ip(src_addr) {
+                        let _ = self.iface.send(data);
+                    }
+                }
+                Action::WriteToNetwork(data) =&gt; {
+                    let _ = self.send_over_udp(peer, data);
+                }
+                Action::None =&gt; (),
+            }
+        }
+
+        Ok(())
+    }
+}</code></pre>
+<p>The <code>Peer</code> selection logic is based on the
+<code>Packet</code> type as well. For
+<code>Packet::HandshakeInit</code>, a <code>Peer</code> is looked up
+from its name - since the sending node/peer does not know its
+<code>remote_idx</code> yet, and instead sends its universally
+agreed-upon name in the handshake message. In the other scenarios, the
+peer is looked up by index.</p>
+<p>Note <code>handle_udp</code> works with both the default disconnected
+<code>UdpSocket</code> and a connected peer <code>UdpSocket</code>. In
+theory, for a connected <code>Peer</code>, there is no need for peer
+lookup, as we know which <code>Peer</code> this socket was connected to.
+We could save a bit of work by skipping peer lookup, but it is not
+required, and I will complete it off screen.</p>
+<p>Another small detail, we have upgraded the <code>SockID</code> used
+in <code>epoll</code> <code>Token</code> to:</p>
+<pre class="rust"><code>#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum SockID {
+    Disconnected,
+    ConnectedPeer(u32),
+}</code></pre>
+<p>When <code>epoll_wait</code> returns, the resulting
+<code>Token</code> contains <code>Peer.local_idx</code>, which
+conveniently identifies which <code>Peer</code>’s connected
+<code>UdpSocket</code> has data available to read.</p>
+<p>Lastly, the handler for the <code>tun</code> interface:</p>
+<pre class="rust"><code>fn handle_tun(&amp;self, thread_data: &amp;mut ThreadData) -&gt; io::Result&lt;()&gt; {
+    let src_buf = &amp;mut thread_data.src_buf[..];
+    while let Ok(nbytes) = self.iface.recv(src_buf) {
+        let (src, dst) = match etherparse::Ipv4HeaderSlice::from_slice(&amp;src_buf[..nbytes]) {
+            Ok(iph) =&gt; {
+                let src = iph.source_addr();
+                let dst = iph.destination_addr();
+                (src, dst)
+            }
+            _ =&gt; continue,
+        };
+        let Some(peer) = self.peers_by_ip.get(dst.into()) else {
+            continue;
+        };
+        match peer.encapsulate(&amp;src_buf[..nbytes], &amp;mut thread_data.dst_buf) {
+            Action::WriteToTunn(data, src_addr) =&gt; {
+                if peer.is_allowed_ip(src_addr) {
+                    let _ = self.iface.send(data);
+                }
+            }
+            Action::WriteToNetwork(data) =&gt; {
+                let _ = self.send_over_udp(peer, data);
+            }
+            Action::None =&gt; (),
+        }
+    }
+
+    Ok(())
+}</code></pre>
+<p>The two types <code>AllowedIPs</code> usages are implemented by this
+two snippets of code:</p>
+<pre class="rust"><code>let Some(peer) = self.peers_by_ip.get(dst.into()) else {
+    continue;
+};</code></pre>
+<pre class="rust"><code>if peer.is_allowed_ip(src_addr) {
+    let _ = self.iface.send(data);
+}</code></pre>
+</div>
+<div id="parse-configurations" class="section level3">
+<h3>Parse Configurations</h3>
+<p>That’s quite a bit of changes and we have significantly expanded
+<code>wontun</code>’s capacities. Configuring it via command line
+arguments would’ve become quite cumbersome. Instead, we shall adopt a
+<code>wireguard</code>-like configuration format (in fact a proper
+subset). Defined as:</p>
+<pre class="rust"><code>#[derive(Debug, Serialize)]
+pub struct Conf {
+    pub interface: InterfaceConf,
+    pub peers: Vec&lt;PeerConf&gt;,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct InterfaceConf {
+    pub name: String,
+    pub address: (Ipv4Addr, u8),
+    pub listen_port: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct PeerConf {
+    pub name: String,
+    pub endpoint: Option&lt;SocketAddrV4&gt;,
+    pub allowed_ips: Vec&lt;(Ipv4Addr, u8)&gt;,
+}
+
+impl Conf {
+    pub const DEFAULT_LISTEN_PORT: u16 = 19988;
+
+    pub fn parse_from(source: &amp;str) -&gt; Result&lt;Self, ConfError&gt; {
+        // ...
+    }
+}</code></pre>
+<p>An example <code>.conf</code> file:</p>
+<pre class="ini"><code>[Interface]
+Name=client-A
+Address=10.10.0.3/24
+
+[Peer]
+Name=server
+Endpoint=172.18.0.2:19988
+AllowedIPs=10.10.0.1/24</code></pre>
+<p>The parsing code is not too existing and we will be skipping it.
+Parsing and dumping (as <code>json</code>) the above example using the
+<code>wontun-conf</code> utility:</p>
+<pre class="bash"><code>&gt; ./target/release/wontun-conf --pretty --conf tun0.conf</code></pre>
+<pre class="json"><code>{
+  &quot;interface&quot;: {
+    &quot;name&quot;: &quot;client-A&quot;,
+    &quot;address&quot;: [
+      &quot;10.10.0.3&quot;,
+      24
+    ],
+    &quot;listen_port&quot;: 19988
+  },
+  &quot;peers&quot;: [
+    {
+      &quot;name&quot;: &quot;server&quot;,
+      &quot;endpoint&quot;: &quot;172.18.0.2:19988&quot;,
+      &quot;allowed_ips&quot;: [
+        [
+          &quot;10.10.0.0&quot;,
+          24
+        ]
+      ]
+    }
+  ]
+}</code></pre>
+</div>
+<div id="updated-main-function" class="section level3">
+<h3>Updated <code>main</code> function</h3>
+<p>As usual, a checkpoint can be view at: <a href>Github link</a></p>
+<pre class="rust"><code>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let args = Args::parse();
+    // tun interface name is derived from the file name of config file
+    let tun_name = args.conf.file_stem().and_then(|s| s.to_str()).unwrap();
+    let conf = std::fs::read_to_string(&amp;args.conf)?;
+    let conf = Conf::parse_from(&amp;conf)?;
+
+    let mut dev = Device::new(DeviceConfig {
+        name: PeerName::new(&amp;conf.interface.name)?,
+        tun_name,
+        use_connected_peer: true,
+        listen_port: conf.interface.listen_port,
+    })?;
+
+    for peer_conf in &amp;conf.peers {
+        let peer_name = PeerName::new(&amp;peer_conf.name)?;
+        let mut peer = Peer::new();
+        if let Some(endpoint) = peer_conf.endpoint {
+            peer.set_endpoint(endpoint);
+        }
+        for (ip, cidr) in &amp;peer_conf.allowed_ips {
+            peer.add_allowed_ip(*ip, *cidr);
+        }
+        dev.add_peer(peer_name, peer);
+    }
+
+    dev.start()?;
+    dev.wait();
+
+    Ok(())
+}</code></pre>
 </div>
 </div>
 

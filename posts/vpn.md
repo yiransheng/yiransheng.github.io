@@ -1125,5 +1125,505 @@ fn handle_udp(&self, sock: &UdpSocket, thread_data: &mut ThreadData) -> io::Resu
 }
 ```
 
-OK, now it is time to dive into the proposed `Packet` `enum` and design a new VPN protocol that addresses both of our problems outline in previous sub-sections.
+OK, now it is time to dive into the proposed `Packet` `enum` and design a new VPN protocol that addresses both of our problems outlined in previous sub-sections.
 
+### The Protocol
+
+Without further ado, here's a state machine diagram for our simple protocol (yet a huge step up from the a single "hello?" message). The solid edges indicate state transitions and are labeled with the associated events that triggers them. The dotted edges point to a side effect or local mutation when the associated state is first transitioned to. 
+
+
+
+![](wontun-handshake.svg)
+
+**The blessed path** 
+
+* Client sends a `Packet::Handshake` and enters the `HandshakeSent` state.
+* Sever receives the `Packet::Handshake`, replies with a `Packet::HandshakeResponse` and enters the `HandshakeReceived` state. At the same time, server updates its `remote_idx` from the handshake message payload.
+* Client receives the `Packet::HandshakeResponse` packet, enters the `Connected` state. In addition, it updates the `remote_idx` from the handshake response's payload.
+* Once server receives the first `Packet::Data` message, it enters the `Connected` state as well.
+
+Note at the end of this short journey, both the client and the server would have their `remote_idx` configured properly, and subsequent data packets will include a `sender_idx = remote_idx` for peer selections as we have shown in the previous sub-section.
+
+There are many failure modes of this protocol. For example it does not account for packet losses and has no timeout or expiration mechanisms. For other, it doesn't not account for nodes crashes and restarts, if the client restarts and re-sends a `Packet::Handshake`, the server rudely ignores it. Furthermore, it requires asymmetric roles between two nodes, if both nodes act like clients and initializes by sending handshakes, the situation deadlocks and neither party can proceed.
+
+We will gloss over these issues. In our controlled environment (reliable local, docker virtual networks) and asymmetric client/server configurations, we favor simplicity over robustness.
+
+### Delegation of Responsibilities: `Peer` vs. `Device`
+
+In our previous stage, the `Deivice` handles almost all the routing logic. Right now, we are expanding the protocol and introducing more states, we would shift more responsibilities to `Peer`. The desired end result is the `Device` will only be responsible for driving the main event loop and peer lookup, the state machine and identity management will be delegated to `Peer`. 
+
+First of all, let's lay out the `Packet` data type (`packet.rs`):
+
+```rust
+#[derive(Debug)]
+pub enum Packet<'a> {
+    HandshakeInit(HandshakeInit<'a>),
+    HandshakeResponse(HandshakeResponse),
+    Data(PacketData<'a>),
+    Empty,
+}
+
+#[derive(Debug)]
+pub struct HandshakeInit<'a> {
+    pub sender_name: PeerName<&'a [u8]>,
+    pub assigned_idx: u32,
+}
+
+#[derive(Debug)]
+pub struct HandshakeResponse {
+    pub assigned_idx: u32,
+    pub sender_idx: u32,
+}
+
+#[derive(Debug)]
+pub struct PacketData<'a> {
+    pub sender_idx: u32,
+    pub data: &'a [u8],
+}
+```
+
+And the `enum` for handshake states:
+
+```rust
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum HandshakeState {
+    None,
+    HandshakeSent,
+    HandshakeReceived { remote_idx: u32 },
+    Connected { remote_idx: u32 },
+}
+```
+
+This is stored in the `Peer` struct:
+
+```rust
+pub struct Peer {
+    local_idx: u32,
+    handshake_state: RwLock<HandshakeState>,
+    endpoint: RwLock<Endpoint>,
+    allowed_ips: AllowedIps<()>,
+}
+```
+
+The main public api of `Peer` is:
+
+```rust
+pub enum Action<'a> {
+    WriteToTunn(&'a [u8], Ipv4Addr),
+    WriteToNetwork(&'a [u8]),
+    None,
+}
+
+impl Peer {
+    pub fn handle_incoming_packet<'a>(
+        &self, 
+        packet: Packet<'a>,
+        dst: &'a mut [u8]
+    ) -> Action<'a> {
+        match packet {
+            Packet::Empty => Action::None,
+            Packet::HandshakeInit(msg) => self.handle_handshake_init(msg, dst),
+            Packet::HandshakeResponse(msg) => self.handle_handshake_response(msg, dst),
+            Packet::Data(msg) => self.handle_packet_data(msg, dst),
+        }
+    }
+}
+```
+
+The return type `Action` communicates to the driver what action to take in response to this `Packet`, with three possibilities:
+
+* Do nothing
+* Send some data back to the `UdpSocket` this `Packet` arrived from
+* Send data to `tun` interface
+
+The three private handlers `handle_handshake_init`, `handle_handshake_response` and `handle_packet_data` codifies the state machine we covered earlier.
+
+```rust
+fn handle_handshake_init<'a>(&self, msg: HandshakeInit<'a>, dst: &'a mut [u8]) -> Action<'a> {
+    let mut state = self.handshake_state.write();
+    if let HandshakeState::None = &*state {
+        *state = HandshakeState::HandshakeReceived {
+            remote_idx: msg.assigned_idx,
+        };
+        drop(state);
+
+        let local_idx = self.local_idx;
+        let response = HandshakeResponse {
+            assigned_idx: local_idx,
+            sender_idx: msg.assigned_idx,
+        };
+        let n = response.format(dst);
+        Action::WriteToNetwork(&dst[..n])
+    } else {
+        Action::None
+    }
+}
+```
+
+The line `let n = response.format(dst)` formats a `HandshakeResponse` into raw bytes in the `dst` buffer, and the main `Device` driver loop is responsible taking the `Action` returned here and send `&dst[..n]` over UDP.
+
+```rust
+fn handle_handshake_response<'a>(
+    &self,
+    msg: HandshakeResponse,
+    dst: &'a mut [u8],
+) -> Action<'a> {
+    let mut state = self.handshake_state.write();
+    if let HandshakeState::HandshakeSent = &*state {
+        *state = HandshakeState::Connected {
+            remote_idx: msg.assigned_idx,
+        };
+        drop(state);
+
+        self.encapsulate(&[], dst)
+    } else {
+        Action::None
+    }
+}
+```
+
+`encapsulate` is a helper method that returns a `Action::WriteToNetwork` value. This call here means we are replying immediately with an empty data packet so that the server can enter a `Connected` state right away as well.
+
+```rust
+fn handle_packet_data<'a>(&self, msg: PacketData<'a>, _dst: &'a mut [u8]) -> Action<'a> {
+    let state = self.handshake_state.read();
+    match &*state {
+        HandshakeState::Connected { .. } => (),
+        HandshakeState::HandshakeReceived { remote_idx } => {
+            let remote_idx = *remote_idx;
+            drop(state);
+
+            let mut state = self.handshake_state.write();
+            *state = HandshakeState::Connected { remote_idx };
+        }
+        _ => return Action::None,
+    };
+    match etherparse::Ipv4HeaderSlice::from_slice(msg.data) {
+        Ok(iph) => {
+            let src = iph.source_addr();
+            Action::WriteToTunn(msg.data, src)
+        }
+        _ => Action::None,
+    }
+}
+```
+
+Key points:
+
+* Unlike other handlers, we call `RwLock::read` instead of `RwLock::write`. This handler is on a hot path, and is called repeatedly for data packets. In a future multi-threaded setting, calling `write` would starve other competing threads, reducing overall throughput.
+* We also inspect the packet data and parses its IPv4 header, and return the source address for the driver loop to filter packets on.
+
+Lastly, our `send_handshake` method to kick start everything:
+
+```rust
+pub fn send_handshake<'a>(
+    &self,
+    sender_name: PeerName<&[u8]>,
+    dst: &'a mut [u8],
+) -> Action<'a> {
+    let mut state = self.handshake_state.write();
+    let endpoint_set = { self.endpoint().addr.is_some() };
+    if HandshakeState::None == *state && endpoint_set {
+        let packet = HandshakeInit {
+            sender_name,
+            assigned_idx: self.local_idx(),
+        };
+        let n = packet.format(dst);
+
+        *state = HandshakeState::HandshakeSent;
+        
+        Action::WriteToNetwork(&dst[..n])
+    } else {
+        Action::None
+    }
+}
+```
+
+Note we only send handshakes (by returning `Action::WriteToNetwork`) if the endpoint is set on this peer (client situation). In the driver code, we loop through all peers and call `send_handshake` with the device's name, and only those peers with known endpoints would have packets sent to them.
+
+```rust
+struct Device {
+    name: PeerName,
+}
+
+impl Device {
+    pub fn start(&self) -> io::Result<()> {
+        self.poll
+            .register_read(Token::Sock(SockID::Disconnected), self.udp.as_ref())?;
+
+        let tun_fd = unsafe { BorrowedFd::borrow_raw(self.iface.as_raw_fd()) };
+        self.poll.register_read::<_, SockID>(Token::Tun, &tun_fd)?;
+
+        let mut buf = [0u8; BUF_SIZE];
+        for (_, peer) in self.peers_by_name.iter() {
+            match peer.send_handshake(self.name.as_ref(), &mut buf) {
+                Action::WriteToTunn(data, src_addr) => {
+                    if peer.is_allowed_ip(src_addr) {
+                        let _ = self.iface.send(data);
+                    }
+                }
+                Action::WriteToNetwork(data) => {
+                    let _ = self.send_over_udp(peer, data);
+                }
+                Action::None => (),
+            }
+        }
+
+        Ok(())
+    }
+}
+```
+
+### Driving the State Machine
+
+That about covers everything on the `Peer` side, moving on to the `Device` side, and we complete the partial code shown earlier:
+
+```rust
+struct Device {
+    // ...
+    peers_by_name: HashMap<PeerName, Arc<Peer>>,
+}
+
+impl Device {    
+    fn handle_udp(&self, sock: &UdpSocket, thread_data: &mut ThreadData) -> io::Result<()> {
+        let src_buf = &mut thread_data.src_buf[..];
+        while let Ok((nbytes, peer_addr)) = sock.recv_from(&mut src_buf[..]) {
+            let SocketAddr::V4(peer_addr) = peer_addr else {
+                continue;
+            };
+            let Ok(packet) = Packet::parse_from(&src_buf[..nbytes]) else {
+                continue;
+            };
+            let peer = match packet {
+                Packet::Empty => continue,
+                Packet::HandshakeInit(ref msg) => {
+                    self.peers_by_name.get(msg.sender_name.as_slice())
+                }
+                Packet::HandshakeResponse(ref msg) => {
+                    self.peers_by_index.get(msg.sender_idx as usize)
+                }
+                Packet::Data(ref msg) => {
+                    self.peers_by_index.get(msg.sender_idx as usize)
+                }
+            };
+            let Some(peer) = peer else {
+                continue;
+            };
+
+            let (endpoint_changed, conn) = peer.set_endpoint(peer_addr);
+            if let Some(conn) = conn {
+                self.poll.delete(conn.as_ref()).expect("epoll delete");
+                drop(conn);
+            }
+            if endpoint_changed && self.use_connected_peer {
+                match peer.connect_endpoint(self.listen_port) {
+                    Ok(conn) => {
+                        self.poll
+                            .register_read(
+                                Token::Sock(SockID::ConnectedPeer(peer.local_idx())),
+                                &*conn,
+                            )
+                            .expect("epoll add");
+                    }
+                    Err(err) => {
+                        eprintln!("error connecting to peer: {:?}", err);
+                    }
+                }
+            }
+
+            match peer.handle_incoming_packet(packet, &mut thread_data.dst_buf) {
+                Action::WriteToTunn(data, src_addr) => {
+                    if peer.is_allowed_ip(src_addr) {
+                        let _ = self.iface.send(data);
+                    }
+                }
+                Action::WriteToNetwork(data) => {
+                    let _ = self.send_over_udp(peer, data);
+                }
+                Action::None => (),
+            }
+        }
+
+        Ok(())
+    }
+}
+```
+
+The `Peer` selection logic is based on the `Packet` type as well. For `Packet::HandshakeInit`, a `Peer` is looked up from its name - since the sending node/peer does not know its `remote_idx` yet, and instead sends its universally agreed-upon name in the handshake message. In the other scenarios, the peer is looked up by index.
+
+Note `handle_udp` works with both the default disconnected `UdpSocket` and a connected peer `UdpSocket`. In theory, for a connected `Peer`, there is no need for peer lookup, as we know which `Peer` this socket was connected to. We could save a bit of work by skipping peer lookup, but it is not required, and I will complete it off screen.
+
+Another small detail, we have upgraded the `SockID` used in `epoll` `Token` to:
+
+```rust
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum SockID {
+    Disconnected,
+    ConnectedPeer(u32),
+}
+```
+
+When `epoll_wait` returns, the resulting `Token` contains `Peer.local_idx`, which conveniently identifies which `Peer`'s connected `UdpSocket` has data available to read.
+
+Lastly, the handler for the `tun` interface:
+
+```rust
+fn handle_tun(&self, thread_data: &mut ThreadData) -> io::Result<()> {
+    let src_buf = &mut thread_data.src_buf[..];
+    while let Ok(nbytes) = self.iface.recv(src_buf) {
+        let (src, dst) = match etherparse::Ipv4HeaderSlice::from_slice(&src_buf[..nbytes]) {
+            Ok(iph) => {
+                let src = iph.source_addr();
+                let dst = iph.destination_addr();
+                (src, dst)
+            }
+            _ => continue,
+        };
+        let Some(peer) = self.peers_by_ip.get(dst.into()) else {
+            continue;
+        };
+        match peer.encapsulate(&src_buf[..nbytes], &mut thread_data.dst_buf) {
+            Action::WriteToTunn(data, src_addr) => {
+                if peer.is_allowed_ip(src_addr) {
+                    let _ = self.iface.send(data);
+                }
+            }
+            Action::WriteToNetwork(data) => {
+                let _ = self.send_over_udp(peer, data);
+            }
+            Action::None => (),
+        }
+    }
+
+    Ok(())
+}
+```
+
+The two types `AllowedIPs` usages are implemented by this two snippets of code:
+
+```rust
+let Some(peer) = self.peers_by_ip.get(dst.into()) else {
+    continue;
+};
+```
+
+```rust
+if peer.is_allowed_ip(src_addr) {
+    let _ = self.iface.send(data);
+}
+```
+
+### Parse Configurations
+
+That's quite a bit of changes and we have significantly expanded `wontun`'s capacities. Configuring it via command line arguments would've become quite cumbersome. Instead, we shall adopt a `wireguard`-like configuration format (in fact a proper subset). Defined as:
+
+```rust
+#[derive(Debug, Serialize)]
+pub struct Conf {
+    pub interface: InterfaceConf,
+    pub peers: Vec<PeerConf>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct InterfaceConf {
+    pub name: String,
+    pub address: (Ipv4Addr, u8),
+    pub listen_port: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct PeerConf {
+    pub name: String,
+    pub endpoint: Option<SocketAddrV4>,
+    pub allowed_ips: Vec<(Ipv4Addr, u8)>,
+}
+
+impl Conf {
+    pub const DEFAULT_LISTEN_PORT: u16 = 19988;
+
+    pub fn parse_from(source: &str) -> Result<Self, ConfError> {
+        // ...
+    }
+}
+```
+
+An example `.conf` file:
+
+```ini
+[Interface]
+Name=client-A
+Address=10.10.0.3/24
+
+[Peer]
+Name=server
+Endpoint=172.18.0.2:19988
+AllowedIPs=10.10.0.1/24
+```
+
+The parsing code is not too existing and we will be skipping it. Parsing and dumping (as `json`) the above example using the `wontun-conf` utility:
+```bash
+> ./target/release/wontun-conf --pretty --conf tun0.conf
+```
+
+```json
+{
+  "interface": {
+    "name": "client-A",
+    "address": [
+      "10.10.0.3",
+      24
+    ],
+    "listen_port": 19988
+  },
+  "peers": [
+    {
+      "name": "server",
+      "endpoint": "172.18.0.2:19988",
+      "allowed_ips": [
+        [
+          "10.10.0.0",
+          24
+        ]
+      ]
+    }
+  ]
+}
+```
+
+### Updated `main` function
+
+As usual, a checkpoint can be view at: [Github link]()
+
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+    // tun interface name is derived from the file name of config file
+    let tun_name = args.conf.file_stem().and_then(|s| s.to_str()).unwrap();
+    let conf = std::fs::read_to_string(&args.conf)?;
+    let conf = Conf::parse_from(&conf)?;
+
+    let mut dev = Device::new(DeviceConfig {
+        name: PeerName::new(&conf.interface.name)?,
+        tun_name,
+        use_connected_peer: true,
+        listen_port: conf.interface.listen_port,
+    })?;
+
+    for peer_conf in &conf.peers {
+        let peer_name = PeerName::new(&peer_conf.name)?;
+        let mut peer = Peer::new();
+        if let Some(endpoint) = peer_conf.endpoint {
+            peer.set_endpoint(endpoint);
+        }
+        for (ip, cidr) in &peer_conf.allowed_ips {
+            peer.add_allowed_ip(*ip, *cidr);
+        }
+        dev.add_peer(peer_name, peer);
+    }
+
+    dev.start()?;
+    dev.wait();
+
+    Ok(())
+}
+```
