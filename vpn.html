@@ -116,6 +116,13 @@ Handlers</a></li>
 <li><a href="#thats-all-and-the-final-code" id="toc-thats-all-and-the-final-code">That’s all and the Final
 Code</a></li>
 </ul></li>
+<li><a href="#many-peers" id="toc-many-peers">Many Peers</a>
+<ul>
+<li><a href="#project-overview" id="toc-project-overview">Project
+Overview</a></li>
+<li><a href="#peer-identities" id="toc-peer-identities">Peer
+Identities</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -716,7 +723,7 @@ target/release/wontun --peer <span class="m">172</span>.18.0.2:19988 <span class
 
 
 
-sudo ip addr add <span class="m">10</span>.0.8.3/24 dev tun0
+sudo ip addr add <span class="m">10</span>.8.0.3/24 dev tun0
 
 sudo ip link <span class="nb">set</span> up dev tun0
 
@@ -746,7 +753,7 @@ setcap <span class="s1">&#39;cap_net_admin=eip&#39;</span>  ./wontun
 
 
 
-ip addr add <span class="m">10</span>.0.8.1/24 dev tun0
+ip addr add <span class="m">10</span>.8.0.1/24 dev tun0
 
 ip link <span class="nb">set</span> up dev tun0
 
@@ -770,7 +777,7 @@ accept any incoming client. In contrast, the client script tells
 <code>wontun</code> exactly where to find its server peer, in this case
 at <code>172.18.0.2:19988</code>. Both scripts prepare the
 <code>tun0</code> interface with appropriate IP configurations, client
-at <code>10.8.0.3</code> and the server at <code>10.0.8.1</code>.</p>
+at <code>10.8.0.3</code> and the server at <code>10.8.0.1</code>.</p>
 <p>Final note, running <code>run_server.sh</code> inside docker operates
 in a more restrictive environment. We need to explicitly pass the
 <code>--cap-add=NET_ADMIN</code> and <code>--device=/dev/net/tun</code>
@@ -1713,6 +1720,205 @@ in working condition. We have successfully refactored
 <code>wontun</code> to use <code>epoll</code> and connected sockets. A
 checkpoint of <code>wontun</code> can be browsed at: <a href="https://github.com/yiransheng/wontun/tree/a6a5306c4f91203713c52736f29caa474083a8fe">Github
 link</a>.</p>
+</div>
+</div>
+<div id="many-peers" class="section level2">
+<h2>Many Peers</h2>
+<div id="project-overview" class="section level3">
+<h3>Project Overview</h3>
+<p>A little bit of house keeping upfront. Up until this point, we have
+been putting everything inside <code>lib.rs</code>. It’s time to factor
+out various building blocks, roughly into their respective types and
+purposes. This is the file structure under <code>src</code>:</p>
+<div class="highlight"><pre><span></span>src/
+
+├── allowed_ip.rs
+
+├── conf.rs
+
+├── dev.rs
+
+├── lib.rs
+
+├── packet.rs
+
+├── peer.rs
+
+├── poll.rs
+
+├── udp.rs
+
+├── wontun-conf.rs
+
+└── wontun.rs
+
+
+
+0 directories, 10 files
+</pre></div>
+<ul>
+<li><code>wontun.rs</code> is our main binary entry point.</li>
+<li><code>wontun-conf.rs</code> is an auxiliary binary that parses
+configuration files in <code>ini</code> format and dump them into
+<code>json</code> (which then can be manipulated easily with
+<code>jq</code> in shell scripts).</li>
+<li><code>conf.rs</code> defines a configuration format and implements
+parsing from <code>ini</code>. The supported options are a subset of
+<code>wireguard</code> configurations format.</li>
+<li><code>poll.rs</code> is our <code>Poll</code> wrapper from before,
+and will remain unchanged in this section.</li>
+<li><code>udp.rs</code> contains a single helper function
+<code>new_udp_socket</code> from last section.</li>
+<li><code>dev.rs</code> and <code>peer.rs</code> corresponds to our
+familiar <code>Device</code> and <code>Peer</code> types, which of
+course will be going through some changes.</li>
+<li><code>packet.rs</code> and <code>allowed_ips.rs</code> are new
+modules that will be covered in details soon.</li>
+</ul>
+</div>
+<div id="peer-identities" class="section level3">
+<h3>Peer Identities</h3>
+<p>When the world contains all but two entities, there are no need for
+names. The pronouns “you” and “me” are enough for the pair to refer to
+each other. This was the situation when we restricted our VPN to allow
+only one peer per host. On either machine, any bytes coming from the
+<code>tun</code> interface was unambiguously meant for “you”, the
+singular partner in our lonely VPN network.</p>
+<p>As we invite more participants to our VPN party, a clear system of
+identification becomes evident. <code>wireguard</code> identifies peers
+by their <code>PublicKey</code>s, we will simply use string names -
+shamelessly transmitted over the wire in plain texts.</p>
+<p><strong>Configuration Examples</strong></p>
+<p>Consider three hosts, <code>A</code>, <code>B</code>, and
+<code>C</code>. Their configurations might look like this:</p>
+<p>Configuration on <code>A</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">[Interface]</span><span class="w"></span>
+
+<span class="na">Name</span><span class="o">=</span><span class="s">A</span><span class="w"></span>
+
+
+
+<span class="k">[Peer]</span><span class="w"></span>
+
+<span class="na">Name</span><span class="o">=</span><span class="s">B</span><span class="w"></span>
+
+
+
+<span class="k">[Peer]</span><span class="w"></span>
+
+<span class="na">...</span><span class="w"></span>
+</pre></div>
+<p>Configuration on <code>B</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">[Interface]</span><span class="w"></span>
+
+<span class="na">Name</span><span class="o">=</span><span class="s">B</span><span class="w"></span>
+
+
+
+<span class="k">[Peer]</span><span class="w"></span>
+
+<span class="na">Name</span><span class="o">=</span><span class="s">C</span><span class="w"></span>
+
+
+
+<span class="k">[Peer]</span><span class="w"></span>
+
+<span class="na">Name</span><span class="o">=</span><span class="s">A</span><span class="w"></span>
+</pre></div>
+<p>Configuration on <code>C</code>:</p>
+<div class="highlight"><pre><span></span><span class="k">[Interface]</span><span class="w"></span>
+
+<span class="na">Name</span><span class="o">=</span><span class="s">C</span><span class="w"></span>
+
+
+
+<span class="k">[Peer]</span><span class="w"></span>
+
+<span class="na">Name</span><span class="o">=</span><span class="s">B</span><span class="w"></span>
+</pre></div>
+<p><strong>Interesting note</strong>: the <code>Name</code> field is
+supported by <code>wireguard</code>, but ignored entirely, it exists
+only as a form of documentation.</p>
+<p>The names are global and all hosts agree on their meanings. If, for
+example, each host stores a <code>HashMap&lt;PeerName, Peer&gt;</code>
+at runtime, and every packet transmitted over UDP includes the name of
+the sender, it would be fairly straightforward to route the packets.
+However, including a potentially long name in every data packet
+transmitted is just too wasteful, we opt to use a slightly more
+complicated system, and tag each message with a <code>u32</code>
+index.</p>
+<p>Each host configures its peers and assigns a <code>local_index</code>
+at startup, effectively placing each peer at a specific position in a
+<code>Vec&lt;Peer&gt;</code>. But there’s a catch: peers initially don’t
+know their <code>local_index</code> as seen by others. For instance,
+host <code>B</code> might be <code>local_index=9</code> in
+<code>A</code>’s list, but <code>B</code> itself starts unaware of this
+numeric label.</p>
+<p>For this reason, we shall store another index in
+<code>struct Peer</code>, called <code>remote_index</code>. At the
+steady state, the <code>Device</code> on node <code>B</code> would have
+the following data:</p>
+<div class="highlight"><pre><span></span><span class="n">Deivice</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">name</span>: <span class="s">&quot;B&quot;</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">peers</span>: <span class="nc">vec</span><span class="o">!</span><span class="p">[</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">Peer</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">name</span>: <span class="s">&quot;A&quot;</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">            </span><span class="c1">// This peer is the 0&#39;th element in peers Vec</span>
+
+<span class="w">            </span><span class="n">local_index</span>: <span class="mi">0</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">remote_index</span>: <span class="mi">9</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+<p>On node <code>A</code>:</p>
+<div class="highlight"><pre><span></span><span class="n">Device</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">name</span>: <span class="s">&quot;A&quot;</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">peers</span>: <span class="nc">vec</span><span class="o">!</span><span class="p">[</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">//...</span>
+
+<span class="w">        </span><span class="n">Peer</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">name</span>: <span class="s">&quot;B&quot;</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">            </span><span class="c1">// This peer is the 9&#39;th element in peers Vec</span>
+
+<span class="w">            </span><span class="n">local_index</span>: <span class="mi">9</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">remote_index</span>: <span class="mi">0</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+<p>This relationship between <code>local_index</code> and
+<code>remote_index</code> is further clarified/illustrated below:</p>
+<p><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj48IS0tIEdlbmVyYXRlZCBieSBncmFwaHZpeiB2ZXJzaW9uIDIuNDAuMSAoMjAxNjEyMjUuMDMwNCkKIC0tPjwhLS0gVGl0bGU6IEcgUGFnZXM6IDEgLS0+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNjE4cHQiIGhlaWdodD0iMjY3cHQiIHZpZXdCb3g9IjAuMDAgMC4wMCA2MTguMDAgMjY3LjIwIj4KPGcgaWQ9ImdyYXBoMCIgY2xhc3M9ImdyYXBoIiB0cmFuc2Zvcm09InNjYWxlKDEgMSkgcm90YXRlKDApIHRyYW5zbGF0ZSg0IDI2My4yKSI+Cjx0aXRsZT5HPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSJ0cmFuc3BhcmVudCIgcG9pbnRzPSItNCw0IC00LC0yNjMuMiA2MTQsLTI2My4yIDYxNCw0IC00LDQiLz4KPGcgaWQ9ImNsdXN0MSIgY2xhc3M9ImNsdXN0ZXIiPgo8dGl0bGU+Y2x1c3Rlcl8wPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2QzZDNkMyIgc3Ryb2tlPSIjZDNkM2QzIiBwb2ludHM9IjgsLTEzMy42IDgsLTI1MS4yIDM0MCwtMjUxLjIgMzQwLC0xMzMuNiA4LC0xMzMuNiIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSIxNzQiIHk9Ii0yMzQuNiIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5ub2RlLUE8L3RleHQ+CjwvZz4KPGcgaWQ9ImNsdXN0MiIgY2xhc3M9ImNsdXN0ZXIiPgo8dGl0bGU+Y2x1c3Rlcl8xPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2YwZjBlZSIgc3Ryb2tlPSIjZjBmMGVlIiBwb2ludHM9Ijk0LC0xNDEuNiA5NCwtMjE4LjQgMzMyLC0yMTguNCAzMzIsLTE0MS42IDk0LC0xNDEuNiIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSIyMTMiIHk9Ii0yMDEuOCIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5QZWVyIChuYW1lPUIpPC90ZXh0Pgo8L2c+CjxnIGlkPSJjbHVzdDMiIGNsYXNzPSJjbHVzdGVyIj4KPHRpdGxlPmNsdXN0ZXJfMTA8L3RpdGxlPgo8cG9seWdvbiBmaWxsPSIjZjBmMGVlIiBzdHJva2U9IiNmMGYwZWUiIHBvaW50cz0iMTYsLTE0MS42IDE2LC0yMTguNCA4NiwtMjE4LjQgODYsLTE0MS42IDE2LC0xNDEuNiIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSI1MSIgeT0iLTIwMS44IiBmb250LWZhbWlseT0iVGltZXMsc2VyaWYiIGZvbnQtc2l6ZT0iMTQuMDAiIGZpbGw9IiMwMDAwMDAiPnBlZXJzPC90ZXh0Pgo8L2c+CjxnIGlkPSJjbHVzdDQiIGNsYXNzPSJjbHVzdGVyIj4KPHRpdGxlPmNsdXN0ZXJfNTwvdGl0bGU+Cjxwb2x5Z29uIGZpbGw9IiNkM2QzZDMiIHN0cm9rZT0iI2QzZDNkMyIgcG9pbnRzPSIzNDgsLTEzMy42IDM0OCwtMjUxLjIgNjAyLC0yNTEuMiA2MDIsLTEzMy42IDM0OCwtMTMzLjYiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iNDc1IiB5PSItMjM0LjYiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+bm9kZS1DPC90ZXh0Pgo8L2c+CjxnIGlkPSJjbHVzdDUiIGNsYXNzPSJjbHVzdGVyIj4KPHRpdGxlPmNsdXN0ZXJfNjwvdGl0bGU+Cjxwb2x5Z29uIGZpbGw9IiNmMGYwZWUiIHN0cm9rZT0iI2YwZjBlZSIgcG9pbnRzPSIzNTYsLTE0MS42IDM1NiwtMjE4LjQgNTk0LC0yMTguNCA1OTQsLTE0MS42IDM1NiwtMTQxLjYiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iNDc1IiB5PSItMjAxLjgiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+UGVlciAobmFtZT1CKTwvdGV4dD4KPC9nPgo8ZyBpZD0iY2x1c3Q2IiBjbGFzcz0iY2x1c3RlciI+Cjx0aXRsZT5jbHVzdGVyXzI8L3RpdGxlPgo8cG9seWdvbiBmaWxsPSIjZDNkM2QzIiBzdHJva2U9IiNkM2QzZDMiIHBvaW50cz0iOTcsLTggOTcsLTEyNS42IDU5NywtMTI1LjYgNTk3LC04IDk3LC04Ii8+Cjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjM0NyIgeT0iLTEwOSIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5ub2RlLUI8L3RleHQ+CjwvZz4KPGcgaWQ9ImNsdXN0NyIgY2xhc3M9ImNsdXN0ZXIiPgo8dGl0bGU+Y2x1c3Rlcl8zPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2YwZjBlZSIgc3Ryb2tlPSIjZjBmMGVlIiBwb2ludHM9IjEwNSwtMTYgMTA1LC05Mi44IDM0MywtOTIuOCAzNDMsLTE2IDEwNSwtMTYiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iMjI0IiB5PSItNzYuMiIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5QZWVyIChuYW1lPUEpPC90ZXh0Pgo8L2c+CjxnIGlkPSJjbHVzdDgiIGNsYXNzPSJjbHVzdGVyIj4KPHRpdGxlPmNsdXN0ZXJfNDwvdGl0bGU+Cjxwb2x5Z29uIGZpbGw9IiNmMGYwZWUiIHN0cm9rZT0iI2YwZjBlZSIgcG9pbnRzPSIzNTEsLTE2IDM1MSwtOTIuOCA1ODksLTkyLjggNTg5LC0xNiAzNTEsLTE2Ii8+Cjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjQ3MCIgeT0iLTc2LjIiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+UGVlciAobmFtZT1DKTwvdGV4dD4KPC9nPgo8IS0tIGFibCAtLT4KPGcgaWQ9ImFibCIgY2xhc3M9Im5vZGUiPgo8dGl0bGU+YWJsPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjZmZmZmZmIiBwb2ludHM9IjMyMy43MDY2LC0xODUuNiAyMjguMjkzNCwtMTg1LjYgMjI4LjI5MzQsLTE0OS42IDMyMy43MDY2LC0xNDkuNiAzMjMuNzA2NiwtMTg1LjYiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iMjc2IiB5PSItMTYzLjQiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+bG9jYWxfaW5kZXg6IDk8L3RleHQ+CjwvZz4KPCEtLSBhYnIgLS0+CjxnIGlkPSJhYnIiIGNsYXNzPSJub2RlIj4KPHRpdGxlPmFicjwvdGl0bGU+Cjxwb2x5Z29uIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iI2ZmZmZmZiIgcG9pbnRzPSIyMDkuODY3NCwtMTg1LjYgMTAyLjEzMjYsLTE4NS42IDEwMi4xMzI2LC0xNDkuNiAyMDkuODY3NCwtMTQ5LjYgMjA5Ljg2NzQsLTE4NS42Ii8+Cjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjE1NiIgeT0iLTE2My40IiBmb250LWZhbWlseT0iVGltZXMsc2VyaWYiIGZvbnQtc2l6ZT0iMTQuMDAiIGZpbGw9IiMwMDAwMDAiPnJlbW90ZV9pbmRleDogMTwvdGV4dD4KPC9nPgo8IS0tIGJhbCAtLT4KPGcgaWQ9ImJhbCIgY2xhc3M9Im5vZGUiPgo8dGl0bGU+YmFsPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjZmZmZmZmIiBwb2ludHM9IjIwOC43MDY2LC02MCAxMTMuMjkzNCwtNjAgMTEzLjI5MzQsLTI0IDIwOC43MDY2LC0yNCAyMDguNzA2NiwtNjAiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iMTYxIiB5PSItMzcuOCIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5sb2NhbF9pbmRleDogMTwvdGV4dD4KPC9nPgo8IS0tIGFiciYjNDU7Jmd0O2JhbCAtLT4KPGcgaWQ9ImVkZ2UxIiBjbGFzcz0iZWRnZSI+Cjx0aXRsZT5hYnItJmd0O2JhbDwvdGl0bGU+CjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgZD0iTTE1Ni43MjcsLTE0OS4zMzY3QzE1Ny41NTI4LC0xMjguNTkzNCAxNTguOTEwMywtOTQuNDkzOCAxNTkuODczNCwtNzAuMyIvPgo8cG9seWdvbiBmaWxsPSIjMDAwMDAwIiBzdHJva2U9IiMwMDAwMDAiIHBvaW50cz0iMTYzLjM3MTQsLTcwLjQxNjcgMTYwLjI3MjEsLTYwLjI4NTQgMTU2LjM3NywtNzAuMTM4MiAxNjMuMzcxNCwtNzAuNDE2NyIvPgo8L2c+CjwhLS0gb3RoZXJzIC0tPgo8ZyBpZD0ibm9kZTMiIGNsYXNzPSJub2RlIj4KPHRpdGxlPm90aGVyczwvdGl0bGU+Cjxwb2x5Z29uIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iI2ZmZmZmZiIgcG9pbnRzPSI3OCwtMTg1LjYgMjQsLTE4NS42IDI0LC0xNDkuNiA3OCwtMTQ5LjYgNzgsLTE4NS42Ii8+Cjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjUxIiB5PSItMTYzLjQiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+Li4uPC90ZXh0Pgo8L2c+CjwhLS0gY2JsIC0tPgo8ZyBpZD0iY2JsIiBjbGFzcz0ibm9kZSI+Cjx0aXRsZT5jYmw8L3RpdGxlPgo8cG9seWdvbiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiNmZmZmZmYiIHBvaW50cz0iNTg1LjcwNjYsLTE4NS42IDQ5MC4yOTM0LC0xODUuNiA0OTAuMjkzNCwtMTQ5LjYgNTg1LjcwNjYsLTE0OS42IDU4NS43MDY2LC0xODUuNiIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSI1MzgiIHk9Ii0xNjMuNCIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5sb2NhbF9pbmRleDogMDwvdGV4dD4KPC9nPgo8IS0tIGNiciAtLT4KPGcgaWQ9ImNiciIgY2xhc3M9Im5vZGUiPgo8dGl0bGU+Y2JyPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjZmZmZmZmIiBwb2ludHM9IjQ3MS44Njc0LC0xODUuNiAzNjQuMTMyNiwtMTg1LjYgMzY0LjEzMjYsLTE0OS42IDQ3MS44Njc0LC0xNDkuNiA0NzEuODY3NCwtMTg1LjYiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iNDE4IiB5PSItMTYzLjQiIGZvbnQtZmFtaWx5PSJUaW1lcyxzZXJpZiIgZm9udC1zaXplPSIxNC4wMCIgZmlsbD0iIzAwMDAwMCI+cmVtb3RlX2luZGV4OiAwPC90ZXh0Pgo8L2c+CjwhLS0gYmNsIC0tPgo8ZyBpZD0iYmNsIiBjbGFzcz0ibm9kZSI+Cjx0aXRsZT5iY2w8L3RpdGxlPgo8cG9seWdvbiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiNmZmZmZmYiIHBvaW50cz0iNDU0LjcwNjYsLTYwIDM1OS4yOTM0LC02MCAzNTkuMjkzNCwtMjQgNDU0LjcwNjYsLTI0IDQ1NC43MDY2LC02MCIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSI0MDciIHk9Ii0zNy44IiBmb250LWZhbWlseT0iVGltZXMsc2VyaWYiIGZvbnQtc2l6ZT0iMTQuMDAiIGZpbGw9IiMwMDAwMDAiPmxvY2FsX2luZGV4OiAwPC90ZXh0Pgo8L2c+CjwhLS0gY2JyJiM0NTsmZ3Q7YmNsIC0tPgo8ZyBpZD0iZWRnZTIiIGNsYXNzPSJlZGdlIj4KPHRpdGxlPmNici0mZ3Q7YmNsPC90aXRsZT4KPHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBkPSJNNDE2LjQwMDUsLTE0OS4zMzY3QzQxNC41ODM4LC0xMjguNTkzNCA0MTEuNTk3NCwtOTQuNDkzOCA0MDkuNDc4NSwtNzAuMyIvPgo8cG9seWdvbiBmaWxsPSIjMDAwMDAwIiBzdHJva2U9IiMwMDAwMDAiIHBvaW50cz0iNDEyLjk2MDYsLTY5Ljk0MTggNDA4LjYwMTQsLTYwLjI4NTQgNDA1Ljk4NzMsLTcwLjU1MjYgNDEyLjk2MDYsLTY5Ljk0MTgiLz4KPC9nPgo8IS0tIGJhciAtLT4KPGcgaWQ9ImJhciIgY2xhc3M9Im5vZGUiPgo8dGl0bGU+YmFyPC90aXRsZT4KPHBvbHlnb24gZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjZmZmZmZmIiBwb2ludHM9IjMzNC44Njc0LC02MCAyMjcuMTMyNiwtNjAgMjI3LjEzMjYsLTI0IDMzNC44Njc0LC0yNCAzMzQuODY3NCwtNjAiLz4KPHRleHQgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iMjgxIiB5PSItMzcuOCIgZm9udC1mYW1pbHk9IlRpbWVzLHNlcmlmIiBmb250LXNpemU9IjE0LjAwIiBmaWxsPSIjMDAwMDAwIj5yZW1vdGVfaW5kZXg6IDk8L3RleHQ+CjwvZz4KPCEtLSBiYXImIzQ1OyZndDthYmwgLS0+CjxnIGlkPSJlZGdlMyIgY2xhc3M9ImVkZ2UiPgo8dGl0bGU+YmFyLSZndDthYmw8L3RpdGxlPgo8cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIGQ9Ik0yODAuMjcyMSwtNjAuMjg1NEMyNzkuNDQ1OSwtODEuMDM4MSAyNzguMDg4NCwtMTE1LjEzODkgMjc3LjEyNTYsLTEzOS4zMjU3Ii8+Cjxwb2x5Z29uIGZpbGw9IiMwMDAwMDAiIHN0cm9rZT0iIzAwMDAwMCIgcG9pbnRzPSIyNzMuNjI3NywtMTM5LjIwNTMgMjc2LjcyNywtMTQ5LjMzNjcgMjgwLjYyMjEsLTEzOS40ODM5IDI3My42Mjc3LC0xMzkuMjA1MyIvPgo8L2c+CjwhLS0gYmNyIC0tPgo8ZyBpZD0iYmNyIiBjbGFzcz0ibm9kZSI+Cjx0aXRsZT5iY3I8L3RpdGxlPgo8cG9seWdvbiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiNmZmZmZmYiIHBvaW50cz0iNTgwLjg2NzQsLTYwIDQ3My4xMzI2LC02MCA0NzMuMTMyNiwtMjQgNTgwLjg2NzQsLTI0IDU4MC44Njc0LC02MCIvPgo8dGV4dCB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSI1MjciIHk9Ii0zNy44IiBmb250LWZhbWlseT0iVGltZXMsc2VyaWYiIGZvbnQtc2l6ZT0iMTQuMDAiIGZpbGw9IiMwMDAwMDAiPnJlbW90ZV9pbmRleDogMDwvdGV4dD4KPC9nPgo8IS0tIGJjciYjNDU7Jmd0O2NibCAtLT4KPGcgaWQ9ImVkZ2U0IiBjbGFzcz0iZWRnZSI+Cjx0aXRsZT5iY3ItJmd0O2NibDwvdGl0bGU+CjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgZD0iTTUyOC42MDE0LC02MC4yODU0QzUzMC40MTg5LC04MS4wMzgxIDUzMy40MDU1LC0xMTUuMTM4OSA1MzUuNTIzNywtMTM5LjMyNTciLz4KPHBvbHlnb24gZmlsbD0iIzAwMDAwMCIgc3Ryb2tlPSIjMDAwMDAwIiBwb2ludHM9IjUzMi4wNDEzLC0xMzkuNjgwMiA1MzYuNDAwNSwtMTQ5LjMzNjcgNTM5LjAxNDYsLTEzOS4wNjk0IDUzMi4wNDEzLC0xMzkuNjgwMiIvPgo8L2c+CjwvZz4KPC9zdmc+"></p>
+<p>Another interesting note on <code>wireguard</code>, it obfuscates the
+indices used in its packets by randomizing them into a 24 bit address
+space, hiding the total number of peers using the system. Since security
+is absolutely not a concern for us, we keep it simple and attempt no
+such obfuscation.</p>
+<p>Alright, now we can state our first problem: design a handshake
+protocol to establish <code>remote_index</code> values satisfying:</p>
+<ul>
+<li><code>A.peer(name=B).local_index == B.peer(name=A).remote_index</code></li>
+<li><code>A.peer(name=B).remote_index == B.peer(name=A).local_index</code></li>
+</ul>
 </div>
 </div>
 
