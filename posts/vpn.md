@@ -871,7 +871,7 @@ Use the same setup and shell scripts as [before](#put-it-all-together), we can v
 
 ## Many Peers
 
-
+As our VPN application grows from a cozy duet to a bustling network of connections, we're gearing up to adjust our codebase to support multiple peers efficiently. This transition is not just about scaling up; it's about introducing a level of sophistication and flexibility that allows seamless communication across an expanded network. Our primary goal is to rework the existing structures and logic to cater to a dynamic environment where numerous peers interact. This means enhancing our routing mechanisms, refining how we handle incoming and outgoing packets, and ensuring that each peer is uniquely identifiable and properly managed. By doing so, we'll transform our application from a simple point-to-point tunnel into a versatile, multi-peer VPN, ready to handle a diverse range of connections and networking scenarios.
 
 ### Project Overview
 
