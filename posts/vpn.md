@@ -351,7 +351,7 @@ sudo setcap cap_net_admin=eip target/release/wontun
 target/release/wontun --peer 172.18.0.2:19988 &
 pid=$!
 
-sudo ip addr add 10.0.8.3/24 dev tun0
+sudo ip addr add 10.8.0.3/24 dev tun0
 sudo ip link set up dev tun0
 sudo ip link set dev tun0 mtu 1400
 
@@ -370,7 +370,7 @@ setcap 'cap_net_admin=eip'  ./wontun
 ./wontun &
 pid=$!
 
-ip addr add 10.0.8.1/24 dev tun0
+ip addr add 10.8.0.1/24 dev tun0
 ip link set up dev tun0
 ip link set dev tun0 mtu 1400
 
@@ -380,7 +380,7 @@ trap "kill $pid" INT TERM
 wait $pid
 ```
 
-These scripts are the glue that binds our code to the system, setting the required `cap_net_admin` capability which is necessary for manipulating `tun` interfaces. The server script kicks off `wontun` without specifying a peer, making it ready to accept any incoming client. In contrast, the client script tells `wontun` exactly where to find its server peer, in this case at `172.18.0.2:19988`. Both scripts prepare the `tun0` interface with appropriate IP configurations, client at `10.8.0.3` and the server at `10.0.8.1`.
+These scripts are the glue that binds our code to the system, setting the required `cap_net_admin` capability which is necessary for manipulating `tun` interfaces. The server script kicks off `wontun` without specifying a peer, making it ready to accept any incoming client. In contrast, the client script tells `wontun` exactly where to find its server peer, in this case at `172.18.0.2:19988`. Both scripts prepare the `tun0` interface with appropriate IP configurations, client at `10.8.0.3` and the server at `10.8.0.1`.
 
 Final note, running `run_server.sh` inside docker operates in a more restrictive environment. We need to explicitly pass the `--cap-add=NET_ADMIN` and `--device=/dev/net/tun` flags to enable `tun` interfaces inside the container:
 
@@ -868,3 +868,130 @@ fn run(peer: Option<SocketAddrV4>) -> io::Result<()> {
 ```
 
 Use the same setup and shell scripts as [before](#put-it-all-together), we can verify things are still in working condition. We have successfully refactored `wontun` to use `epoll` and connected sockets. A checkpoint of `wontun` can be browsed at: [Github link](https://github.com/yiransheng/wontun/tree/a6a5306c4f91203713c52736f29caa474083a8fe).
+
+## Many Peers
+
+
+
+### Project Overview
+
+A little bit of house keeping upfront. Up until this point, we have been putting everything inside `lib.rs`. It's time to factor out various building blocks, roughly into their respective types and purposes. This is the file structure under `src`:
+
+```text
+src/
+├── allowed_ip.rs
+├── conf.rs
+├── dev.rs
+├── lib.rs
+├── packet.rs
+├── peer.rs
+├── poll.rs
+├── udp.rs
+├── wontun-conf.rs
+└── wontun.rs
+
+0 directories, 10 files
+```
+
+* `wontun.rs` is our main binary entry point.
+* `wontun-conf.rs` is an auxiliary binary that parses configuration files in `ini` format and dump them into `json` (which then can be manipulated easily with `jq` in shell scripts).
+* `conf.rs` defines a configuration format and implements parsing from `ini`. The supported options are a subset of `wireguard` configurations format.
+* `poll.rs` is our `Poll` wrapper from before, and will remain unchanged in this section.
+* `udp.rs` contains a single helper function `new_udp_socket` from last section.
+* `dev.rs` and `peer.rs` corresponds to our familiar `Device` and `Peer` types, which of course will be going through some changes.
+* `packet.rs` and `allowed_ips.rs` are new modules that will be covered in details soon.
+
+### Peer Identities
+
+When the world contains all but two entities, there are no need for names. The pronouns "you" and "me" are enough for the pair to refer to each other. This was the situation when we restricted our VPN to allow only one peer per host. On either machine, any bytes coming from the `tun` interface was unambiguously meant for "you", the singular partner in our lonely VPN network.
+
+As we invite more participants to our VPN party, a clear system of identification becomes evident. `wireguard` identifies peers by their `PublicKey`s, we will simply use string names - shamelessly transmitted over the wire in plain texts. 
+
+**Configuration Examples**
+
+Consider three hosts, `A`, `B`, and `C`. Their configurations might look like this:
+
+Configuration on `A`:
+
+```ini
+[Interface]
+Name=A
+
+[Peer]
+Name=B
+
+[Peer]
+...
+```
+
+Configuration on `B`:
+
+```ini
+[Interface]
+Name=B
+
+[Peer]
+Name=C
+
+[Peer]
+Name=A
+```
+
+Configuration on `C`:
+
+```ini
+[Interface]
+Name=C
+
+[Peer]
+Name=B
+```
+**Interesting note**: the `Name` field is supported by `wireguard`, but ignored entirely, it exists only as a form of documentation.
+
+The names are global and all hosts agree on their meanings. If, for example, each host stores a `HashMap<PeerName, Peer>` at runtime, and every packet transmitted over UDP includes the name of the sender, it would be fairly straightforward to route the packets. However, including a potentially long name in every data packet transmitted is just too wasteful, we opt to use a slightly more complicated system, and tag each message with a `u32` index.
+
+Each host configures its peers and assigns a `local_index` at startup, effectively placing each peer at a specific position in a `Vec<Peer>`. But there's a catch: peers initially don't know their `local_index` as seen by others. For instance, host `B` might be `local_index=9` in `A`'s list, but `B` itself starts unaware of this numeric label.
+
+For this reason, we shall store another index in `struct Peer`, called `remote_index`.  At the steady state, the `Device` on node `B` would have the following data:
+
+```rust
+Deivice {
+    name: "B",
+    peers: vec![
+        Peer {
+            name: "A",
+            // This peer is the 0'th element in peers Vec
+            local_index: 0,
+            remote_index: 9,
+        }
+    ]
+}
+```
+
+On node `A`:
+
+```rust
+Device {
+    name: "A",
+    peers: vec![
+        //...
+        Peer {
+            name: "B",
+            // This peer is the 9'th element in peers Vec
+            local_index: 9,
+            remote_index: 0,
+        }
+    ]
+}
+```
+This relationship between `local_index` and `remote_index` is further clarified/illustrated below:
+
+![](peer-ids.svg)
+
+Another interesting note on `wireguard`, it obfuscates the indices used in its packets by randomizing them into a 24 bit address space, hiding the total number of peers using the system. Since security is absolutely not a concern for us, we keep it simple and attempt no such obfuscation.
+
+Alright, now we can state our first problem: design a handshake protocol to establish `remote_index` values  satisfying:
+
+* `A.peer(name=B).local_index == B.peer(name=A).remote_index`
+* `A.peer(name=B).remote_index == B.peer(name=A).local_index`
+
