@@ -122,6 +122,8 @@ Code</a></li>
 Overview</a></li>
 <li><a href="#peer-identities" id="toc-peer-identities">Peer
 Identities</a></li>
+<li><a href="#the-dual-purposes-of-allowedips" id="toc-the-dual-purposes-of-allowedips">The Dual Purposes of
+<code>AllowedIPs</code></a></li>
 </ul></li>
 </ul>
 </div>
@@ -1729,7 +1731,7 @@ link</a>.</p>
 <p>A little bit of house keeping upfront. Up until this point, we have
 been putting everything inside <code>lib.rs</code>. It’s time to factor
 out various building blocks, roughly into their respective types and
-purposes. This is the file structure under <code>src</code>:</p>
+purposes. This is the new file structure under <code>src</code>:</p>
 <div class="highlight"><pre><span></span>src/
 
 ├── allowed_ip.rs
@@ -1919,6 +1921,114 @@ protocol to establish <code>remote_index</code> values satisfying:</p>
 <li><code>A.peer(name=B).local_index == B.peer(name=A).remote_index</code></li>
 <li><code>A.peer(name=B).remote_index == B.peer(name=A).local_index</code></li>
 </ul>
+<p>However, we will not tackle it right away, instead let’s explore the
+problem space a little bit more and talk about:</p>
+</div>
+<div id="the-dual-purposes-of-allowedips" class="section level3">
+<h3>The Dual Purposes of <code>AllowedIPs</code></h3>
+<p>As we have learned, the heart of a VPN application is handling
+communications in two directions: <code>tun -&gt; udp</code>and
+<code>udp -&gt; tun</code>. Consider the first direction in a multi-peer
+setting, when an IP packet is extracted from the <code>tun</code>
+interface, we face a decision: to which <code>Peer</code> should this
+packet be sent? The answer lies in inspecting the packet’s <a href="https://en.wikipedia.org/wiki/Internet_Protocol_version_4#Packet_structure">IP
+header</a>, specifically its destination address.</p>
+<p>This is the first purpose of <code>AllowedIPs</code>. This is a new
+concept to us, but an essential configuration component in
+<code>wireguard</code>. <code>AllowedIPs</code> is a list of CIDR
+notations associated with each peer, defining a range of IP addresses
+that the peer is responsible for. The routing logic involves checking
+the packet’s destination address (<code>dst</code>) against the
+<code>AllowedIPs</code> of each <code>Peer</code>. The packet is sent to
+the <code>Peer</code> whose <code>AllowedIPs</code> range includes
+<code>dst</code>. In cases where multiple peers match, the one with the
+longest prefix match is selected.</p>
+<p>Conversely, for incoming UDP datagrams, after decapsulation, we
+obtain an IP packet with a known source address (<code>src</code>).
+Given the connected <code>Peer</code> from which this packet originates,
+we check if <code>src</code> falls within that peer’s
+<code>AllowedIPs</code>. If it does, the packet is forwarded to the
+<code>tun</code> interface; if not, it’s dropped. This step ensures that
+only packets from valid sources are processed and forwarded.</p>
+<p>In our code base, the <code>AllowedIPs</code> is represented by the
+following type (interface only, implementation omitted):</p>
+<div class="highlight"><pre><span></span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">AllowedIps</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">    </span>
+
+<span class="p">}</span><span class="w"></span>
+
+
+
+<span class="k">impl</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="n">AllowedIps</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Self</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+<span class="w">        </span>
+
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">clear</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">insert</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">key</span>: <span class="nc">IpAddr</span><span class="p">,</span><span class="w"> </span><span class="n">cidr</span>: <span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">data</span>: <span class="nc">D</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Option</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">get</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">key</span>: <span class="nc">IpAddr</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Option</span><span class="o">&lt;&amp;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">remove</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">predicate</span>: <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="nb">Fn</span><span class="p">(</span><span class="o">&amp;</span><span class="n">D</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">bool</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">iter</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Iter</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+
+
+
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+<p>Well, a confession: I straight up stole it from <a href="https://github.com/cloudflare/boringtun/blob/f672bb6c1e1e371240a8d151f15854687eb740bb/boringtun/src/device/allowed_ips.rs"><code>boringtun</code></a>,
+which uses an efficient trie-based lookup table from the crate <a href="https://crates.io/crates/ip_network_table"><code>ip_network_table</code></a>.</p>
+<p>This structure and its methods provide the necessary functionality to
+manage the <code>AllowedIPs</code> configurations for each peer. It
+includes operations for inserting new ranges, querying for a specific IP
+address, and iterating over all entries. The generic parameter
+<code>D</code> allows for associating additional data with each CIDR
+range, providing flexibility in how <code>AllowedIPs</code> is utilized
+in the broader context of the application.</p>
+<p>To summarize, <code>AllowedIPs</code> in our VPN application achieves
+two key objectives:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Peer Selection for Outgoing Packets</strong>: Determines
+which peer an outgoing IP packet should be routed to based on its
+destination address.</li>
+<li><strong>Source Address Filtering for Incoming Packets</strong>:
+Ensures that incoming packets are from an allowed source before
+forwarding them to the <code>tun</code> interface.</li>
+</ol>
 </div>
 </div>
 
