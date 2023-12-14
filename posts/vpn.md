@@ -875,7 +875,7 @@ Use the same setup and shell scripts as [before](#put-it-all-together), we can v
 
 ### Project Overview
 
-A little bit of house keeping upfront. Up until this point, we have been putting everything inside `lib.rs`. It's time to factor out various building blocks, roughly into their respective types and purposes. This is the file structure under `src`:
+A little bit of house keeping upfront. Up until this point, we have been putting everything inside `lib.rs`. It's time to factor out various building blocks, roughly into their respective types and purposes. This is the new file structure under `src`:
 
 ```text
 src/
@@ -995,3 +995,56 @@ Alright, now we can state our first problem: design a handshake protocol to esta
 * `A.peer(name=B).local_index == B.peer(name=A).remote_index`
 * `A.peer(name=B).remote_index == B.peer(name=A).local_index`
 
+However, we will not tackle it right away, instead let's explore the problem space a little bit more and talk about:
+
+### The Dual Purposes of `AllowedIPs`
+
+As we have learned, the heart of a VPN application is handling communications in two directions: `tun -> udp`and `udp -> tun`. Consider the first direction in a multi-peer setting, when an IP packet is extracted from the `tun` interface, we face a decision: to which `Peer` should this packet be sent? The answer lies in inspecting the packet's [IP header](https://en.wikipedia.org/wiki/Internet_Protocol_version_4#Packet_structure), specifically its destination address.
+
+This is the first purpose of `AllowedIPs`. This is a new concept to us, but an essential configuration component in `wireguard`. `AllowedIPs` is a list of CIDR notations associated with each peer, defining a range of IP addresses that the peer is responsible for. The routing logic involves checking the packet's destination address (`dst`) against the `AllowedIPs` of each `Peer`. The packet is sent to the `Peer` whose `AllowedIPs` range includes `dst`. In cases where multiple peers match, the one with the longest prefix match is selected.
+
+Conversely, for incoming UDP datagrams, after decapsulation, we obtain an IP packet with a known source address (`src`). Given the connected `Peer` from which this packet originates, we check if `src` falls within that peer's `AllowedIPs`. If it does, the packet is forwarded to the `tun` interface; if not, it's dropped. This step ensures that only packets from valid sources are processed and forwarded.
+
+In our code base, the `AllowedIPs` is represented by the following type (interface only, implementation omitted):
+
+```rust
+pub struct AllowedIps<D> {
+    
+}
+
+impl<D> AllowedIps<D> {
+    pub fn new() -> Self {
+        
+    }
+
+    pub fn clear(&mut self) {
+
+    }
+
+    pub fn insert(&mut self, key: IpAddr, cidr: u8, data: D) -> Option<D> {
+
+    }
+
+    pub fn get(&self, key: IpAddr) -> Option<&D> {
+
+    }
+
+    pub fn remove(&mut self, predicate: &dyn Fn(&D) -> bool) {
+
+    }
+
+    pub fn iter(&self) -> Iter<D> {
+
+    }
+}
+
+```
+
+Well, a confession: I straight up stole it from [`boringtun`](https://github.com/cloudflare/boringtun/blob/f672bb6c1e1e371240a8d151f15854687eb740bb/boringtun/src/device/allowed_ips.rs), which uses an efficient trie-based lookup table from the crate [`ip_network_table`](https://crates.io/crates/ip_network_table).
+
+This structure and its methods provide the necessary functionality to manage the `AllowedIPs` configurations for each peer. It includes operations for inserting new ranges, querying for a specific IP address, and iterating over all entries. The generic parameter `D` allows for associating additional data with each CIDR range, providing flexibility in how `AllowedIPs` is utilized in the broader context of the application.
+
+To summarize, `AllowedIPs` in our VPN application achieves two key objectives:
+
+1. **Peer Selection for Outgoing Packets**: Determines which peer an outgoing IP packet should be routed to based on its destination address.
+2. **Source Address Filtering for Incoming Packets**: Ensures that incoming packets are from an allowed source before forwarding them to the `tun` interface.
