@@ -1627,3 +1627,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+## Demo
+
+
+
+The illusion: 
+
+![](three-nodes-1.svg)
+
+The reality:
+
+![](three-nodes-2.svg)
