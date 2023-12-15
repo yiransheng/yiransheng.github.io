@@ -1849,7 +1849,7 @@ these bytes in a custom VPN protocol, packaging each into a UDP
 datagram. Initially, our encapsulation approach is straightforward: we
 simply forward the IP packets without alteration, directly to the
 server. On the wire, the IP packet structure resembles:</p>
-<pre><code>+---------------------------------------+                    
+<pre class="text"><code>+---------------------------------------+                    
 |    +---------------------------------+|                    
 |    |     +--------------------------+||                    
 | IP |UDP  |IP                        |||                    
@@ -3512,7 +3512,8 @@ Parsing and dumping (as <code>json</code>) the above example using the
 </div>
 <div id="updated-main-function" class="section level3">
 <h3>Updated <code>main</code> function</h3>
-<p>As usual, a checkpoint can be view at: <a href>Github link</a></p>
+<p>As usual, a checkpoint can be view at: <a href="https://github.com/yiransheng/wontun/tree/6234200787fb0f46bb26cb53441ec3cefdfe4085">Github
+link</a></p>
 <pre class="rust"><code>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
     let args = Args::parse();
     // tun interface name is derived from the file name of config file

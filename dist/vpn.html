@@ -358,13 +358,20 @@ these bytes in a custom VPN protocol, packaging each into a UDP
 datagram. Initially, our encapsulation approach is straightforward: we
 simply forward the IP packets without alteration, directly to the
 server. On the wire, the IP packet structure resembles:</p>
-<pre><code>+---------------------------------------+                    
+<div class="highlight"><pre><span></span>+---------------------------------------+                    
+
 |    +---------------------------------+|                    
+
 |    |     +--------------------------+||                    
+
 | IP |UDP  |IP                        |||                    
+
 |    |     +--------------------------+||                    
+
 |    +---------------------------------+|                    
-+---------------------------------------+ </code></pre>
+
++---------------------------------------+
+</pre></div>
 <p>Adding this entails an extra 28 bytes of overhead due to the IP and
 UDP headers. If the route from client to server has an MTU (Maximum
 Transmission Unit) of 1500 bytes—a common default—trying to send an
@@ -2970,7 +2977,8 @@ Parsing and dumping (as <code>json</code>) the above example using the
 </div>
 <div id="updated-main-function" class="section level3">
 <h3>Updated <code>main</code> function</h3>
-<p>As usual, a checkpoint can be view at: <a href>Github link</a></p>
+<p>As usual, a checkpoint can be view at: <a href="https://github.com/yiransheng/wontun/tree/6234200787fb0f46bb26cb53441ec3cefdfe4085">Github
+link</a></p>
 <div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">main</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="p">(),</span><span class="w"> </span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">std</span>::<span class="n">error</span>::<span class="n">Error</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Args</span>::<span class="n">parse</span><span class="p">();</span><span class="w"></span>

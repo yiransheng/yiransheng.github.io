@@ -136,7 +136,7 @@ If you're familiar with VPNs like `wireguard`, the `wg0` interface that `wg-quic
 
 Now that we're equipped to capture raw IP packets from `tun0`, which are merely bytes, our next move is to wrap these bytes in a custom VPN protocol, packaging each into a UDP datagram. Initially, our encapsulation approach is straightforward: we simply forward the IP packets without alteration, directly to the server. On the wire, the IP packet structure resembles:
 
-```
+```text
 +---------------------------------------+                    
 |    +---------------------------------+|                    
 |    |     +--------------------------+||                    
@@ -1592,7 +1592,7 @@ The parsing code is not too existing and we will be skipping it. Parsing and dum
 
 ### Updated `main` function
 
-As usual, a checkpoint can be view at: [Github link]()
+As usual, a checkpoint can be view at: [Github link](https://github.com/yiransheng/wontun/tree/6234200787fb0f46bb26cb53441ec3cefdfe4085)
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
