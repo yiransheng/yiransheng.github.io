@@ -1,3 +1,10 @@
+
+## [Write a Toy VPN in Rust](vpn)
+
+In this article, we embark on a detailed journey to create `wontun`, a simplified version of the `wireguard` VPN, using Rust. The project serves as an educational exploration into the realms of low-level network programming and system administration tools, deliberately sidelining complexities like security and encryption to focus on the fundamentals of packet routing within a VPN. Key concepts such as `tun/tap` interfaces, `epoll` mechanisms, and Linux IP routing are examined and implemented, providing valuable insights into the workings of virtual network interfaces and event-driven I/O. 
+
+![](wontun-diag.svg)
+
 ## [Analyzing Hacker News Front Page Activities](hnstats)
 
 Random and mildly interesting exploratory analysis and visualizations on Hack News activity data.

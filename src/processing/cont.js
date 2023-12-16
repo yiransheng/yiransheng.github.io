@@ -50,9 +50,15 @@ Cont.prototype = {
     }, this._async);
   },
   filter : function(predicate) {
-    return this.bind(function(x) {
-      return predicate(x) ? Cont.unit(x) : Cont.empty;
-    }); 
+    return new Cont(k => {
+      this.runCont((err, data) => {
+        if (err) {
+          k(err, null);
+        } else if (predicate(data)) {
+          k(null, data);
+        }
+      });
+    });
   }
 };
 Cont.unit = function unit(a) {

@@ -42,7 +42,8 @@ function htmlDOM(inputStream, opts, callback) {
         return cont; 
       });
     });
-  });
+  })
+  .filter(node => node != null);
 }
 
 function html(inputStream, opts, callback) {

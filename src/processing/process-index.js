@@ -23,7 +23,7 @@ var compile = function(indexDOM) {
 function extractContents(contents) {
   return domutils.filter(
     function(node) {
-      return node.attribs && node.attribs["class"] === "section level2";
+      return node && node.attribs && node.attribs["class"] === "section level2";
     },
     contents
   );
@@ -55,10 +55,14 @@ function processRawHtml(inputStream, opts, callback) {
 }
 
 if (require.main === module) {
+  var argv = require("yargs").option("html", {
+    alias: "h",
+    default: ""
+  }).argv;
   var inputStream = process.argv.html
     ? fs.createReadStream(argv.html)
     : process.stdin;
-  processRawHtml(inputStream, function(err, data) {
+  processRawHtml(inputStream, {}, function(err, data) {
     console.log(data);
   });
 }

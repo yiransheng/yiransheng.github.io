@@ -60,7 +60,7 @@ parser.done();
 function tranverse(root, pre, post){
   var stack = Array.isArray(root) ? root.concat([]) : [root];
   var node;
-  while(stack.length) {
+  while (stack.length) {
     node = stack.pop();
     pre && pre(node);
     if(node && Array.isArray(node.children)) {
