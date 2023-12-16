@@ -1,7 +1,7 @@
 ---
 title: "Write a Toy VPN in Rust"
 author: "Yiran Sheng"
-date: "12/11/2023"
+date: "12/17/2023"
 output:
   html_document:
     toc: true
@@ -117,13 +117,11 @@ nc 10.8.0.1
 
 ### The Way Packets Flow
 
-Now that we know what we are aiming for, here's a diagram illustrating how we can achieve it.
-
-![](wontun-poc.svg)
+![](wontun-diag.svg)
 
 For those of us not well-versed in the nitty-gritty of Linux network programming, `tun0` jumps out the most and might come off as an arcane term. Here `tun0` is the designation for a virtual network interface within your Linux system. This isn't a physical network card that you can touch but a software-created interface that acts and quacks like a real network device.
 
-The term `tun/tap` refers to two virtual network device drivers that are part of the Linux kernel. `tun` stands for “network TUNnel” and is used to simulate a network layer device, while `tap` stands for “network tap” and simulates a link layer device. In essence, they are virtual network kernels that behave like real network devices from the point of view of your operating system. [Reference material](https://www.kernel.org/doc/Documentation/networking/tuntap.txt). I learned about it through Jon Gjengset (jonhoo)'s excellent [Implementing TCP in Rust](https://www.youtube.com/watch?v=bzja9fQWzdA) stream, which covers `tun/tap` more succinctly and in-depth.
+The term `tun/tap` refers to two virtual network device drivers that are part of the Linux kernel. `tun` stands for “network TUNnel” and is used to simulate a network layer device, while `tap` stands for “network tap” and simulates a link layer device. In essence, they are virtual network kernels that behave like real network devices from the point of view of your operating system. [Reference material](https://www.kernel.org/doc/Documentation/networking/tuntap.txt).
 
 I can attempt to dive deeper into this, but what clicked for me was to jump straight into the code, so let's do that here as well. We'll be leveraging the [`tun-tap`](https://crates.io/crates/tun-tap) crate for this task. Borrowing from the [example code](https://github.com/vorner/tuntap/blob/master/examples/dump_iface.rs) provided by the crate:
 
@@ -156,15 +154,7 @@ If you're familiar with VPNs like ``wireguard``, the `wg0` interface that `wg-qu
 
 Now that we're equipped to capture raw IP packets from `tun0`, which are merely bytes, our next move is to wrap these bytes in a custom VPN protocol, packaging each into a UDP datagram. Initially, our encapsulation approach is straightforward: we simply forward the IP packets without alteration, directly to the server. On the wire, the IP packet structure resembles:
 
-```text
-+---------------------------------------+                    
-|    +---------------------------------+|                    
-|    |     +--------------------------+||                    
-| IP |UDP  |IP                        |||                    
-|    |     +--------------------------+||                    
-|    +---------------------------------+|                    
-+---------------------------------------+ 
-```
+![](wontun-packet.svg)
 
 Adding this entails an extra 28 bytes of overhead due to the IP and UDP headers. If the route from client to server has an MTU (Maximum Transmission Unit) of 1500 bytes—a common default—trying to send an original IP packet of 1500 bytes will cause fragmentation, which is usually best avoided. To tackle this, we can set the `tun0` interface's MTU to a lower value, akin to ``wireguard`` which defaults to 1420:
 
@@ -598,8 +588,8 @@ impl Poll {
 
 As you can tell, there isn't all that much going on. We just wrap the original `new`, `add`, `delete` and `wait` methods with trivial type conversions added. The small customizations are:
 
-* In `wait`, wait for one event at a time (`epoll_wait` sys call can return a list of ready events using the out parameter pattern through the`&mut events` argument)
-* Use a `Token` type for event identification as explained previously
+* In `wait`, wait for one event at a time (`epoll_wait` sys call can return a list of ready events using the out parameter pattern through the`&mut events` argument).
+* Use a `Token` type for event identification as mentioned previously. We use the higher 32 bits in a `u64` to encode `Token`s tag, (1 for `Tun` and `2` for `Sock`). The application-wide IO resource usage pattern is baked into this type-namely a singleton `tun` interface and multiple sockets. This specificity would be a bad design if we are making a generic library, but it is fine for a self contained use case.
 
 
 ### Revised `Device` Type
@@ -709,7 +699,21 @@ pub fn start(&self) -> io::Result<()> {
 }
 ```
 
-Upon initialization, the `Device` is configured with a listening `UdpSocket` (`self.udp`) and a `tun` interface (`self.iface`). Both of these are registered with the `epoll` instance (`self.poll`) to monitor for readable events. This setup ensures that our application is immediately ready to handle incoming data on both the `tun` interface and the UDP socket.
+Upon initialization, the `Device` is configured with a listening `UdpSocket` (`self.udp`) and a `tun` interface (`self.iface`). Both of these are registered with the `epoll` instance (`self.poll`) to monitor for readable events. This setup ensures that our application is immediately ready to handle incoming data on both the `tun` interface and the UDP socket. Recall `Token` is generic with respect to `Sock` variant's inner id type as long as it can be encoded in an `i32`, this is `SockID`:
+
+```rust
+enum SockID {
+    Disconnected,
+    Connected,
+}
+
+impl From<i32> for SockID {
+    //..
+}
+impl From<SockID> for i32 {
+    //..
+} 
+```
 
 The handler for reading from `self.iface` is similar to the code we had at POC stage (it is helpful to refer back to the [event loop](#quick-preview) shown earlier for details on how we call this handler): 
 
@@ -1903,8 +1907,8 @@ In conclusion, this project was a valuable excursion into the realms of network 
 
 ### Further Readings
 
-* [`wireguard` unofficial documentation](https://github.com/pirate/`wireguard`-docs)
-* [`wireguard` protocol](https://www.`wireguard`.com/protocol/)
+* [Wireguard unofficial documentation](https://github.com/pirate/`wireguard`-docs)
+* [Wireguard protocol](https://www.`wireguard`.com/protocol/)
 * [Understanding modern Linux routing (and wg-quick)](https://ro-che.info/articles/2021-02-27-linux-routing)
 * [Surpassing 10Gb/s over Tailscale](https://tailscale.com/blog/more-throughput)
 * [Epoll is fundamentally broken](https://idea.popcount.org/2017-02-20-epoll-is-fundamentally-broken-12/)
