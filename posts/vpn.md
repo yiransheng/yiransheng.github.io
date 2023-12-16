@@ -9,22 +9,22 @@ output:
 ---
 
 ## Introduction and Motivation
-I started using `wireguard` some five years ago. Touted as simple and user-friendly, I quickly realized its learning curve was steeper than expected. The labyrinth of networking concepts and system tools seemed like voodoo magic to me. This experience was one of many that steered me towards Rust, a language that promised more clarity in the often murky waters of low-level system networking and programming. While I've grown comfortable with Rust as a system programming language, yet the domain itself remained somewhat mystical. For example, the inner workings of `wireguard` seemed like a well-kept secret, leaving me wondering how it managed to create an alternative Internet and the roles of those `iptables` incatations in its `PostUp`.
+I started using ``wireguard`` some five years ago. Touted as simple and user-friendly, I quickly realized its learning curve was steeper than expected. The labyrinth of networking concepts and system tools seemed like voodoo magic to me. This experience was one of many that steered me towards Rust, a language that promised more clarity in the often murky waters of low-level system networking and programming. While I've grown comfortable with Rust as a system programming language, yet the domain itself remained somewhat mystical. For example, the inner workings of ``wireguard`` seemed like a well-kept secret, leaving me wondering how it managed to create an alternative Internet and the roles of those `iptables` incatations in its `PostUp`.
 My curiosity was reignited when I stumbled upon Jon Gjengset (jonhoo)'s [Implementing TCP in Rust](https://www.youtube.com/watch?v=bzja9fQWzdA) stream. His discussion about the `tun` interface was an eye-opener. Despite years as a web engineer and countless encounters with `wg0`, I was oblivious to this concept. Jonhoo's explanation was a revelation, and suddenly, the pieces began to fall into place.
 
-Motivated by this newfound understanding, I decided to dive deeper into lower-level network programming through a practical approach: creating a simplified version of `wireguard`, focusing on packet routing and bypassing the complexities of security and VPN protocols. Though the project was small, the journey was packed with enlightening moments and intriguing detours. This led to my decision to document the process, naming the project `wontun`.
+Motivated by this newfound understanding, I decided to dive deeper into lower-level network programming through a practical approach: creating a simplified version of ``wireguard``, focusing on packet routing and bypassing the complexities of security and VPN protocols. Though the project was small, the journey was packed with enlightening moments and intriguing detours. This led to my decision to document the process, naming the project `wontun`.
 
 ![](wontun.png)
 
 Before embarking on this adventure, I set some clear goals and boundaries:
 
-* Ultimately `wontun` should reach a stage that is capable of modeling complex peer topologies like `wireguard`.
+* Ultimately `wontun` should reach a stage that is capable of modeling complex peer topologies like ``wireguard``.
 * Accommodating realistic network conditions and dealing with packet losses and peer restarts is a non-goal, we shall operate in an ideal fantasy land where UDP datagrams are reliably delivered all the time.
 * Again, no security, no encryption, which means if you want to play with the code, don't do it over public Internet.
 * Concurrency and efficiency should be considered but not optimized for.
 * Learning more about Linux network admin and diagnosis tools such as `ip` `iptables` etc. is a side goal.
 
-I could not resist the urge for spoilers and heavily referenced (and sometimes outright stole from) [boringtun](https://github.com/cloudflare/boringtun), a userland Rust implementation of `wireguard`. The overall architecture of `wontun` is modeled after `boringtun`, but greatly simplified and a lot of unsafe code replaced with alternatives either via third-party crates or less efficient but more straight-forward designs. I also took some breaks in between to read some books and theory to help drive key concepts home, a reading list is included in the end.
+I could not resist the urge for spoilers and heavily referenced (and sometimes outright stole from) [boringtun](https://github.com/cloudflare/boringtun), a userland Rust implementation of ``wireguard``. The overall architecture of `wontun` is modeled after `boringtun`, but greatly simplified and a lot of unsafe code replaced with alternatives either via third-party crates or less efficient but more straight-forward designs. I also took some breaks in between to read some books and theory to help drive key concepts home, a reading list is included in the end.
 
 This project is particularly suited for individuals transitioning from higher-level languages to Rust, keen on system programming but seeking a practical gateway to surmount its entry barriers. Although this article turned out longer than initially planned, I believe its insights will be invaluable, especially for my future self and hopefully others on a similar path.
 
@@ -152,7 +152,7 @@ loop {
 
 The `testtun` can be interacted with just like a typical network interface, such as `eth0`. Pinging `10.107.1.3` will dispatch ICMP packets, which our program can intercept using `iface.recv`. Similarly, if there's a service listening on `10.107.1.2`—let's say an HTTP server on port `80`—sending a properly crafted IP packet to `10.107.1.2:80` will be correctly routed to the service.
 
-If you're familiar with VPNs like `wireguard`, the `wg0` interface that `wg-quick` conjures up is actually a `tun` interface.
+If you're familiar with VPNs like ``wireguard``, the `wg0` interface that `wg-quick` conjures up is actually a `tun` interface.
 
 Now that we're equipped to capture raw IP packets from `tun0`, which are merely bytes, our next move is to wrap these bytes in a custom VPN protocol, packaging each into a UDP datagram. Initially, our encapsulation approach is straightforward: we simply forward the IP packets without alteration, directly to the server. On the wire, the IP packet structure resembles:
 
@@ -166,7 +166,7 @@ Now that we're equipped to capture raw IP packets from `tun0`, which are merely 
 +---------------------------------------+ 
 ```
 
-Adding this entails an extra 28 bytes of overhead due to the IP and UDP headers. If the route from client to server has an MTU (Maximum Transmission Unit) of 1500 bytes—a common default—trying to send an original IP packet of 1500 bytes will cause fragmentation, which is usually best avoided. To tackle this, we can set the `tun0` interface's MTU to a lower value, akin to `wireguard` which defaults to 1420:
+Adding this entails an extra 28 bytes of overhead due to the IP and UDP headers. If the route from client to server has an MTU (Maximum Transmission Unit) of 1500 bytes—a common default—trying to send an original IP packet of 1500 bytes will cause fragmentation, which is usually best avoided. To tackle this, we can set the `tun0` interface's MTU to a lower value, akin to ``wireguard`` which defaults to 1420:
 
 ```bash
 ip link set dev tun0 mtu 1472
@@ -196,7 +196,7 @@ pub struct Device {
 }
 ```
 
-We'll be utilizing our friend `Iface` from the `tun-tap` crate, which, as we've discussed, represents a virtual network interface. The `Device` struct is our central entity for managing IP traffic tunneling. Unlike `wireguard`, which permits defining multiple peers per host and supports complex network configurations, our model will be more straightforward, with one peer per host.
+We'll be utilizing our friend `Iface` from the `tun-tap` crate, which, as we've discussed, represents a virtual network interface. The `Device` struct is our central entity for managing IP traffic tunneling. Unlike ``wireguard``, which permits defining multiple peers per host and supports complex network configurations, our model will be more straightforward, with one peer per host.
 
 A `Peer` for now is just a wrapper around its endpoint, which is an `Option<SocketAddrV4>` (we will be supporting IPv4 only). The address is also wrapped in a `Mutex` - this is a hint that we will be running this application in multiple threads.
 
@@ -426,7 +426,7 @@ A checkpoint of `wontun` can be browsed at: [Github link](https://github.com/yir
 
 ## Let's Epoll
 
-With a proof of concept implemented, we are now ready to move on for some architecture improvements. Our end goal is to support a multitude of peers and intricate routing mechanisms (like `wireguard`).  To accomplish that, the VPN application likely needs to manage an unbounded set of UDP connections (there will still be only one `tun` interface however). The current implementation, spawning two threads per peer, is charmingly simple but, let's face it, not quite fit for the big leagues in terms of scalability. Enter `epoll` and non-blocking IO—our tools of choice for the next phase. We will not be changing the application's behavior just yet, instead our goal is to replace the two main loops with a single `epoll` backed event loop.
+With a proof of concept implemented, we are now ready to move on for some architecture improvements. Our end goal is to support a multitude of peers and intricate routing mechanisms (like ``wireguard``).  To accomplish that, the VPN application likely needs to manage an unbounded set of UDP connections (there will still be only one `tun` interface however). The current implementation, spawning two threads per peer, is charmingly simple but, let's face it, not quite fit for the big leagues in terms of scalability. Enter `epoll` and non-blocking IO—our tools of choice for the next phase. We will not be changing the application's behavior just yet, instead our goal is to replace the two main loops with a single `epoll` backed event loop.
 
 ### Quick Preview
 
@@ -915,7 +915,7 @@ src/
 
 * `wontun.rs` is our main binary entry point.
 * `wontun-conf.rs` is an auxiliary binary that parses configuration files in `ini` format and dump them into `json` (which then can be manipulated easily with `jq` in shell scripts).
-* `conf.rs` defines a configuration format and implements parsing from `ini`. The supported options are a subset of `wireguard` configurations format.
+* `conf.rs` defines a configuration format and implements parsing from `ini`. The supported options are a subset of ``wireguard`` configurations format.
 * `poll.rs` is our `Poll` wrapper from before, and will remain unchanged in this section.
 * `udp.rs` contains a single helper function `new_udp_socket` from last section.
 * `dev.rs` and `peer.rs` corresponds to our familiar `Device` and `Peer` types, which of course will be going through some changes.
@@ -925,7 +925,7 @@ src/
 
 When the world contains all but two entities, there are no need for names. The pronouns "you" and "me" are enough for the pair to refer to each other. This was the situation when we restricted our VPN to allow only one peer per host. On either machine, any bytes coming from the `tun` interface was unambiguously meant for "you", the singular partner in our lonely VPN network.
 
-As we invite more participants to our VPN party, a clear system of identification becomes evident. `wireguard` identifies peers by their `PublicKey`s, we will simply use string names - shamelessly transmitted over the wire in plain texts. 
+As we invite more participants to our VPN party, a clear system of identification becomes evident. ``wireguard`` identifies peers by their `PublicKey`s, we will simply use string names - shamelessly transmitted over the wire in plain texts. 
 
 **Configuration Examples**
 
@@ -966,7 +966,7 @@ Name=C
 [Peer]
 Name=B
 ```
-**Interesting note**: the `Name` field is supported by `wireguard`, but ignored entirely, it exists only as a form of documentation.
+**Interesting note**: the `Name` field is supported by ``wireguard``, but ignored entirely, it exists only as a form of documentation.
 
 The names are global and all hosts agree on their meanings. If, for example, each host stores a `HashMap<PeerName, Peer>` at runtime, and every packet transmitted over UDP includes the name of the sender, it would be fairly straightforward to route the packets. However, including a potentially long name in every data packet transmitted is just too wasteful, we opt to use a slightly more complicated system, and tag each message with a `u32` index.
 
@@ -1008,7 +1008,7 @@ This relationship between `local_index` and `remote_index` is further clarified/
 
 ![](peer-ids.svg)
 
-Another interesting note on `wireguard`, it obfuscates the indices used in its packets by randomizing them into a 24 bit address space, hiding the total number of peers using the system. Since security is absolutely not a concern for us, we keep it simple and attempt no such obfuscation.
+Another interesting note on ``wireguard``, it obfuscates the indices used in its packets by randomizing them into a 24 bit address space, hiding the total number of peers using the system. Since security is absolutely not a concern for us, we keep it simple and attempt no such obfuscation.
 
 Alright, now we can state our first problem: design a handshake protocol to establish `remote_index` values  satisfying:
 
@@ -1021,7 +1021,7 @@ However, we will not tackle it right away, instead let's explore the problem spa
 
 As we have learned, the heart of a VPN application is handling communications in two directions: `tun -> udp`and `udp -> tun`. Consider the first direction in a multi-peer setting, when an IP packet is extracted from the `tun` interface, we face a decision: to which `Peer` should this packet be sent? The answer lies in inspecting the packet's [IP header](https://en.wikipedia.org/wiki/Internet_Protocol_version_4#Packet_structure), specifically its destination address.
 
-This is the first purpose of `AllowedIPs`. This is a new concept to us, but an essential configuration component in `wireguard`. `AllowedIPs` is a list of CIDR notations associated with each peer, defining a range of IP addresses that the peer is responsible for. The routing logic involves checking the packet's destination address (`dst`) against the `AllowedIPs` of each `Peer`. The packet is sent to the `Peer` whose `AllowedIPs` range includes `dst`. In cases where multiple peers match, the one with the longest prefix match is selected.
+This is the first purpose of `AllowedIPs`. This is a new concept to us, but an essential configuration component in ``wireguard``. `AllowedIPs` is a list of CIDR notations associated with each peer, defining a range of IP addresses that the peer is responsible for. The routing logic involves checking the packet's destination address (`dst`) against the `AllowedIPs` of each `Peer`. The packet is sent to the `Peer` whose `AllowedIPs` range includes `dst`. In cases where multiple peers match, the one with the longest prefix match is selected.
 
 Conversely, for incoming UDP datagrams, after decapsulation, we obtain an IP packet with a known source address (`src`). Given the connected `Peer` from which this packet originates, we check if `src` falls within that peer's `AllowedIPs`. If it does, the packet is forwarded to the `tun` interface; if not, it's dropped. This step ensures that only packets from valid sources are processed and forwarded.
 
@@ -1535,7 +1535,7 @@ if peer.is_allowed_ip(src_addr) {
 
 ### Parse Configurations
 
-That's quite a bit of changes and we have significantly expanded `wontun`'s capacities. Configuring it via command line arguments would've become quite cumbersome. Instead, we shall adopt a `wireguard`-like configuration format (in fact a proper subset). Defined as:
+That's quite a bit of changes and we have significantly expanded `wontun`'s capacities. Configuring it via command line arguments would've become quite cumbersome. Instead, we shall adopt a ``wireguard``-like configuration format (in fact a proper subset). Defined as:
 
 ```rust
 #[derive(Debug, Serialize)]
@@ -1766,7 +1766,7 @@ Unfortunately, this advice is not actionable for us, as there's no direct line o
 
 * **Application-Level Handling**: if you have control over the VPN software, you can implement logic to ignore ICMP redirect messages or handle them according to the VPN's network topology.
 
-This is such a nice curiosity I never thought about at all. A bit of digging on the Internet provides us evidence of `wireguard` [dealing with the same problem historically](https://git.zx2c4.com/wireguard-monolithic-historical/commit/?id=1e96d7f29551309f1ab5480e39dcc6124ea89aa0):
+This is such a nice curiosity I never thought about at all. A bit of digging on the Internet provides us evidence of ``wireguard`` [dealing with the same problem historically](https://git.zx2c4.com/`wireguard`-monolithic-historical/commit/?id=1e96d7f29551309f1ab5480e39dcc6124ea89aa0):
 
 ```c
 /* TODO: when we merge to mainline, put this check near the ip_rt_send_redirect
@@ -1878,9 +1878,9 @@ Throughout this project, we delved into several critical areas of networking:
 - **VPN Protocols and Topologies**: The project offered a glimpse into the workings of VPNs, including their protocols and network topologies.
 - **OS IP Routing and Firewalls**: We examined how the operating system handles IP routing and the role of firewalls, particularly iptables, in managing network traffic.
 
-#### WireGuard Inspiration and Comparison
+#### `wireguard` Inspiration and Comparison
 
-Our design decisions drew heavily from WireGuard and its Rust implementation, `boringtun`. The simplicity and efficiency of WireGuard's design were key inspirations, guiding our approach to building a basic yet functional VPN. While our project is far simpler, this comparison helped contextualize our work within the broader landscape of VPN solutions.
+Our design decisions drew heavily from `wireguard` and its Rust implementation, `boringtun`. The simplicity and efficiency of `wireguard`'s design were key inspirations, guiding our approach to building a basic yet functional VPN. While our project is far simpler, this comparison helped contextualize our work within the broader landscape of VPN solutions.
 
 #### The Complexity of Modern Linux Networking
 
@@ -1903,8 +1903,8 @@ In conclusion, this project was a valuable excursion into the realms of network 
 
 ### Further Readings
 
-* [Wireguard unofficial documentation](https://github.com/pirate/wireguard-docs)
-* [Wireguard protocol](https://www.wireguard.com/protocol/)
+* [`wireguard` unofficial documentation](https://github.com/pirate/`wireguard`-docs)
+* [`wireguard` protocol](https://www.`wireguard`.com/protocol/)
 * [Understanding modern Linux routing (and wg-quick)](https://ro-che.info/articles/2021-02-27-linux-routing)
 * [Surpassing 10Gb/s over Tailscale](https://tailscale.com/blog/more-throughput)
 * [Epoll is fundamentally broken](https://idea.popcount.org/2017-02-20-epoll-is-fundamentally-broken-12/)
