@@ -11,7 +11,7 @@
 
 <meta name="author" content="Yiran Sheng" />
 
-<meta name="date" content="2023-12-11" />
+<meta name="date" content="2023-12-17" />
 
 <title>Write a Toy VPN in Rust</title>
 
@@ -1623,7 +1623,7 @@ display: none;
 
 <h1 class="title toc-ignore">Write a Toy VPN in Rust</h1>
 <h4 class="author">Yiran Sheng</h4>
-<h4 class="date">12/11/2023</h4>
+<h4 class="date">12/17/2023</h4>
 
 </div>
 
@@ -1756,6 +1756,7 @@ seeking a practical gateway to surmount its entry barriers. Although
 this article turned out longer than initially planned, I believe its
 insights will be invaluable, especially for my future self and hopefully
 others on a similar path.</p>
+<p>Link to the repo: <a href="https://github.com/yiransheng/wontun" class="uri">https://github.com/yiransheng/wontun</a></p>
 </div>
 <div id="the-first-step" class="section level2">
 <h2>The First Step</h2>
@@ -2614,8 +2615,8 @@ to monitor for readable events. This setup ensures that our application
 is immediately ready to handle incoming data on both the
 <code>tun</code> interface and the UDP socket. Recall <code>Token</code>
 is generic with respect to <code>Sock</code> variant’s inner id type as
-long as it can be encoded in an <code>i32</code>, this is
-<code>SockID</code>:</p>
+long as it can be encoded in an <code>i32</code>, which is
+<code>SockID</code> here:</p>
 <pre class="rust"><code>enum SockID {
     Disconnected,
     Connected,

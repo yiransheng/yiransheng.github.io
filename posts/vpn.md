@@ -28,6 +28,8 @@ I could not resist the urge for spoilers and heavily referenced (and sometimes o
 
 This project is particularly suited for individuals transitioning from higher-level languages to Rust, keen on system programming but seeking a practical gateway to surmount its entry barriers. Although this article turned out longer than initially planned, I believe its insights will be invaluable, especially for my future self and hopefully others on a similar path.
 
+Link to the repo: https://github.com/yiransheng/wontun
+
 ## The First Step
 
 
@@ -699,7 +701,7 @@ pub fn start(&self) -> io::Result<()> {
 }
 ```
 
-Upon initialization, the `Device` is configured with a listening `UdpSocket` (`self.udp`) and a `tun` interface (`self.iface`). Both of these are registered with the `epoll` instance (`self.poll`) to monitor for readable events. This setup ensures that our application is immediately ready to handle incoming data on both the `tun` interface and the UDP socket. Recall `Token` is generic with respect to `Sock` variant's inner id type as long as it can be encoded in an `i32`, this is `SockID`:
+Upon initialization, the `Device` is configured with a listening `UdpSocket` (`self.udp`) and a `tun` interface (`self.iface`). Both of these are registered with the `epoll` instance (`self.poll`) to monitor for readable events. This setup ensures that our application is immediately ready to handle incoming data on both the `tun` interface and the UDP socket. Recall `Token` is generic with respect to `Sock` variant's inner id type as long as it can be encoded in an `i32`, which is `SockID` here:
 
 ```rust
 enum SockID {
