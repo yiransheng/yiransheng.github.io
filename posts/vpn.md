@@ -8,6 +8,8 @@ output:
     df_print: paged
 ---
 
+![](wontun.png)
+
 ## The First Step
 
 
@@ -1883,7 +1885,7 @@ In conclusion, this project was a valuable excursion into the realms of network 
 
 ### Further Readings
 
-* [WIreguard unofficial documentation](https://github.com/pirate/wireguard-docs)
+* [Wireguard unofficial documentation](https://github.com/pirate/wireguard-docs)
 * [Wireguard protocol](https://www.wireguard.com/protocol/)
 * [Understanding modern Linux routing (and wg-quick)](https://ro-che.info/articles/2021-02-27-linux-routing)
 * [Epoll is fundamentally broken](https://idea.popcount.org/2017-02-20-epoll-is-fundamentally-broken-12/)
