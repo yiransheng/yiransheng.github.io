@@ -8,7 +8,25 @@ output:
     df_print: paged
 ---
 
+## Introduction and Motivation
+I started using `wireguard` some five years ago. Touted as simple and user-friendly, I quickly realized its learning curve was steeper than expected. The labyrinth of networking concepts and system tools seemed like voodoo magic to me. This experience was one of many that steered me towards Rust, a language that promised more clarity in the often murky waters of low-level system networking and programming. While I've grown comfortable with Rust as a system programming language, yet the domain itself remained somewhat mystical. For example, the inner workings of `wireguard` seemed like a well-kept secret, leaving me wondering how it managed to create an alternative Internet and the roles of those `iptables` incatations in its `PostUp`.
+My curiosity was reignited when I stumbled upon Jon Gjengset (jonhoo)'s [Implementing TCP in Rust](https://www.youtube.com/watch?v=bzja9fQWzdA) stream. His discussion about the `tun` interface was an eye-opener. Despite years as a web engineer and countless encounters with `wg0`, I was oblivious to this concept. Jonhoo's explanation was a revelation, and suddenly, the pieces began to fall into place.
+
+Motivated by this newfound understanding, I decided to dive deeper into lower-level network programming through a practical approach: creating a simplified version of `wireguard`, focusing on packet routing and bypassing the complexities of security and VPN protocols. Though the project was small, the journey was packed with enlightening moments and intriguing detours. This led to my decision to document the process, naming the project `wontun`.
+
 ![](wontun.png)
+
+Before embarking on this adventure, I set some clear goals and boundaries:
+
+* Ultimately `wontun` should reach a stage that is capable of modeling complex peer topologies like `wireguard`.
+* Accommodating realistic network conditions and dealing with packet losses and peer restarts is a non-goal, we shall operate in an ideal fantasy land where UDP datagrams are reliably delivered all the time.
+* Again, no security, no encryption, which means if you want to play with the code, don't do it over public Internet.
+* Concurrency and efficiency should be considered but not optimized for.
+* Learning more about Linux network admin and diagnosis tools such as `ip` `iptables` etc. is a side goal.
+
+I could not resist the urge for spoilers and heavily referenced (and sometimes outright stole from) [boringtun](https://github.com/cloudflare/boringtun), a userland Rust implementation of `wireguard`. The overall architecture of `wontun` is modeled after `boringtun`, but greatly simplified and a lot of unsafe code replaced with alternatives either via third-party crates or less efficient but more straight-forward designs. I also took some breaks in between to read some books and theory to help drive key concepts home, a reading list is included in the end.
+
+This project is particularly suited for individuals transitioning from higher-level languages to Rust, keen on system programming but seeking a practical gateway to surmount its entry barriers. Although this article turned out longer than initially planned, I believe its insights will be invaluable, especially for my future self and hopefully others on a similar path.
 
 ## The First Step
 
@@ -1888,6 +1906,7 @@ In conclusion, this project was a valuable excursion into the realms of network 
 * [Wireguard unofficial documentation](https://github.com/pirate/wireguard-docs)
 * [Wireguard protocol](https://www.wireguard.com/protocol/)
 * [Understanding modern Linux routing (and wg-quick)](https://ro-che.info/articles/2021-02-27-linux-routing)
+* [Surpassing 10Gb/s over Tailscale](https://tailscale.com/blog/more-throughput)
 * [Epoll is fundamentally broken](https://idea.popcount.org/2017-02-20-epoll-is-fundamentally-broken-12/)
 * [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/)
 * [One system in isolation - *Operating Systems: Three Easy Pieces*](https://pages.cs.wisc.edu/~remzi/OSTEP/)
