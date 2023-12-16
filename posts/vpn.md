@@ -97,7 +97,7 @@ nc 10.8.0.1
 
 ### The Way Packets Flow
 
-Now that we know what we are aiming for, here's a diagram illustrating how we can achieve it. This diagram only covers one half the flow: sending data from client to server, reversing the arrows yields the second half. 
+Now that we know what we are aiming for, here's a diagram illustrating how we can achieve it.
 
 ![](wontun-poc.svg)
 
@@ -1144,7 +1144,7 @@ Without further ado, here's a state machine diagram for our simple protocol (yet
 
 Note at the end of this short journey, both the client and the server would have their `remote_idx` configured properly, and subsequent data packets will include a `sender_idx = remote_idx` for peer selections as we have shown in the previous sub-section.
 
-There are many failure modes of this protocol. For example it does not account for packet losses and has no timeout or expiration mechanisms. For other, it doesn't not account for nodes crashes and restarts, if the client restarts and re-sends a `Packet::Handshake`, the server rudely ignores it. Furthermore, it requires asymmetric roles between two nodes, if both nodes act like clients and initializes by sending handshakes, the situation deadlocks and neither party can proceed.
+There are many failure modes of this protocol. For example it does not account for packet losses and has no timeout or expiration mechanisms. For other, it does not handle nodes crashes and restarts, if the client restarts and re-sends a `Packet::Handshake`, the server rudely ignores it. Furthermore, it requires asymmetric roles between two nodes, if both nodes act like clients and initializes by sending handshakes, the situation deadlocks and neither party can make any progress.
 
 We will gloss over these issues. In our controlled environment (reliable local, docker virtual networks) and asymmetric client/server configurations, we favor simplicity over robustness.
 
@@ -1628,14 +1628,266 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Demo
+## Test Drive
 
+One thing that fascinates me about the networking world is that each layer of abstraction provides a near-perfect illusion of harmony and niceties to the layers above. For example, in this section, we will place three nodes into our virtual network. Any pair among these three can freely communicate with each other, forming a fully connected graph. This indeed is a huge step forward.
 
-
-The illusion: 
+> The Two give birth to the Three. Three gives birth to all things.
+>
+> —Tao Te Ching, Verse 42
 
 ![](three-nodes-1.svg)
 
-The reality:
+This of course, is an illusion, the reality at our abstraction level looks like the this: 
 
 ![](three-nodes-2.svg)
+
+Underneath the seamless facade of our network, the reality of data transmission is slightly more intricate. The blue arrows trace a path IP packets travel from client-A to client-B. All but the loopy one on `tun0` on `server` has been implemented so far. The final step is taken care of by the operating system via ip forwarding, which is setup by (note we also need to pass `--sysctl="net.ipv4.ip_forward=1"` to `docker run` to enable IP forwarding):
+
+```bash
+# executed on server docker container
+iptables -A FORWARD -i tun0 -j ACCEPT
+```
+
+This command  is an instruction to the server's firewall system, specifically designed for managing the forwarding of packets:
+
+- **-A FORWARD**: Adds a rule to the `FORWARD` chain, which is responsible for handling packets that the server needs to route from one network interface to another, rather than processing them locally.
+- **-i tun0**: Targets packets arriving on the `tun0` interface. The `tun0` interface is associated with `wontun` operations
+- **-j ACCEPT**: Sets the action to be taken on matching packets. `ACCEPT` allows the packets to be forwarded.
+
+The operating system determines whether a packet should be processed by the server or forwarded based on its destination IP address. If the destination IP matches one of the server's interface IPs, the packet is processed internally. If not, it's treated as a packet to be forwarded, and the `FORWARD` chain rules are applied. The `iptables` command ensures that packets arriving from VPN clients via `tun0` are allowed to be routed through the server to their ultimate destinations, as per the server's routing table.
+
+**Packet Routing on Client-A**
+
+When client-A sends a packet to `10.10.0.2` (client-B's private IP), the routing decision is made as follows:
+
+```bash
+> ip route get 10.10.0.2
+10.10.0.2 dev tun0 src 10.10.0.3 uid 1000
+    cache
+```
+
+The command output indicates that the packet destined for `10.10.0.2` will be sent through the `tun0` interface. This interface is configured with client-A's private IP (`10.10.0.3`), and the packet is processed by `wontun`.
+
+
+
+**Packet Handling on the Server**
+
+
+
+```bash
+root@76f2d1352e9c:/# ip route show 10.10.0.0/24
+10.10.0.0/24 dev tun0 proto kernel scope link src 10.10.0.1
+
+root@76f2d1352e9c:/# ip route get 10.10.0.2
+10.10.0.2 dev tun0 src 10.10.0.1 uid 0
+    cache
+```
+
+- The `ip route show` command reveals that the `10.10.0.0/24` subnet (which includes `10.10.0.2`) is associated with the server's `tun0` interface. The server's `tun0` has its own IP address (`10.10.0.1`).
+- The `ip route get` command further confirms that the packet for `10.10.0.2` is routed through the `tun0` interface. Since `10.10.0.2` does not match the server's `tun0` address (`10.10.0.1`), the IP forwarding rule is applied, and the packet is routed back into the VPN network.
+
+**Forwarding to Client-B**
+
+The server's configuration identifies where to forward the packet:
+
+```ini
+[Peer]
+Name=client-B
+AllowedIPs=10.10.0.2/32
+```
+
+This configuration specifies that any packet destined for `10.10.0.2` (client-B) should be forwarded to the peer named `client-B`. The `AllowedIPs` directive effectively routes the packet to client-B over the VPN.
+
+To put all this to the test, we can run a `traceroute`, which confirms the packet flow we theorized above:
+
+```bash
+(client-A 10.10.0.3)> traceroute 10.10.0.2
+traceroute to 10.10.0.2 (10.10.0.2), 64 hops max
+  1   10.10.0.1  0.375ms  0.353ms  0.234ms
+  2   10.10.0.2  0.481ms  0.346ms  0.422ms
+```
+
+To get some more details, let's run a simple `ping`:
+
+```bash
+(client-A 10.10.0.3)> ping 10.10.0.2
+PING 10.10.0.2 (10.10.0.2) 56(84) bytes of data.
+64 bytes from 10.10.0.2: icmp_seq=1 ttl=63 time=0.490 ms
+From 10.10.0.1 icmp_seq=2 Redirect Host(New nexthop: 10.10.0.2)
+64 bytes from 10.10.0.2: icmp_seq=2 ttl=63 time=0.951 ms
+From 10.10.0.1 icmp_seq=3 Redirect Host(New nexthop: 10.10.0.2)
+64 bytes from 10.10.0.2: icmp_seq=3 ttl=63 time=0.862 ms
+From 10.10.0.1 icmp_seq=4 Redirect Host(New nexthop: 10.10.0.2)
+64 bytes from 10.10.0.2: icmp_seq=4 ttl=63 time=0.948 ms
+^C
+--- 10.10.0.2 ping statistics ---
+4 packets transmitted, 4 received, +3 errors, 0% packet loss, time 3029ms
+rtt min/avg/max/mdev = 0.490/0.812/0.951/0.189 ms
+```
+
+Working as intended. However, we notice an unusual entry in the `ping` logs: `From 10.10.0.1 icmp_seq=2 Redirect Host(New nexthop: 10.10.0.2)`. Here's the explanation:
+
+- **ICMP Redirects**: Generated by the server (`10.10.0.1`), these messages indicate a more efficient route is available for the packet's destination.
+- **Routing Table Check**: The server, upon receiving a packet, checks its routing table to determine the best route for forwarding.
+- **Direct Route Detection**: If the server's routing table indicates that the destination (`10.10.0.2`) is directly reachable via the same network interface (`tun0`) the packet arrived on, it decides a direct route exists.
+- **Optimization Advice**: The server sends an ICMP redirect message back to the sender (client-A), advising it to send future packets directly to `10.10.0.2` (client-B), bypassing the server.
+
+Unfortunately, this advice is not actionable for us, as there's no direct line of communication between client-A (`10.10.0.3`) and client-B (`10.10.0.2`) in our VPN setup. The ICMP redirect messages, like the one seen in the `ping` output, are generated by the operating system's network stack based on its routing table. In a VPN setup, these messages can be misleading since direct routes between VPN clients typically don't exist. If we want these messages to go away, there are a couple of options:
+
+* **Disable ICMP Redirects**: On the VPN server, you can disable the generation of ICMP redirect messages. This is usually done via sysctl settings. For example, on a Linux server, you can execute the following command:
+
+  ```bash
+  sysctl -w net.ipv4.conf.all.send_redirects=0
+  sysctl -w net.ipv4.conf.default.send_redirects=0
+  ```
+
+* **Firewall Rules**: Implement firewall rules to block outgoing ICMP redirect messages. This can be done using iptables or similar firewall utilities, though it's a less common approach compared to adjusting sysctl settings.
+
+* **Application-Level Handling**: if you have control over the VPN software, you can implement logic to ignore ICMP redirect messages or handle them according to the VPN's network topology.
+
+This is such a nice curiosity I never thought about at all. A bit of digging on the Internet provides us evidence of `wireguard` [dealing with the same problem historically](https://git.zx2c4.com/wireguard-monolithic-historical/commit/?id=1e96d7f29551309f1ab5480e39dcc6124ea89aa0):
+
+```c
+/* TODO: when we merge to mainline, put this check near the ip_rt_send_redirect
+ * call of ip_forward in net/ipv4/ip_forward.c, similar to the current secpath
+ * check, rather than turning it off like this. This is just a stop gap solution
+ * while we're an out of tree module. */
+if (in_dev && dev->netdev_ops == &netdev_ops && event == NETDEV_REGISTER) {
+    IN_DEV_CONF_SET(in_dev, SEND_REDIRECTS, false);
+    IPV4_DEVCONF_ALL(dev_net(dev), SEND_REDIRECTS) = false;
+}
+```
+
+## Multithreading
+
+In the final stage, we would like to run our main `Device` event loops in multiple threads to increase throughput and efficiency. However, this section is a bit anti-climatic. While the idea of introducing multithreading might seem like a major overhaul, the actual implementation is quite straightforward and succinct, as reflected in the patch provided below. 
+
+1. **Function Rename and Parameter Addition:**
+```diff
+--- a/src/dev.rs
++++ b/src/dev.rs
+- pub fn wait(&self) {
++ pub fn event_loop(&self, i: usize) {
+```
+
+* Renamed `wait` function to `event_loop` and added a new parameter `i`, which represents the thread index. This adjustment facilitates the identification and management of multiple event loop instances running in parallel threads.
+
+2. **Import and Use of Arc**:
+
+```diff
+--- a/src/wontun.rs
++++ b/src/wontun.rs
++ use std::{path::PathBuf, sync::Arc};
+...
++ let dev = Arc::new(dev);
+```
+
+3. **Spawning Multiple Threads:**
+
+```diff
++ for i in 1..args.num_threads.unwrap_or(4) {
++     let d = Arc::clone(&dev);
++     std::thread::spawn(move || {
++         d.event_loop(i);
++     });
++ }
+```
+
+* The application now spawns multiple threads (the number is determined by `args.num_threads` or defaults to 4). Each thread runs an instance of the `event_loop` function.
+
+1. **Running Event Loop in Main Thread:**
+
+```diff
++ dev.event_loop(0);
+```
+
+* The main thread also runs its instance of the `event_loop` function, ensuring that the main thread remains active and block on `event_loop` so  that the program don't exit early.
+* No graceful shutdown was implemented, we just `Ctrl-C` it when we are done.
+
+This was easily done because we had used data structures like `Arc` and `RwLock` throughout, and carefully avoided `&mut self` methods. The program compiles, and the compiler assures us it is data race free, fearless concurrency indeed
+
+### Epoll One Last Time
+
+There are some crucial details we shall not gloss over however. It's related to the `epoll` flags we use, which I did not elaborate on at the time:
+
+```rust
+const EPOLL_FLAGS: EpollFlags = EpollFlags::EPOLLIN.union(EpollFlags::EPOLLET);
+```
+
+We've opted for `EPOLLET`, which stands for edge-triggered mode, as opposed to the default level-triggered mode. This choice significantly impacts how `epoll` behaves in a multithreaded environment:
+
+- **Edge vs. Level Triggered**: In level-triggered mode, `epoll` will continually notify about an event as long as the condition persists. In contrast, edge-triggered mode only notifies once when the condition changes. This behavior is crucial for avoiding redundant wake-ups in a multithreaded setup.
+- **Spurious Wakes**: With level-triggered `epoll`, there's a risk of spurious wake-ups where a read event could wake up multiple threads calling `epoll_wait` on the same `epoll` file descriptor (fd). This scenario is less efficient and can lead to unnecessary contention among threads. [Here's a StackOverflow discussion](https://stackoverflow.com/questions/12481245/epoll-wait-on-several-threads-faster/12484467#12484467) for more insights.
+
+#### System Behavior and OS Guarantees
+
+1. **Atomicity of epoll Events**: Modern operating systems generally ensure that `epoll` events are atomic. This means when an event is reported to one thread, it won't be reported to another. However, this guarantee alone doesn't eliminate all concurrency challenges.
+2. **Edge-Triggered Mode**: Using `EPOLLET` (edge-triggered) in `epoll` is crucial in a multithreaded environment. It ensures that events are only reported once when their status changes, rather than continuously as long as the condition is true. This reduces the likelihood of multiple threads attempting to handle the same event simultaneously.
+3. **Reading from UDP Sockets**:
+   - **Atomic Reads**: Each read operation from a UDP socket is atomic in the sense that each `recv` or `recvfrom` system call reads a complete datagram. UDP is a datagram-oriented protocol, meaning each message is sent and received as an entire unit (a datagram). If a datagram is too large to fit in the buffer provided to the `recv` call, it is truncated, but the operation itself is atomic - you either get the entire datagram or a truncated portion of it, but not a partial or merged datagram.
+   - **Concurrency Concerns**: In a multithreaded environment, if multiple threads are reading from the same UDP socket, each `recv` call retrieves a different datagram. There's no risk of two threads reading parts of the same datagram concurrently.
+4. **Reading from tun Interfaces**:
+   - **Atomicity in tun**: Like UDP, reading from a `tun` interface is also atomic per operation. Each read typically retrieves a complete packet. The `tun` interface operates at the network layer (IP packets) and ensures that each read operation from the `tun` device corresponds to one full packet.
+   - **Concurrency and Packet Order**: If multiple threads read from the same `tun` interface, they might retrieve separate packets concurrently. However, the order in which packets are read and processed may not necessarily match the order in which they were received, depending on the threading model and scheduling.
+
+#### Potential Failure Modes in Multithreaded `epoll`
+
+1. **Event Loss**: In edge-triggered mode, if a thread doesn't fully handle an event (for example, reading all available data from a socket), the event might not be reported again, leading to potential data loss or delayed processing.
+2. **Race Conditions**: Even with atomic event notifications, there's a potential for race conditions. Two threads might simultaneously attempt to handle different events that affect each other, leading to inconsistent or unexpected behavior.
+3. **Contention and Deadlocks**: With multiple threads waiting on the same `epoll` `fd`, there's a risk of contention or deadlocks, especially if the threads also need to acquire locks on shared resources (like buffers or data structures associated with sockets).
+
+#### In Summary
+
+For `wontun`, the use of UDP sockets and `tun` interfaces simplifies some aspects of multithreading with `epoll`, primarily because UDP is connectionless and typically incurs less state management overhead than TCP. However, careful design is still required to ensure that all events are processed without loss or delay, and that threads don't interfere with each other's operations. Thorough testing, especially under high-load conditions, is essential to identify and resolve concurrency issues - which I have totally not conducted.
+
+## Conclusion: Insights and Reflections
+
+As we reach the conclusion of our journey in building a rudimentary VPN application, it's crucial to reflect on the objectives, learnings, and potential future directions of this project.
+
+#### Project Goals and Learning Experience
+
+This endeavor was primarily a learning experience, diving into the world of network programming in its most fundamental form. By consciously setting aside complex aspects like security and encryption, we were able to focus on the core elements of network programming. The project provided a hands-on exploration of network communication, handling of virtual interfaces, and interaction with the Linux networking stack.
+
+#### Exploring Key Networking Concepts
+
+Throughout this project, we delved into several critical areas of networking:
+
+- **tun Interfaces**: We explored how these virtual network devices operate, providing a gateway between user-space applications and the network stack in the kernel.
+- **epoll Mechanism**: We tackled the challenges of efficient I/O event notification, crucial for handling multiple network connections.
+- **VPN Protocols and Topologies**: The project offered a glimpse into the workings of VPNs, including their protocols and network topologies.
+- **OS IP Routing and Firewalls**: We examined how the operating system handles IP routing and the role of firewalls, particularly iptables, in managing network traffic.
+
+#### WireGuard Inspiration and Comparison
+
+Our design decisions drew heavily from WireGuard and its Rust implementation, `boringtun`. The simplicity and efficiency of WireGuard's design were key inspirations, guiding our approach to building a basic yet functional VPN. While our project is far simpler, this comparison helped contextualize our work within the broader landscape of VPN solutions.
+
+#### The Complexity of Modern Linux Networking
+
+One of the significant takeaways from this project is the inherent complexity of the modern Linux networking stack. This exploration underscored that the best way to understand such complex systems is through hands-on experience and experimentation.
+
+#### Rust's Role in System Programming
+
+Rust's expressive type system and rich documentation culture significantly eased the learning curve, especially when compared to the traditional challenges of deciphering C code and navigating dense man pages. Rust offers a more approachable and understandable entry point into system programming, making it an excellent choice for projects like this.
+
+#### Future Directions for the Project
+
+Looking ahead, there are several avenues for further exploration and learning:
+
+- **Implementing Basic Encryption**: While our project sidestepped security concerns, a natural next step could be to introduce simple encryption mechanisms, enhancing understanding of secure data transmission.
+- **Performance Optimization**: Experimenting with different threading models or optimizing data handling routines could offer deeper insights into system efficiency.
+- **Network Topology Extensions**: Exploring more complex network topologies, such as mesh networks, could broaden our understanding of VPN structures.
+- **User-Friendly Interface**: Developing a user-friendly interface for configuring and managing the VPN could merge system programming with application development skills.
+
+In conclusion, this project was a valuable excursion into the realms of network programming and system design, illuminated by the powerful features of Rust. The road ahead is filled with opportunities for further learning and development, each promising to deepen our understanding of the intricate world of networking.
+
+### Further Readings
+
+* [WIreguard unofficial documentation](https://github.com/pirate/wireguard-docs)
+* [Wireguard protocol](https://www.wireguard.com/protocol/)
+* [Understanding modern Linux routing (and wg-quick)](https://ro-che.info/articles/2021-02-27-linux-routing)
+* [Epoll is fundamentally broken](https://idea.popcount.org/2017-02-20-epoll-is-fundamentally-broken-12/)
+* [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/)
+* [One system in isolation - *Operating Systems: Three Easy Pieces*](https://pages.cs.wisc.edu/~remzi/OSTEP/)
+* [The Architecture of Open Source Applications (Volume 2) nginx](https://aosabook.org/en/v2/nginx.html)
+
