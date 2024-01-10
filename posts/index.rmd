@@ -1,4 +1,10 @@
 
+## [Understanding call/cc](callcc)
+
+I set up this blog almost eight years ago. I was learning about functional programming at the time, and chose to implement the static site building pipelines in JavaScript - with a custom made monadic CPS framework. It was the worst code I have ever written, even if it is still functional. Every single bug fix over the years was hair-pulling difficult, truly one of the worst in terms of maintainability (I am too embarrassed to link the code here).
+
+Nonetheless, I still consider the knowledge gained in learning about and implementing an ill-advised version of continuation monads valuable. The problem was, I had forgotten about most of what I learned back then. I wrote this article as a refresher for myself.
+
 ## [Write a Toy VPN in Rust](vpn)
 
 In this article, we embark on a detailed journey to create `wontun`, a simplified version of the `wireguard` VPN, using Rust. The project serves as an educational exploration into the realms of low-level network programming and system administration tools, deliberately sidelining complexities like security and encryption to focus on the fundamentals of packet routing within a VPN. Key concepts such as `tun/tap` interfaces, `epoll` mechanisms, and Linux IP routing are examined and implemented, providing valuable insights into the workings of virtual network interfaces and event-driven I/O. 

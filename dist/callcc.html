@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8">
+<meta name="generator" content="pandoc">
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE">
+
+
+<meta name="author" content="Yiran Sheng">
+
+<meta name="date" content="2024-01-10">
+
+<title>Understanding call/cc</title>
+
+
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- tabsets -->
+
+
+
+<!-- code folding -->
+
+
+
+
+<link href="style/main.css" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.206/distr/fira_code.css"></head>
+
+<body><div class="nav-back">
+					 <a href="/">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460.3 460.3"><path d="M230.149 120.939L65.986 256.274c0 .191-.048.472-.144.855-.094.38-.144.656-.144.852v137.041c0 4.948 1.809 9.236 5.426 12.847 3.616 3.613 7.898 5.431 12.847 5.431h109.63V303.664h73.097v109.64h109.629c4.948 0 9.236-1.814 12.847-5.435 3.617-3.607 5.432-7.898 5.432-12.847V257.981c0-.76-.104-1.334-.288-1.707L230.149 120.939z"/><path d="M457.122 225.438L394.6 173.476V56.989c0-2.663-.856-4.853-2.574-6.567-1.704-1.712-3.894-2.568-6.563-2.568h-54.816c-2.666 0-4.855.856-6.57 2.568-1.711 1.714-2.566 3.905-2.566 6.567v55.673l-69.662-58.245c-6.084-4.949-13.318-7.423-21.694-7.423-8.375 0-15.608 2.474-21.698 7.423L3.172 225.438c-1.903 1.52-2.946 3.566-3.14 6.136-.193 2.568.472 4.811 1.997 6.713l17.701 21.128c1.525 1.712 3.521 2.759 5.996 3.142 2.285.192 4.57-.476 6.855-1.998L230.149 95.817l197.57 164.741c1.526 1.328 3.521 1.991 5.996 1.991h.858c2.471-.376 4.463-1.43 5.996-3.138l17.703-21.125c1.522-1.906 2.189-4.145 1.991-6.716-.195-2.563-1.242-4.609-3.141-6.132z"/></svg>
+          </a>
+          <a href="https://github.com/yiransheng">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35.318 35.318"><path d="M23.71 34.689c-.172.062-.345.137-.522.168-.678.121-1.112-.229-1.116-.922-.009-1.287-.009-2.572.012-3.859.022-1.48-.012-2.941-1.139-4.162.67-.12 1.266-.204 1.849-.338 3.862-.887 5.868-3.323 6.124-7.366.131-2.058-.236-3.946-1.604-5.567-.099-.114-.104-.373-.057-.539.364-1.34.258-2.649-.166-3.959-.105-.327-.279-.428-.602-.407-1.134.063-2.173.461-3.089 1.073-.883.593-1.705.722-2.754.482-2.31-.521-4.635-.369-6.94.165-.261.062-.612-.021-.851-.161-1.082-.634-2.164-1.25-3.412-1.496-.965-.188-1.049-.14-1.305.793-.322 1.176-.354 2.353-.025 3.536.047.172-.002.448-.117.575-2.557 2.853-1.631 8.244.092 10.309 1.34 1.604 3.12 2.326 5.096 2.701.345.064.688.113 1.033.173-.296.77-.562 1.497-.863 2.212-.059.138-.246.254-.399.312-1.938.752-3.604.199-4.713-1.56-.593-.938-1.354-1.639-2.488-1.842-.036-.007-.073-.026-.106-.021-.305.08-.607.164-.911.246.171.238.292.558.521.701.961.608 1.586 1.475 1.999 2.498.649 1.604 1.909 2.319 3.546 2.459.799.065 1.606.01 2.481.01 0 .996.036 2.133-.015 3.265-.026.61-.639.854-1.373.604-1.947-.666-3.752-1.621-5.311-2.963C.956 26.96-1.214 20.83.657 13.655 2.522 6.503 7.383 2.116 14.651.739 24.708-1.163 34.235 6.161 35.233 16.37c.788 8.048-3.949 15.579-11.523 18.319zm-9.481-8.839l-.016.038.055.009c.014.001.026.026-.039-.047zm-4.55 3.181c.157.097.307.22.477.273.062.02.177-.121.38-.271-.282-.107-.448-.201-.623-.225-.068-.008-.156.145-.234.223zm1.433.246c.023.105.232.236.355.234.119-.002.235-.16.354-.25-.108-.099-.216-.195-.548-.494-.072.208-.191.376-.161.51zm1.758-.423c-.148.035-.273.172-.408.266.079.1.158.193.285.35.175-.16.294-.271.414-.379-.1-.087-.217-.255-.291-.237zm-4.358-.593c.082.155.209.289.381.508.115-.188.24-.332.218-.361a1.931 1.931 0 0 0-.403-.367c-.01-.008-.213.186-.196.22z"/></svg>
+					 </a>
+				</div>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Understanding call/cc</h1>
+<h4 class="author">Yiran Sheng</h4>
+<h4 class="date">01/10/2024</h4>
+
+</div>
+
+
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>I set up this blog almost eight years ago. I was learning about
+functional programming at the time, and chose to implement the static
+site building pipelines in JavaScript - with a custom made monadic CPS
+framework. It was the worst code I have ever written, even if it is
+still functional. Every single bug fix over the years was hair-pulling
+difficult, truly one of the worst in terms of maintainability (I am too
+embarrassed to link the code here).</p>
+<p>Nonetheless, I still consider the knowledge gained in learning about
+and implementing an ill-advised version of continuation monads valuable.
+The problem was, I had forgotten about most of what I learned back then.
+I wrote this article as a refresher for myself.</p>
+</div>
+<div id="perhaps-better-written-articles-on-this-topic" class="section level2">
+<h2>Perhaps better written articles on this topic</h2>
+<p><a href="https://www.schoolofhaskell.com/user/dpiponi/the-mother-of-all-monads">The
+Mother of all Monads</a></p>
+<p><a href="http://www.madore.org/~david/computers/callcc.html">A page
+about <code>call/cc</code></a></p>
+</div>
+<div id="continuations-in-javascript" class="section level2">
+<h2>Continuations in JavaScript</h2>
+<p>Continuation Passing Style (CPS) is a programming pattern where
+control is passed explicitly through continuation functions. In simpler
+terms, instead of returning the result of a function traditionally, the
+function passes the result to another function (the continuation
+function) that you define and which dictates what happens next.</p>
+<p>In JavaScript, a language with first class functions, CPS can be
+implemented using callback functions. A callback function is a function
+passed into another function as an argument, which is then invoked
+inside the outer function to complete some kind of routine or action.
+Here’s a basic example in JavaScript:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">add</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">const</span> <span class="nx">sum</span> <span class="o">=</span> <span class="nx">a</span> <span class="o">+</span> <span class="nx">b</span><span class="p">;</span>
+
+    <span class="nx">callback</span><span class="p">(</span><span class="nx">sum</span><span class="p">);</span> <span class="c1">// passing the result to the callback function</span>
+
+<span class="p">}</span>
+
+
+
+<span class="kd">function</span> <span class="nx">print</span><span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;The sum is:&#39;</span><span class="p">,</span> <span class="nx">result</span><span class="p">);</span>
+
+<span class="p">}</span>
+
+
+
+<span class="nx">add</span><span class="p">(</span><span class="mf">5</span><span class="p">,</span> <span class="mf">7</span><span class="p">,</span> <span class="nx">print</span><span class="p">);</span> <span class="c1">// This will log &quot;The sum is: 12&quot;</span>
+</pre></div>
+</div>
+<div id="a-continuation-monad-in-typescript" class="section level2">
+<h2>A Continuation Monad in TypeScript</h2>
+<p>First a named callback type to improve readability before things get
+complicated:</p>
+<div class="highlight"><pre><span></span><span class="kr">type</span> <span class="nx">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span> <span class="o">=</span> <span class="p">(</span><span class="nx">arg</span>: <span class="kt">T</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="ow">void</span><span class="p">;</span>
+</pre></div>
+<p>While a standard function returns a value directly, as in
+<code>const ret3 = () =&gt; 3</code>, a CPS-style function, such as
+<code>const Ret3 = (k: Callback&lt;number&gt;) =&gt; k(3)</code>,
+invokes a provided callback with its result.</p>
+<aside>
+<div id="side-note" class="section level4">
+<h4>Side Note</h4>
+<p>Throughout the rest of this article, I shall use Uppercase
+identifiers for CPS function names and lowercase names for
+regular/direct-style function names to distinguish the two styles.</p>
+</div>
+</aside>
+<p>To formalize this approach, we encapsulate such functions in a
+<code>class</code>, enabling us to implement monadic interfaces, the
+most significant of which is <code>flatMap</code> (analogous to
+<code>&gt;&gt;=</code> or <code>bind</code> in Haskell):</p>
+<div class="highlight"><pre><span></span><span class="kd">class</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span> <span class="p">{</span>
+
+  <span class="k">static</span> <span class="k">of</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">a</span>: <span class="kt">U</span><span class="p">)</span><span class="o">:</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">k</span><span class="p">(</span><span class="nx">a</span><span class="p">));</span>
+
+  <span class="p">}</span>
+
+
+
+  <span class="kr">constructor</span><span class="p">(</span><span class="k">private</span> <span class="nx">runCont</span><span class="o">:</span> <span class="p">(</span><span class="nx">k</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="ow">void</span><span class="p">)</span> <span class="p">{}</span>
+
+
+
+  <span class="nx">run</span><span class="p">(</span><span class="nx">k</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">runCont</span><span class="p">(</span><span class="nx">k</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+
+
+  <span class="nx">map</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">f</span><span class="o">:</span> <span class="p">(</span><span class="nx">arg</span>: <span class="kt">T</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">U</span><span class="p">)</span><span class="o">:</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">runCont</span><span class="p">((</span><span class="nx">t</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">k</span><span class="p">(</span><span class="nx">f</span><span class="p">(</span><span class="nx">t</span><span class="p">)));</span>
+
+    <span class="p">});</span>
+
+  <span class="p">}</span>
+
+
+
+  <span class="nx">flatMap</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">f</span><span class="o">:</span> <span class="p">(</span><span class="nx">arg</span>: <span class="kt">T</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">U</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">runCont</span><span class="p">((</span><span class="nx">t</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">f</span><span class="p">(</span><span class="nx">t</span><span class="p">).</span><span class="nx">run</span><span class="p">(</span><span class="nx">k</span><span class="p">));</span>
+
+    <span class="p">});</span>
+
+  <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>An example of a simple <code>add</code> function in this style:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span> <span class="nx">Add</span> <span class="o">=</span> <span class="p">(</span><span class="nx">a</span>: <span class="kt">number</span><span class="p">,</span> <span class="nx">b</span>: <span class="kt">number</span><span class="p">)</span><span class="o">:</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="kt">number</span><span class="o">&gt;</span> <span class="p">=&gt;</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">k</span><span class="p">(</span><span class="nx">a</span> <span class="o">+</span> <span class="nx">b</span><span class="p">));</span>
+</pre></div>
+<p>In fact, we can transform any regular style function to CPS function
+with this helper:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">xform</span><span class="o">&lt;</span><span class="nx">F</span> <span class="k">extends</span> <span class="nb">Function</span><span class="o">&gt;</span><span class="p">(</span>
+
+  <span class="nx">f</span>: <span class="kt">F</span><span class="p">,</span>
+
+<span class="p">)</span><span class="o">:</span> <span class="p">(</span><span class="nx">...args</span>: <span class="kt">Parameters</span><span class="o">&lt;</span><span class="nx">F</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">ReturnType</span><span class="o">&lt;</span><span class="nx">F</span><span class="o">&gt;&gt;</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="p">(...</span><span class="nx">args</span><span class="p">)</span> <span class="p">=&gt;</span>
+
+    <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+      <span class="kd">const</span> <span class="nx">ret</span> <span class="o">=</span> <span class="nx">f</span><span class="p">(...</span><span class="nx">args</span><span class="p">);</span>
+
+      <span class="nx">k</span><span class="p">(</span><span class="nx">ret</span><span class="p">);</span>
+
+    <span class="p">});</span>
+
+<span class="p">}</span>
+
+
+
+<span class="kd">const</span> <span class="nx">mul</span> <span class="o">=</span> <span class="p">(</span><span class="nx">a</span>: <span class="kt">number</span><span class="p">,</span> <span class="nx">b</span>: <span class="kt">number</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">a</span> <span class="o">*</span> <span class="nx">b</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">Mul</span><span class="o">:</span> <span class="p">(</span><span class="nx">a</span>: <span class="kt">number</span><span class="p">,</span> <span class="nx">b</span>: <span class="kt">number</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="kt">number</span><span class="o">&gt;</span> <span class="o">=</span> <span class="nx">xform</span><span class="p">(</span><span class="nx">mul</span><span class="p">);</span>
+</pre></div>
+<p>Let’s compare a full program translation with both regular and CPS
+styles:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Regular</span>
+
+<span class="kd">const</span> <span class="nx">sum</span> <span class="o">=</span> <span class="nx">add</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span> <span class="mf">2</span><span class="p">);</span>
+
+<span class="kd">const</span> <span class="nx">prod</span> <span class="o">=</span> <span class="nx">mul</span><span class="p">(</span><span class="nx">sum</span><span class="p">,</span> <span class="mf">1</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">prod</span><span class="p">);</span>
+
+
+
+<span class="c1">// CPS</span>
+
+<span class="nx">Add</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span> <span class="mf">2</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">sum</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Mul</span><span class="p">(</span><span class="nx">sum</span><span class="p">,</span> <span class="mf">1</span><span class="p">))</span>
+
+  <span class="p">.</span><span class="nx">run</span><span class="p">((</span><span class="nx">prod</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">prod</span><span class="p">));</span>
+</pre></div>
+</div>
+<div id="do-notation" class="section level2">
+<h2><code>Do</code> Notation</h2>
+<p>Writing code in CPS can be cumbersome and reminiscent of the
+“callback hell”. To alleviate this, we introduce a simplified version of
+Haskell’s <code>Do</code> notation into JavaScript/TypeScript using
+generator functions:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">_do</span><span class="o">&lt;</span><span class="nx">R</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">genFn</span>: <span class="kt">Generator</span><span class="o">&lt;</span><span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">unknown</span><span class="o">&gt;</span><span class="p">,</span> <span class="nx">R</span><span class="p">,</span> <span class="nx">unknown</span><span class="o">&gt;</span><span class="p">)</span><span class="o">:</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">R</span><span class="o">&gt;</span> <span class="p">{</span>
+
+  <span class="kd">const</span> <span class="nx">gen</span> <span class="o">=</span> <span class="nx">genFn</span><span class="p">();</span>
+
+  <span class="kd">const</span> <span class="nx">recurr</span> <span class="o">=</span> <span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+    <span class="kd">const</span> <span class="p">{</span> <span class="nx">value</span><span class="p">,</span> <span class="nx">done</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">gen</span><span class="p">.</span><span class="nx">next</span><span class="p">(</span><span class="nx">val</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">done</span><span class="p">)</span> <span class="p">{</span>
+
+      <span class="k">return</span> <span class="nx">value</span><span class="p">.</span><span class="nx">flatMap</span><span class="p">(</span><span class="nx">recurr</span><span class="p">);</span>
+
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+
+      <span class="k">return</span> <span class="nx">Cont</span><span class="p">.</span><span class="k">of</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+
+    <span class="p">}</span>
+
+  <span class="p">};</span>
+
+  <span class="k">return</span> <span class="nx">recurr</span><span class="p">();</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>Due to TypeScript’s expressive yet constrained type system, fully
+typing this helper function is challenging. It uses <code>unknown</code>
+types since there’s no single type for the yielded values or the values
+sent into the generator. Here’s an example usage:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span> <span class="nx">print</span> <span class="o">=</span> <span class="p">(</span><span class="nx">x</span>: <span class="kt">any</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">x</span><span class="p">);</span>
+
+<span class="kd">const</span> <span class="nx">Print</span> <span class="o">=</span> <span class="nx">xform</span><span class="p">(</span><span class="nx">print</span><span class="p">);</span>
+
+
+
+<span class="nx">_do</span><span class="p">(</span><span class="kd">function</span> <span class="o">*</span><span class="p">()</span> <span class="p">{</span>
+
+  <span class="kd">const</span> <span class="nx">sum</span> <span class="o">=</span> <span class="k">yield</span> <span class="nx">Add</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span> <span class="mf">2</span><span class="p">);</span>
+
+  <span class="kd">const</span> <span class="nx">prod</span> <span class="o">=</span> <span class="k">yield</span> <span class="nx">Mul</span><span class="p">(</span><span class="nx">sum</span><span class="p">,</span> <span class="mf">1</span><span class="p">);</span>
+
+    
+
+  <span class="k">yield</span> <span class="nx">print</span><span class="p">(</span><span class="nx">prod</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="nx">prod</span><span class="p">;</span>
+
+<span class="p">}).</span><span class="nx">run</span><span class="p">(</span><span class="nx">k</span> <span class="p">=&gt;</span> <span class="p">{});</span>
+</pre></div>
+<p>In true functional programming style, this approach allows us to
+construct a large <code>Cont</code> monad that represents the entire
+program as a data structure. The final <code>run(k =&gt; {})</code> call
+initiates the actual computations.</p>
+</div>
+<div id="callcc-magic" class="section level2">
+<h2><code>call/cc</code> Magic</h2>
+<p>Now that we have built some useful CPS primitives, finally, we are
+ready to talk about <code>call/cc</code>.</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">callcc</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">f</span><span class="o">:</span> <span class="p">(</span><span class="nx">k</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="ow">void</span><span class="p">)</span><span class="o">:</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span> <span class="p">{</span>
+
+  <span class="k">return</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">f</span><span class="p">(</span><span class="nx">k</span><span class="p">));</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>This one-liner is deceptively difficult, and understanding it can be
+challenging. Let’s explore it through an extended example from the
+previous section:</p>
+<div class="highlight"><pre><span></span><span class="kd">const</span> <span class="nx">Main</span> <span class="o">=</span> <span class="nx">_do</span><span class="p">(</span><span class="kd">function</span><span class="o">*</span> <span class="p">()</span> <span class="p">{</span>
+
+  <span class="kd">const</span> <span class="nx">sum</span> <span class="o">=</span> <span class="k">yield</span> <span class="nx">Add</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span> <span class="mf">2</span><span class="p">);</span>    <span class="c1">// sum=3</span>
+
+  <span class="kd">const</span> <span class="nx">prod</span> <span class="o">=</span> <span class="k">yield</span> <span class="nx">Mul</span><span class="p">(</span><span class="nx">sum</span><span class="p">,</span> <span class="mf">1</span><span class="p">);</span> <span class="c1">// prod=3</span>
+
+    
+
+  <span class="k">yield</span> <span class="nx">Print</span><span class="p">(</span><span class="sb">`start prod = </span><span class="si">${</span><span class="nx">prod</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+
+
+  <span class="kd">const</span> <span class="nx">value</span> <span class="o">=</span> <span class="k">yield</span> <span class="nx">callcc</span><span class="p">((</span><span class="nx">cc</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">prod</span> <span class="o">!==</span> <span class="mf">3</span><span class="p">)</span> <span class="p">{</span>
+
+      <span class="nx">cc</span><span class="p">(</span><span class="mf">4</span><span class="p">);</span>
+
+    <span class="p">}</span>
+
+  <span class="p">});</span>
+
+
+
+  <span class="k">yield</span> <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+  <span class="k">yield</span> <span class="nx">Print</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">);</span>
+
+
+
+  <span class="k">return</span> <span class="nx">value</span><span class="p">;</span>
+
+<span class="p">});</span>
+
+
+
+<span class="nx">Main</span><span class="p">.</span><span class="nx">run</span><span class="p">((</span><span class="nx">result</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{});</span>
+</pre></div>
+<p><code>callcc</code> calls a supplied lambda with “the current
+continuation”, which represents “the rest of the program”. The language
+here is woefully imprecise and probably doesn’t clarity anything, we
+must discuss in more concrete terms. In this example, the “current
+continuation” at the point of <code>callcc</code> represents the
+remaining computations, particularly these statements:</p>
+<div class="highlight"><pre><span></span><span class="k">yield</span> <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="k">yield</span> <span class="nx">Print</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">);</span>
+</pre></div>
+<p>Inside the lambda passed to <code>callcc</code>, <code>cc</code> is
+invoked only if <code>prod !== 3</code>. If we run the math, we find out
+the value of <code>prod</code> is in fact <code>3</code>, therefore,
+<code>cc</code> is not called - meaning the rest of computations are
+skipped. If we run the program, indeed, only the following line is
+printed:</p>
+<div class="highlight"><pre><span></span>start prod = 3
+</pre></div>
+<p>To understand how it works, let’s desugar the <code>_do</code> body
+manually from the point of <code>callcc</code> onwards:</p>
+<div class="highlight"><pre><span></span><span class="nx">callcc</span><span class="p">((</span><span class="nx">cc</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="nx">prod</span> <span class="o">!==</span> <span class="mf">3</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">cc</span><span class="p">(</span><span class="mf">4</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">}).</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">value</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+  <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nx">Print</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">));</span>
+
+<span class="p">});</span>
+
+
+
+<span class="c1">// 1) substitute with callcc&#39;s body</span>
+
+<span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">cc</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="nx">prod</span> <span class="o">!==</span> <span class="mf">3</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">cc</span><span class="p">(</span><span class="mf">4</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">}).</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">value</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+  <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nx">Print</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">));</span>
+
+<span class="p">});</span>
+
+
+
+<span class="c1">// 2) substitute with flatMap&#39;s implementation</span>
+
+<span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+  <span class="p">((</span><span class="nx">cc</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">prod</span> <span class="o">!==</span> <span class="mf">3</span><span class="p">)</span> <span class="p">{</span>
+
+      <span class="nx">cc</span><span class="p">(</span><span class="mf">4</span><span class="p">);</span>
+
+    <span class="p">}</span>
+
+  <span class="p">})((</span><span class="nx">t</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+    <span class="p">((</span><span class="nx">value</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+      <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">).</span><span class="nx">flatMap</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nx">Print</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">));</span>
+
+    <span class="p">})(</span><span class="nx">t</span><span class="p">).</span><span class="nx">run</span><span class="p">(</span><span class="nx">k</span><span class="p">);</span>
+
+  <span class="p">});</span>
+
+<span class="p">});</span>
+
+
+
+<span class="c1">// 3) further simplify</span>
+
+<span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="nx">prod</span> <span class="o">!==</span> <span class="mf">3</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+
+      <span class="p">.</span><span class="nx">flatMap</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nx">Print</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">))</span>
+
+      <span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="nx">k</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+<span class="p">});</span>
+</pre></div>
+<p>Key points:</p>
+<ul>
+<li><code>callcc</code> returns a <code>Cont</code> monad, thus we can
+call <code>flatMap</code> on it</li>
+<li>The lambda passed to <code>callcc(...).flatMap</code> is clearly
+“the rest of the program” (the <code>Cont</code> monads from the
+remaining <code>Print</code> calls)</li>
+<li>Step 3) takes quite a bit of mental energy to perform, but hopefully
+the final expression should convince you it does what was
+advertised</li>
+</ul>
+</div>
+<div id="some-really-cursed-stuff" class="section level2">
+<h2>Some really cursed stuff</h2>
+<p>For our next example, we’ll forgo the <code>_do</code> helper and use
+<code>flatMap</code> directly, since generators are stateful and cannot
+truly and properly model the <code>Do</code> notation (which is
+syntactic sugar only).</p>
+<div class="highlight"><pre><span></span><span class="kd">let</span> <span class="nx">ccStash</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">Main2</span> <span class="o">=</span> <span class="nx">Add</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span> <span class="mf">2</span><span class="p">)</span>
+
+  <span class="p">.</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">sum</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Mul</span><span class="p">(</span><span class="nx">sum</span><span class="p">,</span> <span class="mf">1</span><span class="p">))</span>
+
+  <span class="p">.</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">prod</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="nx">callcc</span><span class="p">((</span><span class="nx">cc</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+      <span class="nx">ccStash</span> <span class="o">=</span> <span class="nx">cc</span><span class="p">;</span>
+
+
+
+      <span class="nx">cc</span><span class="p">(</span><span class="nx">prod</span><span class="p">);</span>
+
+    <span class="p">});</span>
+
+  <span class="p">})</span>
+
+  <span class="p">.</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">v</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Print</span><span class="p">(</span><span class="sb">`v = </span><span class="si">${</span><span class="nx">v</span><span class="si">}</span><span class="sb">`</span><span class="p">).</span><span class="nx">map</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nx">v</span> <span class="o">+</span> <span class="mf">1</span><span class="p">))</span>
+
+  <span class="p">.</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">v</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">ccStash</span> <span class="o">&amp;&amp;</span> <span class="nx">ccStash</span><span class="p">(</span><span class="nx">v</span><span class="p">)));</span>
+
+
+
+<span class="nx">Main2</span><span class="p">.</span><span class="nx">run</span><span class="p">((</span><span class="nx">r</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{});</span>
+</pre></div>
+<p>At the <code>callcc</code> call site, we sneakily stash away the
+<code>cc</code> variable, which is a lambda representing “the rest of
+the program” consisting of:</p>
+<div class="highlight"><pre><span></span><span class="p">.</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">v</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Print</span><span class="p">(</span><span class="sb">`v = </span><span class="si">${</span><span class="nx">v</span><span class="si">}</span><span class="sb">`</span><span class="p">).</span><span class="nx">map</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nx">v</span> <span class="o">+</span> <span class="mf">1</span><span class="p">))</span>
+
+  <span class="p">.</span><span class="nx">flatMap</span><span class="p">((</span><span class="nx">v</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">ccStash</span> <span class="o">&amp;&amp;</span> <span class="nx">ccStash</span><span class="p">(</span><span class="nx">v</span><span class="p">)));</span>
+</pre></div>
+<p>Note <code>ccStash</code> is invoked as a final part of
+<code>ccStash</code> itself! Unsurprisingly, running this leads to an
+infinite loop and stack overflow:</p>
+<div class="highlight"><pre><span></span><span class="nv">v</span> <span class="o">=</span> <span class="m">1271</span>
+
+<span class="nv">v</span> <span class="o">=</span> <span class="m">1272</span>
+
+<span class="nv">v</span> <span class="o">=</span> <span class="m">1273</span>
+
+<span class="nv">v</span> <span class="o">=</span> <span class="m">1274</span>
+
+<span class="nv">v</span> <span class="o">=</span> <span class="m">1275</span>
+
+<span class="nv">v</span> <span class="o">=</span> <span class="m">1276</span>
+
+error: Uncaught <span class="o">(</span><span class="k">in</span> promise<span class="o">)</span> RangeError: Maximum call stack size exceeded
+
+  console.log<span class="o">(</span>x<span class="o">)</span><span class="p">;</span>
+
+  ^
+
+    at print <span class="o">(</span>file:/dev/cont/index.ts:68:3<span class="o">)</span>
+
+    at Cont.runCont <span class="o">(</span>file:/dev/cont/index.ts:36:17<span class="o">)</span>
+
+    at Cont.runCont <span class="o">(</span>file:/dev/cont/index.ts:17:12<span class="o">)</span>
+
+    at Cont.run <span class="o">(</span>file:/dev/cont/index.ts:12:10<span class="o">)</span>
+
+    at file:/dev/cont/index.ts:26:14
+
+    at Cont.runCont <span class="o">(</span>file:/dev/cont/index.ts:100:44<span class="o">)</span>
+
+    at Cont.run <span class="o">(</span>file:/dev/cont/index.ts:12:10<span class="o">)</span>
+
+    at file:/dev/cont/index.ts:26:14
+
+    at file:/dev/cont/index.ts:18:9
+
+    at Cont.runCont <span class="o">(</span>file:/dev/cont/index.ts:37:5<span class="o">)</span>
+</pre></div>
+<p>This illustrates the powerful and potentially dangerous nature of
+continuations and <code>call/cc</code> in programming.</p>
+</div>
+<div id="why-we-might-want-to-use-cps" class="section level2">
+<h2>Why we might want to use CPS</h2>
+<p>In JavaScript particularly, using callbacks for computation lifts the
+restriction of returning results synchronously. This is why old style
+nodejs api for async IO were all callback-based. Consider the following
+addition to our toy CPS machineary:</p>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">xformAsync</span><span class="o">&lt;</span><span class="nx">T</span><span class="p">,</span> <span class="nx">F</span> <span class="k">extends</span> <span class="p">(</span><span class="nx">...args</span>: <span class="kt">any</span><span class="p">[])</span> <span class="p">=&gt;</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="nx">f</span>: <span class="kt">F</span><span class="p">)</span><span class="o">:</span> 
+
+  <span class="p">(</span><span class="nx">...args</span>: <span class="kt">Parameters</span><span class="o">&lt;</span><span class="nx">F</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span> <span class="p">{</span>
+
+
+
+  <span class="k">return</span> <span class="p">(...</span><span class="nx">args</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">(</span><span class="nx">k</span> <span class="p">=&gt;</span> <span class="p">{</span>
+
+    <span class="kd">const</span> <span class="nx">retPromise</span> <span class="o">=</span> <span class="nx">f</span><span class="p">(...</span><span class="nx">args</span><span class="p">);</span>
+
+    <span class="nx">retPromise</span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">k</span><span class="p">);</span>
+
+  <span class="p">});</span>
+
+<span class="p">}</span>
+</pre></div>
+<p>Similar to <code>xform</code>, this helper function transforms an
+async function that returns a <code>Promise</code> into a CPS function.
+We can mix and match sync and async functions in the same framework, as
+shown below:</p>
+<div class="highlight"><pre><span></span><span class="nx">_do</span><span class="p">(</span><span class="kd">function</span> <span class="o">*</span><span class="p">()</span> <span class="p">{</span>
+
+  <span class="kd">const</span> <span class="nx">id</span> <span class="o">=</span> <span class="k">yield</span> <span class="nx">Join</span><span class="p">(</span><span class="s2">&quot;prefix_&quot;</span><span class="p">,</span> <span class="mf">3</span><span class="p">);</span>
+
+  <span class="kd">const</span> <span class="nx">res</span> <span class="o">=</span> <span class="k">yield</span> <span class="nx">Fetch</span><span class="p">(</span><span class="sb">`objects/{id}`</span><span class="p">);</span>
+
+  
+
+  <span class="k">yield</span> <span class="nx">Print</span><span class="p">(</span><span class="nx">res</span><span class="p">);</span>
+
+<span class="p">});</span>
+</pre></div>
+<p>This is but one simple taste of what a unified CPS framework could
+bring. Continuation is a pretty general and powerful concept that can be
+used to implement advanced control flows such as exceptions and
+coroutines. The <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">Wikipedia
+article</a> on CPS also mentions using CPS as an IR for functional
+language compilers as an alternative for SSA (an idea I would like to
+explore some day).</p>
+</div>
+
+
+
+
+</div>
+
+
+
+<!-- tabsets -->
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+
+
+</body>
+</html>
