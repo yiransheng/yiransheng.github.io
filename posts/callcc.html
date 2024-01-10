@@ -515,7 +515,7 @@ initiates the actual computations.</p>
 <p>Now that we have built some useful CPS primitives, finally, we are
 ready to talk about <code>call/cc</code>.</p>
 <pre class="typescript"><code>function callcc&lt;T&gt;(f: (k: Callback&lt;T&gt;) =&gt; void): Cont&lt;T&gt; {
-  return new Cont((k: Callback&lt;T&gt;) =&gt; f(k));
+  return new Cont((cc: Callback&lt;T&gt;) =&gt; f(cc)); // or just return new Cont(f);
 }</code></pre>
 <p>This one-liner is deceptively difficult, and understanding it can be
 challenging. Let’s explore it through an extended example from the
@@ -589,7 +589,7 @@ new Cont((k) =&gt; {
 // 3) further simplify
 new Cont((k) =&gt; {
   if (prod !== 3) {
-    Print(`log value: ${value}`)
+    Print(`log value: ${4}`)
       .flatMap(() =&gt; Print(&quot;end&quot;))
       .run(k);
   }

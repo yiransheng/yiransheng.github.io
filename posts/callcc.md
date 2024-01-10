@@ -159,7 +159,7 @@ Now that we have built some useful CPS primitives, finally, we are ready to talk
 
 ```typescript
 function callcc<T>(f: (k: Callback<T>) => void): Cont<T> {
-  return new Cont((k: Callback<T>) => f(k));
+  return new Cont((cc: Callback<T>) => f(cc)); // or just return new Cont(f);
 }
 ```
 
@@ -236,7 +236,7 @@ new Cont((k) => {
 // 3) further simplify
 new Cont((k) => {
   if (prod !== 3) {
-    Print(`log value: ${value}`)
+    Print(`log value: ${4}`)
       .flatMap(() => Print("end"))
       .run(k);
   }
