@@ -146,7 +146,7 @@ _do(function *() {
   const sum = yield Add(1, 2);
   const prod = yield Mul(sum, 1);
     
-  yield print(prod);
+  yield Print(prod);
   return prod;
 }).run(k => {});
 ```
