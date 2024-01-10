@@ -318,7 +318,7 @@ initiates the actual computations.</p>
 ready to talk about <code>call/cc</code>.</p>
 <div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">callcc</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">f</span><span class="o">:</span> <span class="p">(</span><span class="nx">k</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="ow">void</span><span class="p">)</span><span class="o">:</span> <span class="nx">Cont</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span> <span class="p">{</span>
 
-  <span class="k">return</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">k</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">f</span><span class="p">(</span><span class="nx">k</span><span class="p">));</span>
+  <span class="k">return</span> <span class="ow">new</span> <span class="nx">Cont</span><span class="p">((</span><span class="nx">cc</span>: <span class="kt">Callback</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">f</span><span class="p">(</span><span class="nx">cc</span><span class="p">));</span> <span class="c1">// or just return new Cont(f);</span>
 
 <span class="p">}</span>
 </pre></div>
@@ -449,7 +449,7 @@ manually from the point of <code>callcc</code> onwards:</p>
 
   <span class="k">if</span> <span class="p">(</span><span class="nx">prod</span> <span class="o">!==</span> <span class="mf">3</span><span class="p">)</span> <span class="p">{</span>
 
-    <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+    <span class="nx">Print</span><span class="p">(</span><span class="sb">`log value: </span><span class="si">${</span><span class="mf">4</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
 
       <span class="p">.</span><span class="nx">flatMap</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nx">Print</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">))</span>
 
