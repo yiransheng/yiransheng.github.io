@@ -513,98 +513,146 @@ initiates the actual computations.</p>
 <div id="callcc-magic" class="section level2">
 <h2><code>call/cc</code> Magic</h2>
 <p>Now that we have built some useful CPS primitives, finally, we are
-ready to talk about <code>call/cc</code>.</p>
-<pre class="typescript"><code>function callcc&lt;T&gt;(f: (k: Callback&lt;T&gt;) =&gt; void): Cont&lt;T&gt; {
-  return new Cont((cc: Callback&lt;T&gt;) =&gt; f(cc)); // or just return new Cont(f);
+ready to talk about <code>call/cc</code> (call with current
+continuation).</p>
+<pre class="typescript"><code>type CC&lt;T&gt; = (x: T) =&gt; Cont&lt;any&gt;;
+
+function callcc&lt;T&gt;(f: (cc: CC&lt;T&gt;) =&gt; Cont&lt;T&gt;) {
+  return new Cont(k =&gt; f(a =&gt; new Cont(_ =&gt; k(a))).run(k));
 }</code></pre>
-<p>This one-liner is deceptively difficult, and understanding it can be
-challenging. Let’s explore it through an extended example from the
-previous section:</p>
-<pre class="typescript"><code>const Main = _do(function* () {
-  const sum = yield Add(1, 2);    // sum=3
-  const prod = yield Mul(sum, 1); // prod=3
-    
+<p>When <code>callcc</code> is invoked, it gives the function access to
+the current continuation as an argument. This continuation can be called
+with a value to “jump back” to the point where <code>callcc</code> was
+called, effectively allowing functions to control the flow of the
+program in non-linear ways. I understand this description is hand-wavy,
+and the one liner implementation of <code>callcc</code> might look
+impenetrable and hard to make sense of. Let’s consider a concrete
+example expanded from the previous section.</p>
+<pre class="typescript"><code>const Main = _do(function *() {
+  const sum = yield Add(1, 2);
+  const prod = yield Mul(sum, 1);
+
   yield Print(`start prod = ${prod}`);
 
-  const value = yield callcc((cc) =&gt; {
-    if (prod !== 3) {
-      cc(4);
-    }
-  });
+  const value = yield callcc(raise =&gt; _do(function *(){
+    yield Print(&quot;about to raise 4&quot;);
+    const never = yield raise(4);
+    yield Add(never, 44);
+    yield Print(&quot;unreachable!&quot;);
+
+    return -1;
+  }));
 
   yield Print(`log value: ${value}`);
-  yield Print(&quot;end&quot;);
+  yield Print(&#39;end&#39;);
 
   return value;
 });
 
+
 Main.run((result) =&gt; {});</code></pre>
-<p><code>callcc</code> calls a supplied lambda with “the current
-continuation”, which represents “the rest of the program”. The language
-here is woefully imprecise and probably doesn’t clarity anything, we
-must discuss in more concrete terms. In this example, the “current
-continuation” at the point of <code>callcc</code> represents the
-remaining computations, particularly these statements:</p>
-<pre class="typescript"><code>yield Print(`log value: ${value}`);
-yield Print(&quot;end&quot;);</code></pre>
-<p>Inside the lambda passed to <code>callcc</code>, <code>cc</code> is
-invoked only if <code>prod !== 3</code>. If we run the math, we find out
-the value of <code>prod</code> is in fact <code>3</code>, therefore,
-<code>cc</code> is not called - meaning the rest of computations are
-skipped. If we run the program, indeed, only the following line is
-printed:</p>
-<pre class="text"><code>start prod = 3</code></pre>
-<p>To understand how it works, let’s desugar the <code>_do</code> body
-manually from the point of <code>callcc</code> onwards:</p>
-<pre class="typescript"><code>callcc((cc) =&gt; {
-  if (prod !== 3) {
-    cc(4);
-  }
-}).flatMap((value) =&gt; {
-  Print(`log value: ${value}`).flatMap(() =&gt; Print(&quot;end&quot;));
-});
-
-// 1) substitute with callcc&#39;s body
-new Cont((cc) =&gt; {
-  if (prod !== 3) {
-    cc(4);
-  }
-}).flatMap((value) =&gt; {
-  Print(`log value: ${value}`).flatMap(() =&gt; Print(&quot;end&quot;));
-});
-
-// 2) substitute with flatMap&#39;s implementation
-new Cont((k) =&gt; {
-  ((cc) =&gt; {
-    if (prod !== 3) {
-      cc(4);
-    }
-  })((t) =&gt; {
-    ((value) =&gt; {
-      Print(`log value: ${value}`).flatMap(() =&gt; Print(&quot;end&quot;));
-    })(t).run(k);
-  });
-});
-
-// 3) further simplify
-new Cont((k) =&gt; {
-  if (prod !== 3) {
-    Print(`log value: ${4}`)
-      .flatMap(() =&gt; Print(&quot;end&quot;))
-      .run(k);
-  }
-});</code></pre>
-<p>Key points:</p>
-<ul>
-<li><code>callcc</code> returns a <code>Cont</code> monad, thus we can
-call <code>flatMap</code> on it</li>
-<li>The lambda passed to <code>callcc(...).flatMap</code> is clearly
-“the rest of the program” (the <code>Cont</code> monads from the
-remaining <code>Print</code> calls)</li>
-<li>Step 3) takes quite a bit of mental energy to perform, but hopefully
-the final expression should convince you it does what was
-advertised</li>
-</ul>
+<p>When <code>raise(4)</code> is called within <code>callcc</code>, it
+effectively “jumps” back to the <code>callcc</code> invocation,
+replacing the continuation with the value <code>4</code>. This makes the
+program flow jump to the logging of <code>value</code>, skipping the
+remaining code, namely these statements:</p>
+<pre class="typescript"><code>yield Add(never, 44);
+yield Print(&quot;unreachable!&quot;);</code></pre>
+<p>The output demonstrates this flow:</p>
+<pre class="text"><code>start prod = 3
+about to raise 4
+log value: 4
+end</code></pre>
+<div id="breaking-down-callcc-in-detail" class="section level3">
+<h3>Breaking Down <code>callcc</code> in Detail</h3>
+<p>In this section, we’ll take a deep dive into how the
+<code>callcc</code> function operates in the provided TypeScript code.
+This detailed breakdown will involve expanding the code step-by-step and
+explaining each part to illustrate the underlying mechanism of
+<code>callcc</code>. We start with the original <code>callcc</code>
+function definition:</p>
+<pre class="typescript"><code>function callcc&lt;T&gt;(f: (cc: CC&lt;T&gt;) =&gt; Cont&lt;T&gt;) {
+  return new Cont(k =&gt; f(a =&gt; new Cont(_ =&gt; k(a))).run(k));
+}</code></pre>
+<p>In the code example, <code>callcc</code> is used as follows (after
+desugaring the <code>_do</code> notation):</p>
+<pre class="typescript"><code>callcc((raise) =&gt;
+  raise(4).flatMap((never) =&gt;
+    Add(never, 44).flatMap((_) =&gt;
+      Print(&quot;unreachable!&quot;).flatMap((_) =&gt; Cont.of(-1)),
+    ),
+  ),
+);</code></pre>
+<div id="first-level-of-expansion" class="section level4">
+<h4>First Level of Expansion</h4>
+<p>We expand the <code>callcc</code> usage by substituting the lambda
+function passed to <code>f</code> in <code>callcc</code>:</p>
+<pre class="typescript"><code>new Cont((k) =&gt;
+  ((raise) =&gt;
+    raise(4).flatMap((never) =&gt;
+      Add(never, 44).flatMap((_) =&gt;
+        Print(&quot;unreachable!&quot;).flatMap((_) =&gt; Cont.of(-1)),
+      ),
+    ))((a) =&gt; new Cont((_) =&gt; k(a))).run(k)
+);</code></pre>
+<p>In this expanded form:</p>
+<ol style="list-style-type: decimal">
+<li><code>new Cont(k =&gt; ...)</code>: A new continuation is created,
+where <code>k</code> is the continuation representing the rest of the
+computation after <code>callcc</code>.</li>
+<li><code>(raise =&gt; ...)</code>: A lambda function is provided,
+taking <code>raise</code> as its argument. <code>raise</code> is a
+function that will capture the current continuation.</li>
+</ol>
+</div>
+<div id="second-level-of-expansion" class="section level4">
+<h4>Second Level of Expansion</h4>
+<p>At this stage, we’ll replace <code>raise</code> with the function
+<code>(a) =&gt; new Cont((_) =&gt; k(a))</code>. Here’s how it looks
+after this expansion:</p>
+<pre class="typescript"><code>new Cont((k) =&gt;
+  ((a) =&gt; new Cont((_) =&gt; k(a)))(4)
+    .flatMap((never) =&gt;
+      Add(never, 44).flatMap((_) =&gt;
+        Print(&quot;unreachable!&quot;).flatMap((_) =&gt; Cont.of(-1)),
+      ),
+    )
+    .run(k),
+);</code></pre>
+<p>In this expanded form:</p>
+<ol style="list-style-type: decimal">
+<li><code>((a) =&gt; new Cont((_) =&gt; k(a)))(4)</code>: The lambda
+function <code>(a) =&gt; new Cont((_) =&gt; k(a))</code> is immediately
+invoked with the value <code>4</code>.</li>
+<li><code>new Cont((_) =&gt; k(4))</code>: The invocation results in a
+new <code>Cont</code> instance. Inside this <code>Cont</code>, the
+unused parameter <code>_</code> is ignored, and <code>k</code> is
+directly called with <code>4</code>, full code below:</li>
+</ol>
+<pre class="typescript"><code>new Cont((k) =&gt;
+  new Cont((_) =&gt; k(4))
+    .flatMap((never) =&gt;
+      Add(never, 44).flatMap((_) =&gt;
+        Print(&quot;unreachable!&quot;).flatMap((_) =&gt; Cont.of(-1)),
+      ),
+    )
+    .run(k),
+);</code></pre>
+</div>
+<div id="implication-of-the-expansion" class="section level4">
+<h4>Implication of the Expansion</h4>
+<p>This expansion illustrates the key operation of <code>callcc</code>.
+The new <code>Cont</code> instance created
+(<code>new Cont((_) =&gt; k(4))</code>) is a continuation that, when
+run, bypasses the remaining computation in the lambda function and
+directly applies <code>4</code> to the continuation <code>k</code>. This
+effectively “jumps” back to the continuation point where
+<code>callcc</code> was invoked, using the value <code>4</code>. As a
+result, the <code>flatMap</code> chain that follows this new
+<code>Cont</code> instance is never executed, and any code within it
+becomes unreachable.</p>
+</div>
+</div>
 </div>
 <div id="some-really-cursed-stuff" class="section level2">
 <h2>Some really cursed stuff</h2>
@@ -614,23 +662,24 @@ truly and properly model the <code>Do</code> notation (which is
 syntactic sugar only).</p>
 <pre class="typescript"><code>let ccStash;
 const Main2 = Add(1, 2)
-  .flatMap((sum) =&gt; Mul(sum, 1))
-  .flatMap((prod) =&gt; {
-    return callcc((cc) =&gt; {
+  .flatMap(sum =&gt; Mul(sum, 1))
+  .flatMap(prod =&gt; {
+
+    return callcc(cc =&gt; {
       ccStash = cc;
 
-      cc(prod);
+      return cc(prod);
     });
   })
   .flatMap((v) =&gt; Print(`v = ${v}`).map(() =&gt; v + 1))
-  .flatMap((v) =&gt; new Cont((k) =&gt; ccStash &amp;&amp; ccStash(v)));
+  .flatMap((v) =&gt; ccStash(v));
 
 Main2.run((r) =&gt; {});</code></pre>
 <p>At the <code>callcc</code> call site, we sneakily stash away the
 <code>cc</code> variable, which is a lambda representing “the rest of
 the program” consisting of:</p>
-<pre class="typescript"><code>  .flatMap((v) =&gt; Print(`v = ${v}`).map(() =&gt; v + 1))
-  .flatMap((v) =&gt; new Cont((k) =&gt; ccStash &amp;&amp; ccStash(v)));</code></pre>
+<pre class="typescript"><code>.flatMap((v) =&gt; Print(`v = ${v}`).map(() =&gt; v + 1))
+.flatMap((v) =&gt; ccStash(v));</code></pre>
 <p>Note <code>ccStash</code> is invoked as a final part of
 <code>ccStash</code> itself! Unsurprisingly, running this leads to an
 infinite loop and stack overflow:</p>
@@ -687,6 +736,83 @@ coroutines. The <a href="https://en.wikipedia.org/wiki/Continuation-passing_styl
 article</a> on CPS also mentions using CPS as an IR for functional
 language compilers as an alternative for SSA (an idea I would like to
 explore some day).</p>
+<p>As another fun exercise to showcase CPS’s powerful nature, we will
+implement a basic form of coroutines using <code>call/cc</code>.
+Coroutines are program components that generalize subroutines by
+allowing multiple entry points and suspending and resuming execution at
+certain locations. Unlike the generators we’ve used in <code>_do</code>
+notation, here we will manually control the flow of execution using
+<code>call/cc</code>.</p>
+<div id="stashing-cc-for-later-use" class="section level4">
+<h4>Stashing <code>cc</code> for Later Use</h4>
+<p>The key to implementing coroutines is to capture the current
+continuation (<code>cc</code>) and save it for later use. This allows us
+to pause the coroutine’s execution and resume it from the same
+point.</p>
+<p>First, we need a place to store our continuation:</p>
+<pre class="typescript"><code>let savedContinuation: CC&lt;void&gt; | null = null;</code></pre>
+</div>
+<div id="defining-coroutine-functions" class="section level4">
+<h4>Defining Coroutine Functions</h4>
+<p>We can now define functions that use <code>call/cc</code> to save
+their continuation and yield control:</p>
+<pre class="typescript"><code>function pause() {
+  return callcc&lt;void&gt;((cc) =&gt; {
+    savedContinuation = cc; // Save the continuation
+    return new Cont(k =&gt; {}); // Return a continuation that aborts
+  });
+}
+
+function resume() {
+  if (savedContinuation) {
+    const cc = savedContinuation;
+    savedContinuation = null; // Clear the saved continuation
+    return cc(undefined); // Resume the saved continuation
+  } else {
+    return Cont.of(); // No-op if there&#39;s nothing to resume
+  }
+}</code></pre>
+</div>
+<div id="using-coroutines" class="section level4">
+<h4>Using Coroutines</h4>
+<p>With <code>pause</code> and <code>resume</code>, we can now write
+coroutine-like functions. For example:</p>
+<pre class="typescript"><code>const CoroutineExample = _do(function* () {
+  const tstart = Date.now();
+  console.log(&quot;Coroutine started&quot;);
+  yield pause();
+  const elapsed = Date.now() - tstart;
+  console.log(`Coroutine resumed after ${elapsed}ms`);
+
+  return 42;
+});
+
+CoroutineExample.run((result) =&gt; console.log(`Coroutine completed with ${result}`));</code></pre>
+<p>Somewhere else in the code, we can resume the coroutine:</p>
+<pre class="typescript"><code>// This would typically be triggered by some event or condition
+setTimeout(() =&gt; {
+  resume().run(() =&gt; {});
+}, 1000);</code></pre>
+<p>Outputs:</p>
+<pre class="text"><code>Coroutine started
+Coroutine resumed after 1003ms
+Coroutine completed with 42</code></pre>
+</div>
+<div id="explanation" class="section level4">
+<h4>Explanation</h4>
+<ul>
+<li><code>pause</code>: When called within a coroutine,
+<code>pause</code> uses <code>call/cc</code> to capture the current
+continuation (the rest of the coroutine) and saves it in
+<code>savedContinuation</code>. It then returns a no-op continuation,
+effectively pausing the coroutine.</li>
+<li><code>resume</code>: When invoked, <code>resume</code> checks if
+there is a saved continuation. If so, it resumes the coroutine from
+where it was paused, using the saved continuation.</li>
+<li><code>CoroutineExample</code>: This is a simple coroutine that
+starts execution, pauses, and then resumes.</li>
+</ul>
+</div>
 </div>
 
 
