@@ -441,6 +441,23 @@ Coroutine completed with 42
 
 #### Explanation
 
-- `pause`: When called within a coroutine, `pause` uses `call/cc` to capture the current continuation (the rest of the coroutine) and saves it in `savedContinuation`. It then returns a no-op continuation, effectively pausing the coroutine.
+- `pause`: When called within a coroutine, `pause` uses `call/cc` to capture the current continuation (the rest of the coroutine) and saves it in `savedContinuation`. It then returns an aborting continuation.
 - `resume`: When invoked, `resume` checks if there is a saved continuation. If so, it resumes the coroutine from where it was paused, using the saved continuation.
-- `CoroutineExample`: This is a simple coroutine that starts execution, pauses, and then resumes.
+- `CoroutineExample`: This is a simple coroutine that starts execution, pauses for one second, and then resumes.
+
+## Conclusion
+
+In this article, we explored the concept of Continuation Passing Style (CPS) and its application in JavaScript and TypeScript. We began by understanding the basics of CPS, illustrating how functions can explicitly pass control using continuations. This was followed by an exploration of how to encapsulate CPS functions in a `Cont` monad, enabling powerful monadic operations like `flatMap`.
+
+The discussion of the `call/cc` function was a central part of this exploration. By breaking down its implementation and usage, we gained a deep understanding of how `call/cc` captures and manipulates continuations, allowing for non-linear execution flows. This insight was crucial for appreciating the power and flexibility of continuations in managing program control flow.
+
+Furthermore, we demonstrated how `call/cc` can be used to implement coroutine-like structures in TypeScript. By stashing and resuming continuations, we showed how control can be paused and resumed in an application, simulating the behavior of coroutines.
+
+This journey through CPS and `call/cc` underscores the richness of functional programming concepts and their applicability in modern programming languages like JavaScript and TypeScript. The ability to control and manipulate the flow of a program at such a granular level opens up possibilities for writing more expressive, powerful, and maintainable code, at least in theory. It encourages a different way of thinking about functions and control flow, beyond the traditional linear and nested structures. In practice however, I would not recommend its usage. There are several reasons why I would caution against the practical use of CPS in JavaScript or TypeScript for most applications:
+
+1. **Suboptimal Substitute for `Do` Notations**: Generator functions in JavaScript are not true substitutes for `Do` notations, which are best supported by language-level compiler features. The syntactic and semantic gap can lead to less intuitive and more cumbersome code. Occasionally, it will fail entirely due to the stateful nature of generators. 
+2. **Lack of Tail Call Optimization**: JavaScript currently lacks proper tail call optimization, a critical feature for functional programming styles like CPS. Without it, recursive CPS can lead to stack overflow errors, limiting its practicality.
+3. **Maintainability Challenges**: CPS can create convoluted control flows, making the code hard to follow and maintain. Each addition or modification can become a significant challenge, as I personally experienced.
+4. **Debugging Difficulties**: Debugging CPS code can be a nightmare. Stack traces become less meaningful, and understanding the flow of execution can be arduous, often requiring a deep dive into the mechanics of CPS.
+
+When it comes to practical application in JavaScript or TypeScript, sticking to standard language features like Promises and async/await is often the wiser choice. These features provide a more straightforward, maintainable, and debuggable approach to asynchronous programming, aligning better with the language's design and the ecosystem's expectations.

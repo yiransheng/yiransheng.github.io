@@ -804,15 +804,72 @@ Coroutine completed with 42</code></pre>
 <li><code>pause</code>: When called within a coroutine,
 <code>pause</code> uses <code>call/cc</code> to capture the current
 continuation (the rest of the coroutine) and saves it in
-<code>savedContinuation</code>. It then returns a no-op continuation,
-effectively pausing the coroutine.</li>
+<code>savedContinuation</code>. It then returns an aborting
+continuation.</li>
 <li><code>resume</code>: When invoked, <code>resume</code> checks if
 there is a saved continuation. If so, it resumes the coroutine from
 where it was paused, using the saved continuation.</li>
 <li><code>CoroutineExample</code>: This is a simple coroutine that
-starts execution, pauses, and then resumes.</li>
+starts execution, pauses for one second, and then resumes.</li>
 </ul>
 </div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>In this article, we explored the concept of Continuation Passing
+Style (CPS) and its application in JavaScript and TypeScript. We began
+by understanding the basics of CPS, illustrating how functions can
+explicitly pass control using continuations. This was followed by an
+exploration of how to encapsulate CPS functions in a <code>Cont</code>
+monad, enabling powerful monadic operations like
+<code>flatMap</code>.</p>
+<p>The discussion of the <code>call/cc</code> function was a central
+part of this exploration. By breaking down its implementation and usage,
+we gained a deep understanding of how <code>call/cc</code> captures and
+manipulates continuations, allowing for non-linear execution flows. This
+insight was crucial for appreciating the power and flexibility of
+continuations in managing program control flow.</p>
+<p>Furthermore, we demonstrated how <code>call/cc</code> can be used to
+implement coroutine-like structures in TypeScript. By stashing and
+resuming continuations, we showed how control can be paused and resumed
+in an application, simulating the behavior of coroutines.</p>
+<p>This journey through CPS and <code>call/cc</code> underscores the
+richness of functional programming concepts and their applicability in
+modern programming languages like JavaScript and TypeScript. The ability
+to control and manipulate the flow of a program at such a granular level
+opens up possibilities for writing more expressive, powerful, and
+maintainable code, at least in theory. It encourages a different way of
+thinking about functions and control flow, beyond the traditional linear
+and nested structures. In practice however, I would not recommend its
+usage. There are several reasons why I would caution against the
+practical use of CPS in JavaScript or TypeScript for most
+applications:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Suboptimal Substitute for <code>Do</code>
+Notations</strong>: Generator functions in JavaScript are not true
+substitutes for <code>Do</code> notations, which are best supported by
+language-level compiler features. The syntactic and semantic gap can
+lead to less intuitive and more cumbersome code. Occasionally, it will
+fail entirely due to the stateful nature of generators.</li>
+<li><strong>Lack of Tail Call Optimization</strong>: JavaScript
+currently lacks proper tail call optimization, a critical feature for
+functional programming styles like CPS. Without it, recursive CPS can
+lead to stack overflow errors, limiting its practicality.</li>
+<li><strong>Maintainability Challenges</strong>: CPS can create
+convoluted control flows, making the code hard to follow and maintain.
+Each addition or modification can become a significant challenge, as I
+personally experienced.</li>
+<li><strong>Debugging Difficulties</strong>: Debugging CPS code can be a
+nightmare. Stack traces become less meaningful, and understanding the
+flow of execution can be arduous, often requiring a deep dive into the
+mechanics of CPS.</li>
+</ol>
+<p>When it comes to practical application in JavaScript or TypeScript,
+sticking to standard language features like Promises and async/await is
+often the wiser choice. These features provide a more straightforward,
+maintainable, and debuggable approach to asynchronous programming,
+aligning better with the language’s design and the ecosystem’s
+expectations.</p>
 </div>
 
 
