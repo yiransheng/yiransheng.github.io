@@ -21,4 +21,7 @@ $(DIST)/%: $(POSTS)/%
 clean:
 	rm -f $(PAGES) $(ASSETS)
 
-.PHONY: all clean
+publish: all
+	scripts/publish.sh $(DIST)
+
+.PHONY: all clean publish
