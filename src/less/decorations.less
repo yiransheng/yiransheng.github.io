@@ -51,6 +51,18 @@ code {
   padding: 0;
   background: transparent;
 }
+// tables are set in Roboto Mono (x-height .528em) inside a Latin Modern body
+// (x-height .431em), so at 1em they read noticeably larger than the prose.
+// .85em matches the two x-heights; line-height is inherited from body as an
+// absolute px value, so cell text keeps sitting on the baseline grid.
+.table {
+  font-size: 0.85em;
+  // the 90% bootstrap applies to inline code compensates mono-in-serif prose,
+  // which does not apply here -- cell text is already monospace
+  code {
+    font-size: 1em;
+  }
+}
 .big {
   width: 100vw;
   height: 100vh;
