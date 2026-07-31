@@ -1,7 +1,8 @@
--- Experimental pandoc filter: LaTeX math -> typst -> inline SVG,
--- code blocks -> pygments, tables -> bootstrap classes.
+-- Pandoc filter: LaTeX math -> typst -> inline SVG, table classes,
+-- and document metadata (title / author / date).
 
 local SCRATCH = os.getenv("MATH_TMP") or "/tmp"
+local AUTHOR = "Yiran Sheng"
 local counter = 0
 
 local PREAMBLE = [[
@@ -123,4 +124,24 @@ function Table(el)
     end
   end
   return el
+end
+
+-- Metadata: yaml frontmatter wins, otherwise fill in defaults. Title falls
+-- back to a leading h1 (which is then dropped, as the template renders it),
+-- date to the source file's mtime, passed in as POST_DATE by render.sh.
+function Pandoc(doc)
+  local meta = doc.meta
+  if not meta.title then
+    local first = doc.blocks[1]
+    if first and first.t == "Header" and first.level == 1 then
+      meta.title = pandoc.MetaInlines(first.content)
+      table.remove(doc.blocks, 1)
+    end
+  end
+  meta.author = meta.author or pandoc.MetaString(AUTHOR)
+  local mtime = os.getenv("POST_DATE")
+  if not meta.date and mtime and mtime ~= "" then
+    meta.date = pandoc.MetaString(mtime)
+  end
+  return pandoc.Pandoc(doc.blocks, meta)
 end
