@@ -2,14 +2,26 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+// display equations are centered, but scroll inside their own box when wider
+// than the column -- otherwise a single wide formula scrolls the whole page.
+// `safe center` falls back to left alignment while overflowing, so the left
+// end of a wide formula stays reachable (plain `center` would strand it
+// outside the scroll origin).
 p > span.math.eq {
     margin: 0 auto;
-    display: block;
+    display: flex;
+    justify-content: safe center;
+    overflow-x: auto;
 }
 p > span.math.eq > svg {
-    position: relative;
-    left: 50%;
-    transform: translate(-50%, 0);  
+    flex: 0 0 auto;
+}
+// a lone inline formula can also be wider than the column; scale it down
+// rather than push the page (aspect ratio is preserved: the svg width/height
+// attributes match the viewBox)
+span.math.inline > svg {
+    max-width: 100%;
+    height: auto;
 }
 li p {
     margin: 0;
