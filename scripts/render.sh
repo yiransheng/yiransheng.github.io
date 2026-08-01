@@ -17,9 +17,16 @@ trap 'rm -rf "$tmp"' EXIT
 post_date=$(git log -1 --format=%ad --date=format:'%m/%d/%Y' -- "$src" 2>/dev/null || true)
 [ -n "$post_date" ] || post_date=$(date -r "$src" +%m/%d/%Y)
 
+# custom language grammars for the built-in highlighter, one xml per language
+syntax=()
+for def in "$scripts_dir"/syntax/*.xml; do
+  [ -e "$def" ] && syntax+=(--syntax-definition "$def")
+done
+
 MATH_TMP=$tmp POST_DATE=$post_date pandoc "$src" \
   -f markdown -t html5 \
   --section-divs \
+  ${syntax[@]+"${syntax[@]}"} \
   --template "$scripts_dir/template.html" \
   --lua-filter "$scripts_dir/filter.lua" \
   -o "$out"

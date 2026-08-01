@@ -10,7 +10,9 @@ ASSETS     := $(patsubst $(POSTS)/%,$(DIST)/%,$(ASSET_SRCS))
 
 all: $(PAGES) $(ASSETS)
 
-$(DIST)/%.html: $(POSTS)/%.md scripts/render.sh scripts/filter.lua scripts/template.html
+SYNTAX := $(wildcard scripts/syntax/*.xml)
+
+$(DIST)/%.html: $(POSTS)/%.md scripts/render.sh scripts/filter.lua scripts/template.html $(SYNTAX)
 	@mkdir -p $(@D)
 	scripts/render.sh $< $@
 

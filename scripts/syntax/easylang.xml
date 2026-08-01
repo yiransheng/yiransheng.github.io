@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<!--
+  EasyLang: the first-order language defined in posts_v2/incompleteness.md
+  (section 2), plus the definition/program extension of section 10.
+
+  Token kinds follow section 2.1: numerals, variables, function symbols,
+  relation symbols, logical operators, quantifiers, punctuation. Names
+  introduced by definitions are uppercase (section 10), which is what keeps
+  them distinguishable from variables.
+
+  Attributes map onto standard skylighting default styles, so the highlighting
+  css pandoc generates into the template already styles them -- no site css.
+-->
+<language name="easylang" version="1" kateversion="5.0"
+          section="Sources" extensions="*.easylang" mimetype="text/x-easylang">
+  <highlighting>
+    <!-- reserved words: no variable may be spelled like one (section 2.1) -->
+    <list name="keywords">
+      <item>not</item>
+      <item>and</item>
+      <item>or</item>
+      <item>forall</item>
+      <item>exists</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="#" attribute="Comment" context="Comment"/>
+        <keyword String="keywords" attribute="Keyword"/>
+        <!-- names: uppercase letter then uppercase letters and digits.
+             covers the built-in D and every name a program defines -->
+        <RegExpr String="[A-Z][A-Z0-9]*" attribute="Function"/>
+        <!-- variables: v, v1, v2 ... and the x/y/z of definition clauses.
+             matched after keywords, so `not`/`and`/... never land here -->
+        <RegExpr String="[a-z][a-zA-Z0-9]*" attribute="Variable"/>
+        <!-- numerals; underscores are display sugar only (section 2.1) -->
+        <RegExpr String="[0-9][0-9_]*" attribute="Decimal"/>
+        <StringDetect String="-&gt;" attribute="Operator"/>
+        <StringDetect String=":=" attribute="Operator"/>
+        <AnyChar String="+*=&lt;" attribute="Operator"/>
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+      <itemData name="Function"    defStyleNum="dsFunction"/>
+      <itemData name="Variable"    defStyleNum="dsVariable"/>
+      <itemData name="Decimal"     defStyleNum="dsDecVal"/>
+      <itemData name="Operator"    defStyleNum="dsOperator"/>
+      <itemData name="Comment"     defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>
