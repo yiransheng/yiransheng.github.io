@@ -17,6 +17,25 @@ local PREAMBLE = [[
 #set text(size: 12pt, top-edge: "bounds", bottom-edge: "bounds")
 ]]
 
+-- Baseline grid. An inline formula is a replaced element, so its margin box
+-- takes part in line box sizing: anything reaching past the strut makes that
+-- one line taller and shifts every following line off the grid. These are the
+-- strut's extents for the body face (latin modern: ascent 1.127em, descent
+-- 0.290em, content area 1.417em) at the tightest line-height in the site css
+-- (1.2em), where half-leading is negative. Clamping to the tightest breakpoint
+-- keeps the grid at all four.
+local STRUT_ABOVE = 1.1270 + (1.2 - 1.4170) / 2  -- 1.0185em
+local STRUT_BELOW = 0.2900 + (1.2 - 1.4170) / 2  -- 0.1815em
+
+-- (min-width, line-height) per breakpoint, from src/less/layout.less
+local BREAKPOINTS = {
+  { query = nil,     line = 1.2 },
+  { query = "48em",  line = 1.3 },
+  { query = "62em",  line = 1.5 },
+  { query = "75em",  line = 1.4 },
+}
+local display_rules = {}
+
 local function file_read(path)
   local f = io.open(path, "r")
   if not f then return nil end
@@ -43,7 +62,19 @@ local function svg_scale(svg, depth_pt)
   if not (w and h) then return svg end
   local style = ""
   if depth_pt then
-    style = string.format(' style="vertical-align: -%s"', pt_to_em(depth_pt))
+    -- Negative margins shrink the margin box back inside the strut so the
+    -- line box never grows; the ink still paints (margins do not clip), it
+    -- just overlaps the neighbouring line instead of displacing it. The
+    -- vertical-align offset is measured to the bottom margin edge, so it
+    -- absorbs the bottom margin to leave the ink where it belongs.
+    local em_h, em_d = tonumber(h) / 12.0, depth_pt / 12.0
+    local over_top = math.max(0, (em_h - em_d) - STRUT_ABOVE)
+    local over_bot = math.max(0, em_d - STRUT_BELOW)
+    style = string.format(' style="vertical-align: -%.4fem', em_d - over_bot)
+    if over_top > 0 or over_bot > 0 then
+      style = style .. string.format("; margin: -%.4fem 0 -%.4fem", over_top, over_bot)
+    end
+    style = style .. '"'
   end
   local repl = string.format('width="%s" height="%s"%s',
     pt_to_em(tonumber(w)), pt_to_em(tonumber(h)), style)
@@ -125,6 +156,24 @@ function Math(el)
     if h and asc then depth = math.max(h - (MARGIN_PT + asc), 0) end
   end
 
+  -- A display equation is as tall as its content, which is never a whole
+  -- number of lines, so everything after it lands off the grid. Pad each one
+  -- up to the next whole line -- per breakpoint, since the line-height in em
+  -- differs at each and no single static value can satisfy all four.
+  if el.mathtype == "DisplayMath" then
+    local h_em = tonumber(svg:match('height="([%d%.]+)pt"')) / 12.0
+    for _, bp in ipairs(BREAKPOINTS) do
+      local lines = math.ceil(h_em / bp.line - 0.0001)
+      local pad = lines * bp.line - h_em
+      local rule = string.format("p>span.math.eq.%s{padding-bottom:%.4fem}", base, pad)
+      if bp.query then
+        rule = string.format("@media (min-width:%s){%s}", bp.query, rule)
+      end
+      table.insert(display_rules, rule)
+    end
+    class = class .. " " .. base
+  end
+
   svg = svg_scale(svg, depth)
   return pandoc.RawInline("html",
     '<span class="' .. class .. '">' .. svg .. "</span>")
@@ -161,6 +210,10 @@ function Pandoc(doc)
   local mtime = os.getenv("POST_DATE")
   if not meta.date and mtime and mtime ~= "" then
     meta.date = pandoc.MetaString(mtime)
+  end
+  if #display_rules > 0 then
+    meta["math-css"] = pandoc.MetaBlocks({ pandoc.RawBlock("html",
+      "<style>\n" .. table.concat(display_rules, "\n") .. "\n</style>") })
   end
   return pandoc.Pandoc(doc.blocks, meta)
 end

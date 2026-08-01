@@ -48,6 +48,10 @@ pre {
 
 h2 {
   border-top: 2px solid #000;
+  // the top margin already compensates for the 2px border (the mixin's offset
+  // argument), but the 5px tab below it was in flow and pushed every heading
+  // 5px off the baseline grid -- take it out of flow, it sits in the leading
+  position: relative;
   a {
     background: none;
   }
@@ -58,10 +62,28 @@ h2:before {
   width: 25%;
   height: 5px;
   background: #000;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 code {
   padding: 0;
   background: transparent;
+}
+// a table row has to be exactly one line tall: vertical cell padding and the
+// 1px row rule both added height, so every row drifted ~2.6px. The rule is
+// drawn with an inset shadow instead, which paints without taking up space.
+.table > tbody > tr > td {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.table tr.odd,
+.table tr.even {
+  border-top: 0;
+}
+.table tr.odd > td,
+.table tr.even > td {
+  box-shadow: inset 0 1px 0 #000;
 }
 // tables are set in Roboto Mono (x-height .528em) inside a Latin Modern body
 // (x-height .431em), so at 1em they read noticeably larger than the prose.

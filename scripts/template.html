@@ -19,13 +19,20 @@ $highlighting-css$
 </style>
 $endif$
 <style>
-/* site css sets pre { line-height: .8em }, tuned for the old highlighter's
-   markup; highlighted blocks escape it via pandoc's inline-block line spans
-   (line-height: 1.25) but plain fenced blocks need the same fix */
-pre:not([class]) {
-  line-height: 1.25;
+/* Code sits on the baseline grid by inheriting the body line-height, which is
+   an absolute px value, so one code line is exactly one text line at every
+   breakpoint. The site's own pre rule (.8em, i.e. less than the font size) and
+   pandoc's 1.25 both give code lines that are not a whole fraction of the
+   grid, so a block of k lines drifts by k * remainder. */
+pre,
+pre code,
+code.sourceCode > span {
+  line-height: inherit;
 }
 </style>
+$if(math-css)$
+$math-css$
+$endif$
 </head>
 <body>
 <div class="nav-back">
