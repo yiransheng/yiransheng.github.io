@@ -7,7 +7,7 @@ construction: a sentence that refers to itself.
 
 ### A self-referential sentence
 
-```
+```easylang
 exists v1.D(61118049032097110100032040118049061048041)=v1 and (v1=0)
 ```
 
@@ -33,7 +33,7 @@ def D(m: int) -> int:
 And the 41-digit number inside the sentence is not an arbitrary number.
 Decoded, three digits per character, it reads
 
-```
+```easylang
  =   v   1       a   n   d       (   v   1   =   0   )
 061 118 049 032 097 110 100 032 040 118 049 061 048 041
 ```
@@ -398,7 +398,7 @@ actually appear; assigning the whole range is harmless. The variable letter
 **Annotated display.** When character-level detail matters, this article
 writes a string with the ASCII code of each character aligned beneath it:
 
-```
+```easylang
  0   =   0
 048 061 048
 ```
@@ -421,20 +421,20 @@ by two cases:
 
 Examples, in annotated display:
 
-```
+```easylang
  0   =   0
 048 061 048
 ```
 The Gödel number of `0=0` is 48_061_048. It recurs as the article's running
 example — name it: let $Z$ be the sentence `0=0`.
 
-```
+```easylang
  D   (   v   )   =   0
 068 040 118 041 061 048
 ```
 The Gödel number of `D(v)=0` is 68_040_118_041_061_048.
 
-```
+```easylang
  n   o   t       0   =   1
 110 111 116 032 048 061 049
 ```
@@ -492,7 +492,7 @@ corners can meet:
   $B$, then `)`. Then $\ulcorner f(Z) \urcorner$ is computed inside-out —
   first $f(Z)$, which is the formula
 
-  ```
+  ```easylang
    n   o   t   (   0   =   0   )
   110 111 116 040 048 061 048 041
   ```
@@ -650,7 +650,7 @@ The central example of the article. Let $A[\texttt{v}]$ be `D(v)=0`, with
 $\ulcorner A \urcorner$ = 68_040_118_041_061_048 (computed in 4.2). Then
 $\mathrm{diag}(A)$ is the 22-character sentence
 
-```
+```easylang
 D(68_040_118_041_061_048)=0
    D   (   v   )   =   0
 ```
@@ -907,7 +907,7 @@ $$A \;=\; \texttt{D(v)=0}$$
 So define $S^{*} := \mathrm{diag}(A)$ for $A[\texttt{v}]$ = `D(v)=0` —
 concretely, the 22-character sentence of 5.3:
 
-```
+```easylang
 D(68_040_118_041_061_048)=0
    D   (   v   )   =   0
 ```
@@ -1117,7 +1117,7 @@ injective, so Theorem 7.2 applies. On the emptiness block:
 
 $Y = Q$ = `=v1 and (v1=0)`, fourteen characters, coded
 
-```
+```easylang
  =   v   1       a   n   d       (   v   1   =   0   )
 061 118 049 032 097 110 100 032 040 118 049 061 048 041
 ```
@@ -1127,7 +1127,7 @@ so $\ulcorner Y \urcorner$ =
 the leading zero of 061 dropped (Lemma 4.1). Then $S := h(Y)$ is the
 sixty-eight-character sentence — *object level, an EasyLang string*:
 
-```
+```easylang
 exists v1.D(61118049032097110100032040118049061048041)=v1 and (v1=0)
 ```
 
@@ -1141,7 +1141,7 @@ d(61118049032097110100032040118049061048041)
 *Metalevel* — that value, read in three-digit blocks, decodes to the
 sentence itself:
 
-```
+```easylang
  e   x   i   s   t   s       v   1   .   D   (   6           v   1   =   0   )
 101 120 105 115 116 115 032 118 049 046 068 040 054   ...   118 049 061 048 041
 ```
@@ -1211,3 +1211,166 @@ defines rather than a string edit invented for the convention.
 `exists v1.D(v)=v1 and (v1=0)` can be *read*; `)=v1 and (v1=0)` can
 only be decoded. diag is not special; the article keeps it because it is the one
 convention that stays inside the grammar.
+
+## 8 Defining D
+
+So far `D`'s meaning lives outside the language: 2.5 left its
+interpretation open, and Sections 6–7 chose one at the metalevel. This
+section removes that special status. EasyLang is extended so that
+function symbols are *defined inside the language*, and `D` becomes an
+ordinary defined name — the last symbol whose meaning was stipulated
+now has its meaning computed.
+
+**New syntax.** The character set gains the capital letters `A`–`Z`
+(codes 65–90), the comma (44), the semicolon (59), and the colon (58);
+the coding of Section 4 extends unchanged — same three-digit rule,
+more characters. Three token kinds join 2.1:
+
+```
+name       ::= an uppercase letter, then uppercase letters and digits
+term       ::= … (2.2) | name ( term , … , term )
+definition ::= name ( variables ) := term
+             | name ( …, 0, … ) := term ;
+               name ( …, x+1, … ) := term
+item       ::= definition | sentence
+program    ::= item ; item ; … ; item
+```
+
+Names are things like `D`, `SG`, `TENPOW`; the `D` of Sections 2–7,
+formerly a primitive, is from here on just a name. Arities are
+arbitrary; argument lists use the comma, which occurs nowhere else.
+
+**Well-formedness of definitions.** A definition is *explicit* (one
+clause, `name(variables) := term`) or *recursive* (two clauses). In a
+recursive definition the two clauses agree except at one argument
+position — the **recursion argument** — which is `0` in the first
+clause and `x+1` (for a variable `x`) in the second. The rules:
+
+- the defining terms use only the variables of their own left side;
+- a definition may use numerals, `+`, `*`, and names *defined earlier
+  in the program* — never later ones, never quantifiers;
+- in the `x+1` clause, the name being defined may occur, but only
+  applied with `x` at the recursion position — recursion reaches one
+  step down, nothing else;
+- each name is defined at most once; an explicit definition may not
+  mention its own name at all.
+
+**What a definition means.** Each definition extends the standard
+model by a function on $\mathbb{N}$, and the format guarantees there
+is exactly one candidate: the `0` clause forces the values at $0$, the
+`x+1` clause forces the values at $k+1$ from the values at $k$, so by
+ordinary induction every value is forced and some function satisfies
+the clauses. This single metatheorem — **every well-formed definition
+determines exactly one total function** — is the entire trust base of
+the extension. No definition ever needs a separate justification; the
+format is the justification.
+
+A **program** is a `;`-delimited sequence of definitions and
+sentences, each item free to use the names defined before it. The
+program below defines `D` from the primitives in sixteen steps; its
+last item is the sentence of the Introduction. The function the
+sixteen definitions determine for `D` is exactly the interpretation
+Sections 6–7 stipulated — so nothing already established moves; what
+changes is only that no stipulation remains.
+
+```easylang
+# bootstrap: predecessor, truncated subtraction, sign tests,
+# comparison, branching
+PRED(0) := 0;
+PRED(x+1) := x;
+
+SUB(x, 0) := x;
+SUB(x, y+1) := PRED(SUB(x, y));
+
+SG(0) := 0;
+SG(x+1) := 1;
+
+NSG(0) := 1;
+NSG(x+1) := 0;
+
+EQ(x, y) := NSG(SUB(x, y) + SUB(y, x));
+LT(x, y) := SG(SUB(y, x));
+IF(x, y, z) := y*SG(x) + z*NSG(x);
+
+# arithmetic: powers of ten; remainder and quotient by counting
+# rollovers of the dividend
+TENPOW(0) := 1;
+TENPOW(x+1) := TENPOW(x)*10;
+
+MOD(0, y) := 0;
+MOD(x+1, y) := IF(EQ(MOD(x, y)+1, y), 0, MOD(x, y)+1);
+
+DIV(0, y) := 0;
+DIV(x+1, y) := DIV(x, y) + EQ(MOD(x, y)+1, y);
+
+# strings as numbers
+# SHIFT(x): least power of 1000 above x — steps up exactly at powers
+SHIFT(0) := 1;
+SHIFT(x+1) := IF(LT(x+1, SHIFT(x)), SHIFT(x), SHIFT(x)*1000);
+
+# CAT: paste two codes
+CAT(x, y) := x*SHIFT(y) + y;
+
+# NDIG(x): number of decimal digits of x — same stepping trick
+NDIG(0) := 1;
+NDIG(x+1) := IF(LT(x+1, TENPOW(NDIG(x))), NDIG(x), NDIG(x)+1);
+
+# SPELL(x): code of x's decimal numeral, built last digit first
+SPELLH(0, y) := 0;
+SPELLH(x+1, y) := CAT(48 + MOD(DIV(y, TENPOW(x)), 10), SPELLH(x, y));
+
+SPELL(x) := SPELLH(NDIG(x), x);
+
+# D: paste the head, the spelling of x, ")", then x itself
+# 101...040 is the code of "exists v1.D(" ; 41 is the code of ")"
+D(x) := CAT(CAT(CAT(101120105115116115032118049046068040, SPELL(x)), 41), x);
+
+# the program's last item is a sentence
+exists v1.D(61118049032097110100032040118049061048041)=v1 and (v1=0)
+```
+
+Each capital symbol denotes a metalevel function — same name in
+lowercase, per the convention of 6.3 (typewriter `D`, italic $d$).
+Their definitions in ordinary notation, with the names' origins:
+
+- $\mathrm{pred} : \mathbb{N} \to \mathbb{N}$, $\;\mathrm{pred}(x) =
+  \max(x-1,\,0)$ — *predecessor*.
+- $\mathrm{sub} : \mathbb{N}^2 \to \mathbb{N}$, $\;\mathrm{sub}(x,y) =
+  \max(x-y,\,0)$ — *truncated subtraction*; the literature writes it
+  $x \mathbin{\dot{-}} y$ ("monus").
+- $\mathrm{sg}, \mathrm{nsg} : \mathbb{N} \to \mathbb{N}$,
+  $\;\mathrm{sg}(x) = 0$ if $x = 0$ and $1$ otherwise;
+  $\mathrm{nsg}(x) = 1 - \mathrm{sg}(x)$ — *signum* and its complement,
+  Kleene's $\mathrm{sg}$ and $\overline{\mathrm{sg}}$. These convert
+  numbers to truth values: nonzero for true, $0$ for false.
+- $\mathrm{eq}, \mathrm{lt} : \mathbb{N}^2 \to \mathbb{N}$,
+  $\;\mathrm{eq}(x,y) = 1$ if $x = y$ else $0$;
+  $\;\mathrm{lt}(x,y) = 1$ if $x < y$ else $0$.
+- $\mathrm{if} : \mathbb{N}^3 \to \mathbb{N}$,
+  $\;\mathrm{if}(x,y,z) = y$ if $x \neq 0$, else $z$.
+- $\mathrm{tenpow} : \mathbb{N} \to \mathbb{N}$,
+  $\;\mathrm{tenpow}(x) = 10^x$.
+- $\mathrm{mod}, \mathrm{div} : \mathbb{N}^2 \to \mathbb{N}$, remainder
+  and quotient: $\mathrm{mod}(x,y) = x \bmod y$,
+  $\mathrm{div}(x,y) = \lfloor x/y \rfloor$ (by the recursions'
+  convention, $\mathrm{mod}(x,0) = x$ and $\mathrm{div}(x,0) = 0$).
+- $\mathrm{shift} : \mathbb{N} \to \mathbb{N}$,
+  $\;\mathrm{shift}(x) = \min\{1000^k : 1000^k > x\}$ — the least
+  power of $1000$ above $x$; the multiplier that moves a code past $x$.
+- $\mathrm{cat} : \mathbb{N}^2 \to \mathbb{N}$,
+  $\;\mathrm{cat}(x,y) = x \cdot \mathrm{shift}(y) + y$ — pasting: the
+  number-floor shadow of string concatenation.
+- $\mathrm{ndig} : \mathbb{N} \to \mathbb{N}$, the number of decimal
+  digits of $x$, with $\mathrm{ndig}(0) = 1$.
+- $\mathrm{spellh} : \mathbb{N}^2 \to \mathbb{N}$,
+  $\;\mathrm{spellh}(k,y) = \sum_{i<k} (48 + d_i) \cdot 1000^i$ where
+  $d_i = \mathrm{mod}(\mathrm{div}(y, 10^i), 10)$ — the last $k$
+  digits of $y$, each turned into its character block.
+- $\mathrm{spell} : \mathbb{N} \to \mathbb{N}$,
+  $\;\mathrm{spell}(x) = \ulcorner \text{the decimal numeral of } x
+  \urcorner$ — the shadow of writing a number down.
+- $d : \mathbb{N} \to \mathbb{N}$, $\;d(x) =
+  \mathrm{cat}(\mathrm{cat}(\mathrm{cat}(\ulcorner \texttt{exists
+  v1.D(} \urcorner,\, \mathrm{spell}(x)),\, \ulcorner \texttt{)}
+  \urcorner),\, x)$ — the glue convention of 7.5, transcribed; the
+  same function the Introduction's Python computes.
