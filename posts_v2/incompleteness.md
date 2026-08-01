@@ -25,9 +25,9 @@ def D(m: int) -> int:
     digits = "0" * (-len(digits) % 3) + digits
     Y = "".join(chr(int(digits[i:i+3])) for i in range(0, len(digits), 3))
     # rebuild a sentence around Y: fixed head, m itself, then Y
-    s = "exists v1.D(" + str(m) + ")" + Y
+    S = "exists v1.D(" + str(m) + ")" + Y
     # encode it back into a number
-    return int("".join(f"{ord(c):03d}" for c in s))
+    return int("".join(f"{ord(c):03d}" for c in S))
 ```
 
 And the 41-digit number inside the sentence is not an arbitrary number.
@@ -96,9 +96,13 @@ is always set in typewriter font, as a literal string — never in math type.
 
 ### 1.4 Variables
 
-Lowercase letters $m, n, k, a, b$ range over $\mathbb{N}$; $s, t$ range over
-strings. Conventions for naming EasyLang formulas are registered in Section 2,
-where formulas are defined.
+Lowercase letters $m, n, k, x, a, b$ range over $\mathbb{N}$; $s, t$
+range over strings when the string is generic and nameless. Any
+*distinguished* object — a formula, a sentence, a particular string
+with a role, a metavariable for a numeral — is named by a capital
+letter, registered where it is introduced (Section 2 onward). So a
+lowercase letter never names a formula or a sentence, and a capital
+never names a bare number.
 
 ## 2 The language EasyLang
 
@@ -144,7 +148,7 @@ Three remarks:
   this by construction.
 - **Function symbols are capital-cased.** Word-like function symbols are
   spelled with capital letters; variables and keywords are lowercase. A
-  variable can therefore never be confused with a function symbol. `D` is the only capital-cased symbol. It is an ordinary unary function symbol as far as the grammar is concerned (interpretation: 2.5).
+  variable can therefore never be confused with a function symbol. `D` is the only capital-cased symbol. It is an ordinary unary function symbol as far as the grammar is concerned (axioms: 2.5).
 
 **Whitespace rule.** Whitespace separates tokens and carries no meaning of
 its own: consecutive whitespace characters collapse into one, and whitespace
@@ -250,68 +254,62 @@ Naming conventions:
   `D`-terms, which contain no variables — plus one renaming-guarded
   `v1` in Section 7 — so it is literal string replacement.
 
-### 2.5 Meaning: structures and the standard model
+### 2.5 Meaning: axioms and derivability
 
-So far EasyLang is pure syntax — rules about which strings are formulas. The
-meaning side is handled by basic **model theory**.
+So far EasyLang is pure syntax — rules about which strings are
+formulas. What the article does with formulas is handled by basic
+**proof theory**: adopt some sentences outright as **axioms**, and
+derive others from them by rules.
 
-A **structure** (also called a **model** or an **interpretation**) for
-EasyLang consists of:
+A sentence $A$ is **derivable**, written $\vdash A$ — the
+**turnstile**, proof theory's central symbol — when a finite chain of
+the usual rules of first-order logic with equality leads from the
+axioms to $A$; it is **refutable** when its negation is derivable. The
+rules themselves are not spelled out here: they are the standard ones,
+they mention only string shapes, and every step is mechanically
+checkable.
 
-- a nonempty set $M$, called the **domain** (or **universe**) — the objects
-  the quantifiers range over;
-- for each function symbol, an actual function on $M$ of the right arity —
-  a function $M \times M \to M$ for `+` and `*`, a function $M \to M$ for
-  `D`;
-- for each relation symbol, an actual relation on $M$;
-- for each numeral, an element of $M$.
+Derivability is always relative to an axiom set, and the full notation
+carries that set on the turnstile's left:
+$Q \vdash$ `exists v.v+1=2`. This article writes the bare $\vdash$,
+with the axiom stock fixed by context: from here, the axioms below;
+from Section 8 on, those plus a program's definitions. Omitting the
+set does not mean there is none.
 
-The structure this article cares about is the **standard model**: the
-interpretation EasyLang is *designed* to have.
+The axioms:
 
-- Domain: $\mathbb{N}$.
-- Each numeral denotes its decimal value: `42` denotes $42$.
-- `+`, `*`, `<`, `=` denote ordinary addition, multiplication, order, and
-  equality on $\mathbb{N}$.
-- `D` denotes a specific total function $\mathbb{N} \to \mathbb{N}$ that is
-  defined later — its definition requires the encoding of formulas
-  as numbers (Section 4), which does not exist yet. Until then, nothing depends on
-  which function it is; the grammar above is already fixed regardless.
+- **Robinson's Q** — Raphael Robinson's 1950 finite fragment of
+  arithmetic, restated for decimal numerals, together with the numeral
+  facts that make decimal literals compute. We take this floor without
+  ceremony: every closed equation or inequation between numerals over
+  `+`, `*`, `<` that holds as ordinary arithmetic is derivable, and
+  every other one is refutable. There is no induction.
+- Nothing about `D`. No axiom mentions it, so no sentence containing
+  `D` is derivable or refutable yet. Its governing equations arrive in
+  Section 8; the grammar above is fixed regardless.
 
-In the standard model, every **closed term** (a term with no variables)
-denotes a number, computed the obvious way: `2+3*4` denotes $14$. The
-metalevel word for this is **denotation**, or the **value** of the term.
+Consequences of the floor, in examples:
 
-A sentence is **true** or **false** in a structure — this is the
-fundamental relation of model theory, called **satisfaction** and written
-with the double turnstile $\models$:
+- $\vdash$ `not 0=1`, and $\vdash$ `2+3*4=14`;
+- $\vdash$ `exists v.v+1=2` — derive `1+1=2`, then introduce the
+  quantifier with witness `1`;
+- every **closed term** (a term with no variables) is derivably equal
+  to exactly one numeral; the number that numeral writes is the term's
+  **value** — the metalevel word for it.
 
-$$\mathbb{N} \models A$$
+Only sentences are derived. An open formula $A[\texttt{v}]$ acts
+through its instances: substituting the numeral of $k$ for `v` yields
+a sentence, and the numbers $k$ whose instances are derivable are the
+property the formula expresses — $\vdash$ `1<3`, while `7<3` is
+refutable. Open formulas are the language's way of expressing
+*properties*.
 
-reads "$A$ is true in the standard model" (here $\mathbb{N}$ names the
-standard model, a harmless overload of the symbol for its domain). The
-crossed version $\mathbb{N} \not\models A$ says $A$ is false there.
-Examples:
-
-- $\mathbb{N} \models$ `not 0=1`
-- $\mathbb{N} \models$ `forall v.not v<v`
-- $\mathbb{N} \not\models$ `exists v.v+1=v`
-- `D(0)=0` — true or false in the standard model, but *which* is not
-  determined until the interpretation of `D` is fixed.
-
-An *open* formula is neither true nor false outright; it becomes so only
-relative to an **assignment** — a choice of value for each free variable.
-The open formula `v<3` is satisfied by the assignment $\texttt{v} \mapsto
-1$ and not by $\texttt{v} \mapsto 7$. Under this reading an open formula
-$A[\texttt{v}]$ carves out a set of numbers — the numbers whose assignment
-satisfies it — which is why open formulas are the language's way of
-expressing *properties*.
-
-Two facts about satisfaction, both immediate from the readings above: **substitution** — for $A[\texttt{v}]$ and a
-closed term $t$ of value $k$, the sentence $A[\texttt{v} := t]$ is true
-iff $A$ is satisfied by $\texttt{v} \mapsto k$; **renaming** — rewriting
-a bound variable to a fresh one changes no truth value and no
-satisfaction.
+Two facts supplied by the logic itself, recorded for later use:
+**rewriting** — if $\vdash t\texttt{=}M$ for a closed term $t$ and a
+numeral $M$, then $A[\texttt{v} := t]$ and $A[\texttt{v} := M]$ are
+derivable from each other (equality congruence); **renaming** —
+changing a bound variable to a fresh one preserves derivability in
+both directions.
 
 ## 3 Levels: the object language and the metalevel
 
@@ -320,20 +318,20 @@ does too. This section names them, once, so the distinction can be used without 
 
 - The **object language** is the formal language under study — here,
   EasyLang. Its formulas are ASCII strings: pieces of data, to be inspected,
-  measured, and encoded. A formula claims something only in
-  the sense of 2.5, relative to a structure.
+  measured, and encoded. A formula asserts nothing by itself; what the
+  article establishes about formulas is derivability from axioms (2.5).
 - The **metalanguage** is the language the study itself is written in:
   mathematical English plus the notation of Section 1. Reasoning carried out
   in it is called **metatheory**, and "at the metalevel" means "in the
   metalanguage, speaking about the object language." Nothing at this level
-  is exotic — it is ordinary mathematics, applied to strings and structures.
+  is exotic — it is ordinary mathematics, applied to strings and numbers.
 
 By this classification, everything in Section 2 apart from the displayed
 EasyLang strings was metalevel: the grammar in 2.2 is not an EasyLang
 formula but a metalevel description of which strings are terms; "every
 formula has a single canonical spelling" is a metalevel fact about strings;
-$\mathbb{N} \models$ `not 0=1` is a metalevel statement relating one string
-to one structure.
+$\vdash$ `not 0=1` is a metalevel statement about one string and the
+axioms.
 
 Functions need the most care, because they occur on both sides of the
 divide. The rule, already applied in 2.5 and kept for the rest of
@@ -341,15 +339,17 @@ the article: **when a function is defined, the definition states its domain,
 its codomain, and its level.** Three kinds occur:
 
 1. metalevel functions on numbers — for instance, the function
-   $\mathbb{N} \to \mathbb{N}$ that the symbol `D` will denote;
+   $\mathbb{N} \to \mathbb{N}$ that Section 8's equations for the
+   symbol `D` compute;
 2. metalevel functions on strings or formulas — for instance, the encoding
    built in Section 4;
 3. function symbols *inside* EasyLang — `+`, `*`, `D`. These are not
-   functions at all; they are characters occurring in strings. Each one
-   *denotes* a function only relative to a structure (2.5).
+   functions at all; they are characters occurring in strings. What
+   holds of them is settled only by axioms (2.5).
 
-The kinds interlock without merging: kind 3 is syntax, and what a kind-3
-symbol denotes in the standard model is an object of kind 1.
+The kinds interlock without merging: kind 3 is syntax; axioms tie a
+kind-3 symbol to an object of kind 1, as Section 8's equations tie `D`
+to a function.
 
 Typography carries the level by default: typewriter text is verbatim
 EasyLang, always; prose and math notation are metalevel, always. Beyond
@@ -419,6 +419,19 @@ by two cases:
   result as a decimal number;
 - the empty string (the string with no characters): assigned $0$.
 
+One companion notation, introduced here because the two travel
+together: for $n \in \mathbb{N}$,
+
+$$|n| \;\in\; \mathbb{L}$$
+
+is the decimal **numeral** of $n$ — the $\mathbb{N} \to \mathbb{L}$
+direction of 2.4's bijection. So $|\ulcorner Y \urcorner|$ is the
+numeral that writes $Y$'s Gödel number: the form in which a code
+enters a sentence, since a number itself cannot occur inside a string.
+(The classical notation is a bar on top, $\overline{n}$, which cannot
+be typed in ASCII displays; hence flanking bars. In this article they
+never mean length or absolute value.)
+
 Examples, in annotated display:
 
 ```easylang
@@ -455,7 +468,7 @@ Two reading aids visible in the examples:
 *evaluate* what is inside. $\ulcorner A \urcorner$ is the Gödel number of
 the string that the metalevel name $A$ denotes — not anything to do with
 the letter "A" — and the same reading holds under quantification: in "for
-every formula $B$, $\ulcorner B \urcorner$ is even", $\ulcorner r
+every formula $B$, $\ulcorner B \urcorner$ is even", $\ulcorner B
 \urcorner$ is the Gödel number of whichever formula $B$ stands for.
 Verbatim EasyLang text may **not** be written inside corners; the Gödel
 number of a concrete formula is stated in words instead, as in "the Gödel
@@ -505,7 +518,7 @@ corners can meet:
 
 ### 4.3 Decoding
 
-> **Lemma 4.1 (decoding).** From $\ulcorner S
+> **Lemma 4.1 (decoding).** From $\ulcorner s
 \urcorner$ the string $s$ is
 > recoverable: write the number in decimal, left-pad with zeros until the
 > length is a multiple of three, cut into three-digit blocks, and map each
@@ -515,7 +528,7 @@ corners can meet:
 *Proof.* Every code in the table lies between 32 and 122, so every block is
 three digits with at most one leading zero, and only the first block's
 leading zero can be lost when the concatenation is read as a number. The
-decimal expansion of $\ulcorner S
+decimal expansion of $\ulcorner s
 \urcorner$ therefore has $3n$ or $3n-1$
 digits for a string of length $n$, and left-padding to a multiple of three
 restores exactly the original blocks. The special value $0$ pads to the
@@ -537,21 +550,20 @@ Two remarks:
 $\ulcorner A \urcorner$ is a metalevel number. To *mention* it inside
 EasyLang, write its decimal numeral — and because EasyLang numerals are
 decimal literals, the numeral is the same digit string as the number.
-Convention: a metalevel number appearing inside typewriter text stands for
-its decimal numeral — its partner in $\mathbb{L}$ under the bijection of
-2.4. For example, let $A[\texttt{v}]$ be the open formula
-`v<10`, and recall $Z$ (4.2), with
+The bars of 4.2 are how a code crosses into a sentence. Let
+$A[\texttt{v}]$ be the open formula `v<10`, and recall $Z$ (4.2), with
 $\ulcorner Z \urcorner$ = 48_061_048:
 
-$$A[\texttt{v} := \ulcorner Z \urcorner] \;\;\text{is}\;\;
+$$A[\texttt{v} := |\ulcorner Z \urcorner|] \;\;\text{is}\;\;
 \texttt{48061048<10}$$
 
-a sentence claiming that the Gödel number of $Z$ is below ten (false — it
-is eight digits long).
+a sentence claiming that the Gödel number of $Z$ is below ten
+(refutable — the number is eight digits long, and the floor of 2.5
+settles every closed numeral comparison).
 
 One size fact:
 
-> The numeral for $\ulcorner S
+> The numeral for $\ulcorner s
 \urcorner$ is $3n$ or $3n - 1$ characters
 > long, where $n$ is the length of $s$, for nonempty $s$. Writing a string's Gödel numeral
 > inside EasyLang costs about **three times the string's own length**.
@@ -579,9 +591,10 @@ in $\mathbb{F}_1$ (its `v1` occurrences are bound; only `v` is free);
 Definition. The metalevel function
 
 $$\mathrm{gsub} \;:\; \mathbb{F}_1 \times \mathbb{F} \to \mathbb{F}_0,
-\qquad \mathrm{gsub}(B, A) \;=\; B[\texttt{v} := \ulcorner A \urcorner]$$
+\qquad \mathrm{gsub}(B, A) \;=\; B[\texttt{v} := |\ulcorner A \urcorner|]$$
 
-— in words: take the Gödel number of $A$, write it as a numeral (4.4), and
+— in words: take the Gödel number of $A$, write it as a numeral (the
+bars of 4.2), and
 substitute that numeral for every free occurrence of `v` in $B$. The name
 abbreviates *Gödel-number substitution*.
 
@@ -605,11 +618,12 @@ Typing facts, in the discipline of Section 3:
 Worked examples, all about $Z$ ($\ulcorner Z \urcorner$ = 48_061_048):
 
 - $B$ = `v<10`:  $\mathrm{gsub}(B, Z)$ is `48061048<10` — "the Gödel
-  number of $Z$ is below ten." False.
+  number of $Z$ is below ten." Refutable.
 - $B$ = `exists v1.v=v1+v1`:  $\mathrm{gsub}(B, Z)$ is
-  `exists v1.48061048=v1+v1` — "the Gödel number of $Z$ is even." True.
+  `exists v1.48061048=v1+v1` — "the Gödel number of $Z$ is even."
+  Derivable, with witness `24030524`.
 - $B$ = `v<v+1`:  $\mathrm{gsub}(B, Z)$ is `48061048<48061048+1` —
-  both free occurrences of `v` are replaced. True.
+  both free occurrences of `v` are replaced. Derivable.
 
 Each output is a sentence about a *number* that happens to be the code of
 a *formula* — the arithmetization of Section 4, now in active use.
@@ -668,7 +682,8 @@ Read it at face value: "`D` of the number
   construction started from. The sentence carries its own ancestry in its
   digits.
 - Whether this sentence has anything to do with *itself* depends
-  entirely on what the symbol `D` means — and `D` still means nothing.
+  entirely on which equations govern the symbol `D` — and no axiom
+  mentions `D` yet.
 
 Like the coding (4.3), $\mathrm{gsub}$ and $\mathrm{diag}$ are
 mechanical: encode, write digits, replace characters.
@@ -725,9 +740,9 @@ see arithmetic, with no hint that formulas are involved.
 Two closing observations:
 
 - $\mathrm{ndiag}$ is mechanical: decode, diagonalize (5.3), encode.
-- $\mathrm{ndiag}$ is a total function $\mathbb{N} \to \mathbb{N}$ — which
-  is the kind of object a unary function symbol of EasyLang
-  can denote in a structure (2.5).
+- $\mathrm{ndiag}$ is a total function $\mathbb{N} \to \mathbb{N}$ — the
+  kind of function a unary symbol of EasyLang can be tied to by
+  defining equations (Section 8).
 
 ## 6 A sentence that talks about itself
 
@@ -744,27 +759,28 @@ EasyLang sentences are about numbers, so a sentence can be about a
 is immediate: by 4.2 and Lemma 4.1, the empty string is the only
 string with Gödel number $0$, so
 
-$$s \text{ is empty} \iff \ulcorner S \urcorner = 0.$$
+$$S \text{ is empty} \iff \ulcorner S \urcorner = 0.$$
 
-And "says" is made precise through truth: a sentence **says** a metalevel
-statement $P$ when its **truth condition** is $P$ — that is, when the
-sentence is true in the standard model if and only if $P$ holds.
-(Nomenclature: *truth condition* is the standard term for the "if and only
-if" a sentence's truth amounts to.)
+And "says" is made precise through derivability. For a property
+expressed by an open formula $A[\texttt{v}]$, a sentence $S$ **says**
+"this sentence's Gödel number has the property" when the theory
+derives the equivalence between $S$ and the property at $S$'s own
+code:
 
-The definition is deliberately weak — a material biconditional, nothing
-more. Any false sentence \"says,\" in this sense, every false statement:
-both sides of the iff fail together. The constructions ahead deliver
-more than the definition asks: their sentences contain a closed term
-whose value *is* the sentence's own Gödel number, and the truth
-condition follows from that. Results are stated with the weak reading;
-the structure is where the content lives.
+$$\vdash S \texttt{ -> } A[\texttt{v} := M]
+\quad\text{and}\quad
+\vdash A[\texttt{v} := M] \texttt{ -> } S,$$
 
-One gap matters here. The interpretation of `D` was deliberately
-left open in 2.5 — `D` is, so far, an unspecified unary function symbol,
-and until it denotes something, a sentence containing `D` has no truth
-value and says nothing. Its interpretation is chosen in 6.4, once the
-requirements on it are in view.
+$M := |\ulcorner S \urcorner|$. This is a demanding
+notion: not that the two happen to agree, but that the axioms
+themselves derive each from the other. For emptiness the property
+formula is `v=0`, so the goal sentence must be derivably equivalent to
+$M$`=0` at its own $M$.
+
+One gap matters here. No axiom mentions `D` yet (2.5), so nothing
+containing `D` is derivable, and no candidate sentence can yet say
+anything. Sections 6–7 work out what `D`'s equations must deliver;
+Section 8 writes them.
 
 ### 6.2 The naive attempt
 
@@ -788,8 +804,8 @@ object-language syntax; the capital names $A$, $B$, $Z$ have been
 metavariables for formulas all along.) The naive plan is to fill `N` with
 the numeral of the finished sentence's own Gödel number.
 
-This fails by counting. If the numeral of $\ulcorner S \urcorner$ occurs anywhere inside
-$S$ — as `N=0` requires — then, writing $n = \mathrm{len}(s)$, the
+This fails by counting. If $|\ulcorner S \urcorner|$ occurs anywhere inside
+$S$ — as `N=0` requires — then, writing $n = \mathrm{len}(S)$, the
 substring alone has length $3n$ or $3n-1$ (4.4), so $n \geq 3n - 1$,
 forcing $n = 0$: no sentence contains the numeral of its own Gödel number.
 If self-reference is possible at all, the sentence must *compute* its
@@ -809,19 +825,23 @@ where two things are unknown:
 - `X` — a metavariable for a numeral, exactly as `N` was in 6.2, left
   blank while we solve for it; the display `D(X)=0` is again a template,
   not a sentence.
-- the meaning of `D` — suppose it **denotes** some total function
-  $d : \mathbb{N} \to \mathbb{N}$, to be chosen. (Same letter, two
-  faces: typewriter `D` is the symbol, italic $d$ is the function it
-  denotes.)
+- the meaning of `D` — suppose its future equations make it *compute*
+  some total function $d : \mathbb{N} \to \mathbb{N}$, numeralwise:
+  $\vdash$ `D(`$|x|$`)=`$|d(x)|$ for every $x$. (Same
+  letter, two faces: typewriter `D` is the symbol, italic $d$ the
+  function it is tied to.)
 
 Fix any candidate $d$, and suppose the blank `X` has been filled with an
 actual numeral, an element of $\mathbb{L}$; let $x \in \mathbb{N}$ be the
 number that numeral denotes — its partner under the bijection of 2.4. Then
-the completed sentence — call it $S^{*}$ — asserts:
+the completed sentence — call it $S^{*}$ — is derivably equivalent,
+by rewriting with $\vdash$ `D(`$|x|$`)=`$|d(x)|$, to the numeral claim
 
-$$d(x) = 0.$$
+$$|d(x)|\,\texttt{=0}.$$
 
-We want it to say $\ulcorner S^{*} \urcorner = 0$. The two match if, as a plain fact about numbers,
+We want it to say $\ulcorner S^{*} \urcorner = 0$ — to be derivably
+equivalent to that claim at its *own* code. The two coincide if, as a
+plain fact about numbers,
 
 $$d(x) = \ulcorner S^{*} \urcorner.$$
 
@@ -849,12 +869,12 @@ string-floor operation. It says a square commutes. Chased on elements:
 
 ```
                      h
-         Y ───────────────────▶ h(Y) = s*        (strings)
+         Y ───────────────────▶ h(Y) = S*        (strings)
          │                         │
      ⌜·⌝ │                         │ ⌜·⌝
          ▼                         ▼
-         x ───────────────────▶ d(x) = ⌜s*⌝      (numbers)
-                     g
+         x ───────────────────▶ d(x) = ⌜S*⌝      (numbers)
+                     d
 ```
 
 Top floor: strings, where sentences get built. Bottom floor: numbers,
@@ -862,7 +882,7 @@ where `D` computes. All the unknowns are in the picture: the bottom-left
 corner $x$ is the value of the numeral `X`, the bottom edge is $d$, and
 the top edge $h$ is the string operation whose shadow $d$ is asked to be.
 
-### 6.4 Guessing g
+### 6.4 Guessing d
 
 This square has been seen before. Set the wanted equation beside the one
 equation Section 5 ended with:
@@ -874,17 +894,19 @@ $$\text{wanted } (*):\;\; d(\ulcorner Y \urcorner) =
 
 Same shape, edge for edge. A match of shapes proves nothing — nothing
 here says $h$ must be $\mathrm{diag}$, and other conventions for building
-a sentence around the numeral of $\ulcorner Y \urcorner$ could be made to
+a sentence around $|\ulcorner Y \urcorner|$ could be made to
 work — but the match
 is exact in form, and $\mathrm{diag}$ is already defined. Guess:
 
 $$h := \mathrm{diag}, \qquad d := \mathrm{ndiag}.$$
 
-**Interpreting `D`.** The standard model's one open entry (2.5) is now
-filled: **`D` denotes $\mathrm{ndiag}$.** Every EasyLang sentence has,
-from here on, a truth value. (The example left open in 2.5 is settled
-too: $0$ is the Gödel number of the empty string, which is not a formula,
-so $\mathrm{ndiag}(0) = 0$ by the default case — `D(0)=0` is *true*.)
+**The commitment.** The guess fixes what `D`'s equations must deliver:
+$d := \mathrm{ndiag}$, numeralwise — $\vdash$ `D(`$|x|$`)=`$|\mathrm{ndiag}(x)|$
+for every $x$. No such equations exist yet; Section 8 shows how
+definitions of this kind are written, and 8.1 how their values are
+derived. (2.5's gap now has a definite shape: for instance `D(0)=0`
+will be derivable, since $0$ codes the empty string, no formula, and
+$\mathrm{ndiag}$ defaults to $0$ there.)
 
 **Verifying the guess.** It is enough to verify it on this section's
 sentence. Write $A$ for the string $Y$ — with $h = \mathrm{diag}$, the
@@ -894,9 +916,9 @@ recast already set $S^{*} = h(Y)$, so the guess reads
 
 $$\mathrm{diag}(A) = S^{*}.$$
 
-But $S^{*}$ is `D(X)=0` with `X` the numeral of $\ulcorner A \urcorner$,
-and $\mathrm{diag}(A) = A[\texttt{v} := \ulcorner A \urcorner]$ — the
-numeral of $\ulcorner A \urcorner$ standing exactly where `v` stood free.
+But $S^{*}$ is `D(X)=0` with `X` $= |\ulcorner A \urcorner|$,
+and $\mathrm{diag}(A) = A[\texttt{v} := |\ulcorner A \urcorner|]$ —
+that same numeral standing exactly where `v` stood free.
 Un-substituting it, $A$ must be the template with `v` restored in `X`'s
 place:
 
@@ -919,15 +941,17 @@ Verification, using only facts already established:
 
 1. $\ulcorner A \urcorner$ = 68_040_118_041_061_048 (4.2).
 2. $S^{*} = \mathrm{diag}(A)$ = `D(68040118041061048)=0` (5.3).
-3. In the standard model, $S^{*}$ asserts:
-   $\mathrm{ndiag}(68\_040\_118\_041\_061\_048) = 0$ — since `D` denotes
-   $\mathrm{ndiag}$ (6.4).
-4. $\mathrm{ndiag}(68\_040\_118\_041\_061\_048) = \ulcorner
+3. $\mathrm{ndiag}(68\_040\_118\_041\_061\_048) = \ulcorner
    \mathrm{diag}(A) \urcorner = \ulcorner S^{*} \urcorner$ — the 65-digit
-   number computed in 5.4.
-5. Therefore $S^{*}$ is true if and only if $\ulcorner S^{*} \urcorner =
-   0$, i.e. if and only if $S^{*}$ is empty. **$S^{*}$ says: "this
-   sentence is empty."**
+   number computed in 5.4. Write $M$ for its numeral.
+4. Under the commitment of 6.4, $\vdash$
+   `D(68040118041061048)=`$M$ — the sentence's own D-term, derivably
+   evaluated.
+5. Rewriting by that equation (2.5) turns $S^{*}$ and $M$`=0` into
+   each other: the derivable equivalence of 6.1, at $S^{*}$'s own
+   code. **$S^{*}$ says: "this sentence is empty."** (And the floor
+   refutes $M$`=0`, so $\vdash$ `not` $S^{*}$: the theory refutes it,
+   as it must — no sentence is empty.)
 
 The same sentence read on two layers — layer 0 is plain arithmetic,
 layer 1 reads every number through the coding — part by part:
@@ -939,8 +963,8 @@ layer 1 reads every number through the coding — part by part:
 | `=0`                   | equals $0$                                                  | is the empty string ($0$ codes nothing else)                                                                   |
 | all of $S^{*}$         | $\mathrm{ndiag}(68\_040\_118\_041\_061\_048) = 0$           | "this sentence is empty"                                                                                       |
 
-Both layers are the same sentence with the same truth value — false;
-only the metalevel gloss differs.
+Both layers read the same sentence — refuted by the theory either
+way (step 5); only the metalevel gloss differs.
 
 Nothing in the construction depends on the particular property asserted:
 swap emptiness for another property of Gödel numbers and it goes through
@@ -951,31 +975,13 @@ unchanged.
 Section 6 produced its sentence by a guess: interpret `D` as
 $\mathrm{ndiag}$, then verify. This section replaces the guess with the requirements.
 
-### 7.1 Numbers in string positions
-
-For $n \in \mathbb{N}$, $n.\texttt{toString()} \in \mathbb{L}$ is the
-decimal numeral of $n$ — the $\mathbb{N} \to \mathbb{L}$ direction of
-the bijection of 2.4, named as in programming languages (JavaScript:
-`(123).toString()` evaluates to `"123"`). From here on the conversion
-is **implicit**, as type coercion: wherever a number stands in a string
-position — a piece of a concatenation, or inside typewriter text — it
-means its numeral. The reading is unambiguous, because a number is not
-a string: $\ulcorner Y \urcorner \in \mathbb{N}$ cannot literally occur
-inside a sentence, so `D(` $\frown \ulcorner Y \urcorner \frown$ `)`
-can only mean
-`D(` $\frown \ulcorner Y \urcorner.\texttt{toString()} \frown$ `)` —
-the numeral of $\ulcorner Y \urcorner$ spliced between the fixed
-pieces. $\texttt{toString()}$ is not written again. (The
-display convention of 4.4 — a metalevel number inside typewriter text
-stands for its numeral — was this coercion already, informally.)
-
-### 7.2 From the requirements to an equation
+### 7.1 From the requirements to an equation
 
 Fix a property: an open formula $\mathcal{P} \in \mathbb{F}_1$ that
 uses `v`. (Typography: the calligraphic marks the parameter of the
 construction; plain capitals $A$, $B$ name incidental formulas.)
-Wanted: a sentence $S$ that says — in the truth-condition sense of
-6.1 — "this sentence's Gödel number satisfies $\mathcal{P}$."
+Wanted: a sentence $S$ that says — in the sense of
+6.1 — "this sentence's Gödel number has the property $\mathcal{P}$."
 
 The requirements, collected from Section 6:
 
@@ -984,45 +990,52 @@ The requirements, collected from Section 6:
    *can* contain. That numeral codes some string — call it $Y$, the
    second unknown:
 
-   $$s \;=\; \mathcal{P}[\texttt{v} :=
-   \texttt{D(}\,\ulcorner Y \urcorner\,\texttt{)}]
+   $$S \;=\; \mathcal{P}[\texttt{v} :=
+   \texttt{D(}\,|\ulcorner Y \urcorner|\,\texttt{)}]
    \tag{1}$$
 
 2. **Computation.** $S$ is manufactured out of $Y$ by a string
    operation $h$ (as in 6.3, codomain relaxed to strings):
 
-   $$h(Y) \;=\; s \tag{2}$$
+   $$h(Y) \;=\; S \tag{2}$$
 
-3. **Shadow.** `D` denotes the number-floor shadow of $h$, on the
-   whole domain of $h$ — writing $d$ for what `D` denotes,
+3. **Shadow.** Write $d$ for the number-floor **shadow** of $h$: the
+   metalevel function with
+   $d(\ulcorner W \urcorner) = \ulcorner h(W) \urcorner$ for every
+   $W \in \mathrm{dom}(h)$. `D`'s equations must compute it
+   numeralwise:
 
-   $$d(\ulcorner W \urcorner) \;=\; \ulcorner h(W) \urcorner
+   $$\vdash \texttt{D(}\,|\ulcorner W \urcorner|\,\texttt{)=}\,
+   |d(\ulcorner W \urcorner)|
    \quad \text{for every } W \in \mathrm{dom}(h). \tag{3}$$
 
 Equations (1) and (2) are the system, with two string unknowns $S$ and
-$Y$; equation (3) is language design, fixed once with $h$, before any
-$\mathcal{P}$ arrives.
+$Y$; requirement (3) is language design — axioms owed to `D`, fixed
+once with $h$, before any $\mathcal{P}$ arrives.
 
-> **Theorem 7.1 (truth condition).** Suppose (1), (2), (3) hold. Then
-> $S$ is true in the standard model if and only if the assignment
-> $\texttt{v} \mapsto \ulcorner S \urcorner$ satisfies $\mathcal{P}$ —
-> that is, $S$ says "this sentence's Gödel number satisfies
+> **Theorem 7.1 (the derivable equivalence).** Suppose (1), (2), (3)
+> hold, and write $M := |\ulcorner S \urcorner|$. Then
+> $\vdash S$ `->` $\mathcal{P}[\texttt{v} := M]$ and
+> $\vdash \mathcal{P}[\texttt{v} := M]$ `->` $S$ — in the sense of
+> 6.1, $S$ says "this sentence's Gödel number has the property
 > $\mathcal{P}$."
 
-*Proof.* The closed term inside $S$ evaluates as
+*Proof.* By (3) at $W = Y$, $\vdash$
+`D(`$|\ulcorner Y \urcorner|$`)=`$|d(\ulcorner Y \urcorner)|$, and
 $d(\ulcorner Y \urcorner) = \ulcorner h(Y) \urcorner = \ulcorner S
-\urcorner$, by (3) at $W = Y$ and then (2). By (1), $S$ is
-$\mathcal{P}$ with every free `v` filled by a closed term of value
-$\ulcorner S \urcorner$, and truth of such a sentence is satisfaction
-of $\mathcal{P}$ at that value (2.5). $\square$
+\urcorner$ by the shadow's definition and (2) — so the derived
+equation is `D(`$|\ulcorner Y \urcorner|$`)=`$M$. By (1), $S$ is
+$\mathcal{P}[\texttt{v} := \texttt{D(}|\ulcorner Y \urcorner|\texttt{)}]$,
+and rewriting by the derived equation (2.5) turns $S$ and
+$\mathcal{P}[\texttt{v} := M]$ into each other. $\square$
 
 Eliminating $S$ — substitute (2) into (1) — leaves one equation in the
 single unknown $Y$:
 
 $$h(Y) \;=\; \mathcal{P}[\texttt{v} :=
-\texttt{D(}\,\ulcorner Y \urcorner\,\texttt{)}]$$
+\texttt{D(}\,|\ulcorner Y \urcorner|\,\texttt{)}]$$
 
-### 7.3 The self-reference equation
+### 7.2 The self-reference equation
 
 Every property is equivalent to one of a single fixed shape. Bump
 $\mathcal{P}$'s numbered variables (each `vi` to `v(i+1)`, so `v1` is
@@ -1034,9 +1047,10 @@ $$\mathcal{P}' \;=\; \texttt{exists v1.v=v1 and (} \frown
 \text{core} \frown \texttt{)}$$
 
 ($\frown$ is string concatenation): "some number equals `v` and has
-the property." $\mathcal{P}'$ is satisfied by exactly the numbers $\mathcal{P}$ is —
-the renaming fact of 2.5, plus the leading `exists` merely naming the
-value — and it contains the token `v` exactly once, with everything
+the property." Every instance of $\mathcal{P}'$ is derivably
+equivalent to the matching instance of $\mathcal{P}$ — renaming (2.5),
+plus the pure logic of `exists` and `=` discharging the pronoun — and
+it contains the token `v` exactly once, with everything
 after it in one `v`-free piece. That piece is the **block**
 
 $$Q \;=\; \texttt{=v1 and (} \frown \text{core} \frown \texttt{)}$$
@@ -1046,24 +1060,25 @@ $Q$ is ill-formed, and what it owes the grammar is only that `D(0)`
 $\frown Q$ be a formula with free variables at most `v1`.
 
 Substituting the D-term for $\mathcal{P}'$'s single `v` turns the
-equation of 7.2 into pure concatenation. This is the final form:
+equation of 7.1 into pure concatenation. This is the final form:
 
 **The self-reference equation.**
 
 $$h(Y) \;=\; \texttt{exists v1.D(} \frown
-\ulcorner Y \urcorner \frown \texttt{)} \frown Q$$
+|\ulcorner Y \urcorner| \frown \texttt{)} \frown Q$$
 
 A fixed **head**, the numeral of $Y$'s own code, the block. The head
 does two jobs: its D-term computes the sentence's own Gödel number (by
 the shadow (3)), and its quantifier binds `v1`, the block's *pronoun*
 for that number — the sentence reads "there is a number: it is my
 code, and it has the property." Theorem 7.1, applied to
-$\mathcal{P}'$, gives the truth condition for $\mathcal{P}$.
+$\mathcal{P}'$, gives the derivable equivalence for $\mathcal{P}'$,
+and the instance-equivalence above carries it to $\mathcal{P}$.
 
 Running example, emptiness: $\mathcal{P}$ = `v=0`, core `v1=0`, block
 $Q$ = `=v1 and (v1=0)`. (Evenness: core `exists v2.v1=v2+v2`.)
 
-### 7.4 The one requirement
+### 7.3 The one requirement
 
 The block is manufactured from the property; the solution is
 manufactured from the block. A convention is a *recipe*: a metalevel
@@ -1084,7 +1099,7 @@ $Q_2$; $h(Y)$ is one string, so $Q_1 = Q_2$. Conversely, for injective
 $\mathrm{pack}$, define $h$ on the image by the equation itself,
 
 $$h(\mathrm{pack}(Q)) \;:=\; \texttt{exists v1.D(} \frown
-\ulcorner \mathrm{pack}(Q) \urcorner \frown
+|\ulcorner \mathrm{pack}(Q) \urcorner| \frown
 \texttt{)} \frown Q,$$
 
 well-defined because each $Y$ in the image arises from exactly one
@@ -1102,17 +1117,17 @@ operate needs more: $\mathrm{pack}$ and $h$ must be given by rules —
 computable, specifiable in advance. Every entry in the catalogue below
 meets this.
 
-### 7.5 The simplest recipe: pack(Q) = Q
+### 7.4 The simplest recipe: pack(Q) = Q
 
 One convention worked end to end, the way Section 6 worked
 $\mathrm{diag}$. The recipe is the identity — the solution *is* the
 block — and $h$ glues:
 
 $$\mathrm{pack}(Q) = Q, \qquad
-h(Y) = \texttt{exists v1.D(} \frown \ulcorner Y \urcorner \frown
+h(Y) = \texttt{exists v1.D(} \frown |\ulcorner Y \urcorner| \frown
 \texttt{)} \frown Y$$
 
-with `D` denoting the shadow of this $h$, per (3). The identity is
+with the axioms owing `D` this $h$'s shadow, per (3). The identity is
 injective, so Theorem 7.2 applies. On the emptiness block:
 
 $Y = Q$ = `=v1 and (v1=0)`, fourteen characters, coded
@@ -1146,9 +1161,10 @@ sentence itself:
 101 120 105 115 116 115 032 118 049 046 068 040 054   ...   118 049 061 048 041
 ```
 
-(The middle block is the shadow equation (3) at $W = Y$:
+(The middle block computes the shadow,
 $d(\ulcorner Y \urcorner) = \ulcorner h(Y) \urcorner =
-\ulcorner S \urcorner$.) The two layers, part by part:
+\ulcorner S \urcorner$; requirement (3) is the theory owing `D`
+exactly this value.) The two layers, part by part:
 
 | part of $S$ | layer 0 (arithmetic) | layer 1 (through the coding) |
 |---|---|---|
@@ -1161,20 +1177,20 @@ One contrast with Section 6: $S^{*}$'s numeral decoded to the formula
 the construction started from (`D(v)=0`); here the numeral decodes to
 the sentence's own tail — head quoting suffix, in one string.
 
-### 7.6 The catalogue
+### 7.5 The catalogue
 
 Every injective $\mathrm{pack}$ is a convention. Seven, on the
-emptiness block $Q$ = `=v1 and (v1=0)`; the first row is 7.5's:
+emptiness block $Q$ = `=v1 and (v1=0)`; the first row is 7.4's:
 
 | $\mathrm{pack}(Q)$          | $Y$                            | $h(Y)$                                                                                                       |
 | --------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| $Q$                         | `=v1 and (v1=0)`               | `exists v1.D(` $\frown \ulcorner Y \urcorner \frown$ `)` $\frown Y$                                          |
-| `v` $\frown Q$              | `v=v1 and (v1=0)`              | `exists v1.D(` $\frown \ulcorner Y \urcorner \frown$ `)` $\frown$ ($Y$ minus its leading `v`)                |
-| `exists v1.D(v)` $\frown Q$ | `exists v1.D(v)=v1 and (v1=0)` | $Y$ with $\ulcorner Y \urcorner$ substituted for its free `v` — **diag**                                     |
-| `exists v1.D()` $\frown Q$  | `exists v1.D()=v1 and (v1=0)`  | $Y$ with $\ulcorner Y \urcorner$ inserted into its `()` gap                                                  |
-| `)` $\frown Q$              | `)=v1 and (v1=0)`              | `exists v1.D(` $\frown \ulcorner Y \urcorner \frown$ `)` $\frown$ ($Y$ minus its first character)            |
-| `D(` $\frown Q \frown$ `)`  | `D(=v1 and (v1=0))`            | `exists v1.D(` $\frown \ulcorner Y \urcorner \frown$ `)` $\frown$ ($Y$ minus its `D(` prefix and `)` suffix) |
-| $Q \frown Q$                | `=v1 and (v1=0)=v1 and (v1=0)` | `exists v1.D(` $\frown \ulcorner Y \urcorner \frown$ `)` $\frown$ (first half of $Y$)                        |
+| $Q$                         | `=v1 and (v1=0)`               | `exists v1.D(` $\frown \vert\ulcorner Y \urcorner\vert \frown$ `)` $\frown Y$                                          |
+| `v` $\frown Q$              | `v=v1 and (v1=0)`              | `exists v1.D(` $\frown \vert\ulcorner Y \urcorner\vert \frown$ `)` $\frown$ ($Y$ minus its leading `v`)                |
+| `exists v1.D(v)` $\frown Q$ | `exists v1.D(v)=v1 and (v1=0)` | $Y$ with $\vert\ulcorner Y \urcorner\vert$ substituted for its free `v` — **diag**                                     |
+| `exists v1.D()` $\frown Q$  | `exists v1.D()=v1 and (v1=0)`  | $Y$ with $\vert\ulcorner Y \urcorner\vert$ inserted into its `()` gap                                                  |
+| `)` $\frown Q$              | `)=v1 and (v1=0)`              | `exists v1.D(` $\frown \vert\ulcorner Y \urcorner\vert \frown$ `)` $\frown$ ($Y$ minus its first character)            |
+| `D(` $\frown Q \frown$ `)`  | `D(=v1 and (v1=0))`            | `exists v1.D(` $\frown \vert\ulcorner Y \urcorner\vert \frown$ `)` $\frown$ ($Y$ minus its `D(` prefix and `)` suffix) |
+| $Q \frown Q$                | `=v1 and (v1=0)=v1 and (v1=0)` | `exists v1.D(` $\frown \vert\ulcorner Y \urcorner\vert \frown$ `)` $\frown$ (first half of $Y$)                        |
 
 All seven sentences are identical except for the numeral in the head —
 the code of the row's $Y$.
@@ -1182,10 +1198,10 @@ the code of the row's $Y$.
 Three remarks:
 
 - **The diag row is Section 6's convention.** Its $Y$ is a formula in
-  $\mathbb{F}_1$, its $h$ is $\mathrm{diag}$, and `D` denotes
+  $\mathbb{F}_1$, its $h$ is $\mathrm{diag}$, and `D` is committed to
   $\mathrm{ndiag}$ — the guess of 6.4, one row among seven. Section
   6's own $S^{*}$ = `D(68040118041061048)=0` is the same convention on
-  the un-normalized shape of 7.2: a simple property can fit the D-term
+  the un-normalized shape of 7.1: a simple property can fit the D-term
   directly into its own `v`-slot and needs no head. The normalized
   shape trades that economy for one form serving every property.
 - **$Y$ owes distinctness, nothing else.** The junk row's $Y$ opens
@@ -1193,16 +1209,17 @@ Three remarks:
   throws half of $Y$ away unread. Meaning and economy are both
   optional — only losing part of $Q$ is fatal.
 - **Each row is a different language.** Different $h$, hence a
-  different shadow, hence a different interpretation of `D` completing
-  2.5 — different machines, agreeing only on what the equation
-  demands, every one of them satisfying Theorem 7.1.
+  different shadow, hence a different set of equations owed to `D` —
+  2.5's gap filled differently by each — different machines, agreeing
+  only on what the equation demands, every one of them satisfying
+  Theorem 7.1.
 
-### 7.7 What is left of diag
+### 7.6 What is left of diag
 
 What every row shares: the sentence carries the numeral of $Y$'s own
 code, so $\ulcorner S \urcorner$ exceeds the cube of
 $\ulcorner Y \urcorner$ — the counting fact of 6.2 returned as a
-growth law, ruling out any cheap interpretation of `D`; infinitely
+growth law, ruling out any cheap set of equations for `D`; infinitely
 many $Y$ are needed; and $Q$ must be recoverable from $Y$. Beyond
 that, nothing is forced — the catalogue is the proof. What is then
 left of $\mathrm{diag}$: it is the one row whose $Y$ is a well-formed
@@ -1214,12 +1231,12 @@ convention that stays inside the grammar.
 
 ## 8 Defining D
 
-So far `D`'s meaning lives outside the language: 2.5 left its
-interpretation open, and Sections 6–7 chose one at the metalevel. This
-section removes that special status. EasyLang is extended so that
-function symbols are *defined inside the language*, and `D` becomes an
-ordinary defined name — the last symbol whose meaning was stipulated
-now has its meaning computed.
+So far `D` has no axioms: 2.5 left it ungoverned, and Sections 6–7
+only fixed what its equations must deliver. This section supplies the
+mechanism. EasyLang is extended so that function symbols are *defined
+inside the language*, and `D` becomes an ordinary defined name — the
+last symbol that owed its content to a promise now earns it from a
+definition.
 
 **New syntax.** The character set gains the capital letters `A`–`Z`
 (codes 65–90), the comma (44), the semicolon (59), and the colon (58);
@@ -1246,6 +1263,9 @@ recursive definition the two clauses agree except at one argument
 position — the **recursion argument** — which is `0` in the first
 clause and `x+1` (for a variable `x`) in the second. The rules:
 
+- argument variables in definitions are `x`, `y`, `z` (then `x1`,
+  `x2`, …) — a register disjoint from the sentence variables `v`,
+  `v1`, …;
 - the defining terms use only the variables of their own left side;
 - a definition may use numerals, `+`, `*`, and names *defined earlier
   in the program* — never later ones, never quantifiers;
@@ -1255,8 +1275,8 @@ clause and `x+1` (for a variable `x`) in the second. The rules:
 - each name is defined at most once; an explicit definition may not
   mention its own name at all.
 
-**What a definition means.** Each definition extends the standard
-model by a function on $\mathbb{N}$, and the format guarantees there
+**What a definition means.** Each definition attaches a function on
+$\mathbb{N}$ to its name, and the format guarantees there
 is exactly one candidate: the `0` clause forces the values at $0$, the
 `x+1` clause forces the values at $k+1$ from the values at $k$, so by
 ordinary induction every value is forced and some function satisfies
@@ -1269,9 +1289,11 @@ A **program** is a `;`-delimited sequence of definitions and
 sentences, each item free to use the names defined before it. The
 program below defines `D` from the primitives in sixteen steps; its
 last item is the sentence of the Introduction. The function the
-sixteen definitions determine for `D` is exactly the interpretation
-Sections 6–7 stipulated — so nothing already established moves; what
-changes is only that no stipulation remains.
+sixteen definitions determine for `D` is the glue shadow of 7.4 — the
+Introduction's Python function. Section 6's commitment
+($d = \mathrm{ndiag}$) is discharged the same way, by an exactly
+analogous program; each convention of the catalogue is one program
+away from its axioms.
 
 ```easylang
 # bootstrap: predecessor, truncated subtraction, sign tests,
@@ -1367,10 +1389,75 @@ Their definitions in ordinary notation, with the names' origins:
   $d_i = \mathrm{mod}(\mathrm{div}(y, 10^i), 10)$ — the last $k$
   digits of $y$, each turned into its character block.
 - $\mathrm{spell} : \mathbb{N} \to \mathbb{N}$,
-  $\;\mathrm{spell}(x) = \ulcorner \text{the decimal numeral of } x
-  \urcorner$ — the shadow of writing a number down.
+  $\;\mathrm{spell}(x) = \ulcorner |x| \urcorner$ — bars, then
+  corners: the code of $x$'s numeral; the shadow of writing a number
+  down.
 - $d : \mathbb{N} \to \mathbb{N}$, $\;d(x) =
   \mathrm{cat}(\mathrm{cat}(\mathrm{cat}(\ulcorner \texttt{exists
   v1.D(} \urcorner,\, \mathrm{spell}(x)),\, \ulcorner \texttt{)}
-  \urcorner),\, x)$ — the glue convention of 7.5, transcribed; the
+  \urcorner),\, x)$ — the glue convention of 7.4, transcribed; the
   same function the Introduction's Python computes.
+
+### 8.1 Proving the evaluations
+
+So far the sixteen definitions have been computed at the metalevel.
+This section derives their values inside the theory. To the axioms of
+2.5, a program adds one thing: each of its definitions' clauses, as
+universally quantified equations. Still no induction.
+
+> **Theorem 8.1 (evaluation).** For every name $F$ of the program and
+> all numbers: $f(x_1, \dots, x_n) = y$ if and only if
+> $\vdash$ `F(`$|x_1|$`,`$\dots$`,`$|x_n|$`)=`$|y|$ — numerals
+> throughout, by the bars of 4.2.
+
+Right to left is **soundness**: every axiom holds as ordinary
+arithmetic and the rules preserve that, so a derivable evaluation
+equation records $f$'s actual value. Left to right is a
+construction of derivations, by induction along the program order
+and, inside each recursive definition, on the value of the recursion
+argument. Three archetypes cover all sixteen.
+
+**PRED — a clause applied directly.** To derive `PRED(7)=6`:
+
+1. `PRED(6+1)=6` — the `x+1` clause, instantiated at `6`.
+2. `6+1=7` — the numeral floor.
+3. `PRED(7)=6` — rewrite line 1 by line 2 (equality congruence).
+
+**SUB — recursion unwound step by step.** To derive `SUB(7,2)=5`:
+
+1. `SUB(7,0)=7` — the `0` clause.
+2. `SUB(7,1)=PRED(SUB(7,0))` — the `y+1` clause at `0`, with `0+1=1`.
+3. `SUB(7,1)=6` — rewrite by line 1, then the already-derivable
+   evaluation `PRED(7)=6`.
+4. `SUB(7,2)=PRED(SUB(7,1))=PRED(6)=5` — the same pattern once more.
+
+Each step leans on evaluations of names defined earlier in the
+program; the program order is the induction order.
+
+**MOD — recursion with branching.** To derive `MOD(7,3)=1`, the chain
+climbs the dividend from `MOD(0,3)=0`, and at each step the branch is
+decided by evaluating the test. At the first rollover:
+
+1. `MOD(3,3)=IF(EQ(MOD(2,3)+1,3),0,MOD(2,3)+1)` — the `x+1` clause.
+2. `MOD(2,3)=2`, `2+1=3`, `EQ(3,3)=1` — already-derivable evaluations
+   and the floor.
+3. `IF(1,0,3)=0` — IF's own evaluation.
+4. `MOD(3,3)=0` — rewrite 1 by 2 and 3.
+
+Four more steps of this deliver `MOD(7,3)=1`. The derivation's length
+grows with the dividend — on the 41-digit arguments ahead these
+derivations are astronomically long, and finite, and mechanical;
+derivability is the only currency here.
+
+Every other definition is one of these three shapes: the explicit ones
+(`EQ`, `LT`, `IF`, `CAT`, `SPELL`, `D`) evaluate by substituting
+already-derived equations through congruence; the recursive ones
+follow the SUB pattern, or the MOD pattern where they branch
+(`TENPOW`, `DIV`, `SHIFT`, `NDIG`, `SPELLH`). The induction closes
+over all sixteen.
+
+> **Corollary 8.2.** $\vdash$
+> `D(61118049032097110100032040118049061048041)` `=`
+> `101120105115116115032118049046068040054`$\dots$`118049061048041`
+> (the 204-digit numeral). The D-term of the program's own final
+> sentence is evaluated by the theory itself.
