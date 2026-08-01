@@ -2,7 +2,57 @@
 
 ## Introduction
 
-*(placeholder — written last, once the technical spine is fixed)*
+This article builds Gödel's first incompleteness theorem out of one
+construction: a sentence that refers to itself.
+
+### A self-referential sentence
+
+```
+exists v1.D(61118049032097110100032040118049061048041)=v1 and (v1=0)
+```
+
+This is a sentence of a small formal language, defined properly in
+Section 2. Read `exists v1.` as "there is a number v1," and the rest as
+two claims about that number. Strings are encoded as numbers throughout:
+write each character as its three-digit ASCII code and read the digits
+off as one number. The symbol `D` names a function on numbers — this
+one:
+
+```python
+def D(m: int) -> int:
+    # decode: three digits per character
+    digits = str(m)
+    digits = "0" * (-len(digits) % 3) + digits
+    Y = "".join(chr(int(digits[i:i+3])) for i in range(0, len(digits), 3))
+    # rebuild a sentence around Y: fixed head, m itself, then Y
+    s = "exists v1.D(" + str(m) + ")" + Y
+    # encode it back into a number
+    return int("".join(f"{ord(c):03d}" for c in s))
+```
+
+And the 41-digit number inside the sentence is not an arbitrary number.
+Decoded, three digits per character, it reads
+
+```
+ =   v   1       a   n   d       (   v   1   =   0   )
+061 118 049 032 097 110 100 032 040 118 049 061 048 041
+```
+
+— the sentence's own tail: the fourteen characters after the closing
+parenthesis.
+
+Now run `D` on the 41-digit number by hand. Decoding gives the tail
+`=v1 and (v1=0)`. The rebuilding step glues `exists v1.D(`, the same
+41-digit number, `)`, and the tail — which is, character for character,
+the displayed sentence. The final step returns that sentence's
+encoding: a 204-digit number. So the term `D(61118…041)`, sitting
+inside the sentence, evaluates to the 204-digit encoding of the very
+sentence it sits in. The sentence claims: there is
+a number, it is my own encoding, and it is 0. In plain English:
+**"this sentence's ASCII encoding is 0."** It refers to itself
+exactly, and there is no circularity anywhere: `D` is an ordinary
+program, the number is an ordinary number, and the whole thing can be
+checked by hand.
 
 ## 1 Notation and conventions
 
@@ -1052,10 +1102,69 @@ operate needs more: $\mathrm{pack}$ and $h$ must be given by rules —
 computable, specifiable in advance. Every entry in the catalogue below
 meets this.
 
-### 7.5 The catalogue
+### 7.5 The simplest recipe: pack(Q) = Q
+
+One convention worked end to end, the way Section 6 worked
+$\mathrm{diag}$. The recipe is the identity — the solution *is* the
+block — and $h$ glues:
+
+$$\mathrm{pack}(Q) = Q, \qquad
+h(Y) = \texttt{exists v1.D(} \frown \ulcorner Y \urcorner \frown
+\texttt{)} \frown Y$$
+
+with `D` denoting the shadow of this $h$, per (3). The identity is
+injective, so Theorem 7.2 applies. On the emptiness block:
+
+$Y = Q$ = `=v1 and (v1=0)`, fourteen characters, coded
+
+```
+ =   v   1       a   n   d       (   v   1   =   0   )
+061 118 049 032 097 110 100 032 040 118 049 061 048 041
+```
+
+so $\ulcorner Y \urcorner$ =
+61_118_049_032_097_110_100_032_040_118_049_061_048_041 — 41 digits,
+the leading zero of 061 dropped (Lemma 4.1). Then $S := h(Y)$ is the
+sixty-eight-character sentence — *object level, an EasyLang string*:
+
+```
+exists v1.D(61118049032097110100032040118049061048041)=v1 and (v1=0)
+```
+
+*Metalevel* — the value of its D-term, a 204-digit number:
+
+```
+d(61118049032097110100032040118049061048041)
+  = 101120105115116115032118049046068040054...118049061048041
+```
+
+*Metalevel* — that value, read in three-digit blocks, decodes to the
+sentence itself:
+
+```
+ e   x   i   s   t   s       v   1   .   D   (   6           v   1   =   0   )
+101 120 105 115 116 115 032 118 049 046 068 040 054   ...   118 049 061 048 041
+```
+
+(The middle block is the shadow equation (3) at $W = Y$:
+$d(\ulcorner Y \urcorner) = \ulcorner h(Y) \urcorner =
+\ulcorner S \urcorner$.) The two layers, part by part:
+
+| part of $S$ | layer 0 (arithmetic) | layer 1 (through the coding) |
+|---|---|---|
+| the 41-digit numeral | the number 61_118_…_041 | the block $Q$ itself — decoded above |
+| `D(`…`)` | $d$ at that number: a 204-digit value | the Gödel number of this very sentence |
+| `=v1 and (v1=0)` | the witness equals that value, and equals $0$ | "…it is my code, and it is $0$, the code of the empty string" |
+| all of $S$ | $\exists$ v1: $d(\dots) =$ v1 $\land$ v1 $= 0$ — false | "this sentence is empty" — false |
+
+One contrast with Section 6: $S^{*}$'s numeral decoded to the formula
+the construction started from (`D(v)=0`); here the numeral decodes to
+the sentence's own tail — head quoting suffix, in one string.
+
+### 7.6 The catalogue
 
 Every injective $\mathrm{pack}$ is a convention. Seven, on the
-emptiness block $Q$ = `=v1 and (v1=0)`:
+emptiness block $Q$ = `=v1 and (v1=0)`; the first row is 7.5's:
 
 | $\mathrm{pack}(Q)$          | $Y$                            | $h(Y)$                                                                                                       |
 | --------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
@@ -1088,7 +1197,7 @@ Three remarks:
   2.5 — different machines, agreeing only on what the equation
   demands, every one of them satisfying Theorem 7.1.
 
-### 7.6 What is left of diag
+### 7.7 What is left of diag
 
 What every row shares: the sentence carries the numeral of $Y$'s own
 code, so $\ulcorner S \urcorner$ exceeds the cube of
