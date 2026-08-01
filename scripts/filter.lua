@@ -5,9 +5,16 @@ local SCRATCH = os.getenv("MATH_TMP") or "/tmp"
 local AUTHOR = "Yiran Sheng"
 local counter = 0
 
+-- top-edge/bottom-edge default to font metrics (roughly cap-height to
+-- baseline), so an auto-sized page crops whatever sits outside that band:
+-- overlines and other tall marks at the top, descenders and subscripts at the
+-- bottom. "bounds" fits the page to the actual ink instead. The margin is
+-- headroom for antialiasing at the edges; it cancels out of the baseline
+-- offset, which is measured from the page top.
+local MARGIN_PT = 1
 local PREAMBLE = [[
-#set page(width: auto, height: auto, margin: 0.4pt, fill: none)
-#set text(size: 12pt)
+#set page(width: auto, height: auto, margin: 1pt, fill: none)
+#set text(size: 12pt, top-edge: "bounds", bottom-edge: "bounds")
 ]]
 
 local function file_read(path)
@@ -57,13 +64,17 @@ local function typst_compile(src, base)
   return file_read(out)
 end
 
-local function typst_baseline(base)
+-- Distance from the top of the ink to the baseline. With bounds edges the page
+-- box hugs the ink, so `here().position()` reports the ink bottom rather than
+-- the baseline and cannot be used; measuring the same content with a baseline
+-- bottom edge gives the ascent directly.
+local function typst_ascent(base)
   local typ = SCRATCH .. "/" .. base .. ".typ"
   local pipe = io.popen(string.format(
-    "typst query %q '<pos>' --field value 2>/dev/null", typ))
+    "typst query %q '<asc>' --field value 2>/dev/null", typ))
   local json = pipe:read("a")
   pipe:close()
-  return tonumber(json:match('"y":"([%d%.]+)pt"'))
+  return tonumber(json:match('([%d%.]+)pt'))
 end
 
 local function to_typst(el)
@@ -86,6 +97,10 @@ function Math(el)
     io.stderr:write("[math2svg] unconvertible math: " .. el.text .. "\n")
     return nil
   end
+  -- Source line wrapping must not survive into the formula: a newline landing
+  -- inside a quoted run -- mono("exists\nv1.D(") -- renders as a line break,
+  -- where latex would have set a space. An explicit \ line break is kept.
+  typst_math = typst_math:gsub("([^\\])[ \t]*\n[ \t]*", "%1 ")
 
   local src, class
   if el.mathtype == "DisplayMath" then
@@ -93,17 +108,21 @@ function Math(el)
     src = PREAMBLE .. typst_math .. "\n"
   else
     class = "math inline"
-    src = PREAMBLE .. typst_math .. "#context [#metadata(here().position())<pos>]\n"
+    src = PREAMBLE
+      .. "#let f = " .. typst_math .. "\n"
+      .. "#f#context [#metadata(measure(text(bottom-edge: \"baseline\", f)).height)<asc>]\n"
   end
 
   local svg = typst_compile(src, base)
   if not svg then return nil end -- keep original on failure
 
+  -- how far the ink descends below the baseline: the page top edge sits one
+  -- margin above the ink, so the baseline is MARGIN_PT + ascent from the top
   local depth = nil
   if el.mathtype == "InlineMath" then
     local h = tonumber(svg:match('height="([%d%.]+)pt"'))
-    local y = typst_baseline(base)
-    if h and y then depth = math.max(h - y, 0) end
+    local asc = typst_ascent(base)
+    if h and asc then depth = math.max(h - (MARGIN_PT + asc), 0) end
   end
 
   svg = svg_scale(svg, depth)
