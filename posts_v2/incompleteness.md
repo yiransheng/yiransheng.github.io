@@ -273,8 +273,9 @@ Derivability is always relative to an axiom set, and the full notation
 carries that set on the turnstile's left:
 $Q \vdash$ `exists v.v+1=2`. This article writes the bare $\vdash$,
 with the axiom stock fixed by context: from here, the axioms below;
-from Section 8 on, those plus a program's definitions. Omitting the
-set does not mean there is none.
+from 6.4 on, those plus a schema for `D`; from Section 8 on, the
+axioms below plus a program's definitions. Omitting the set does not
+mean there is none.
 
 The axioms:
 
@@ -285,8 +286,9 @@ The axioms:
   `+`, `*`, `<` that holds as ordinary arithmetic is derivable, and
   every other one is refutable. There is no induction.
 - Nothing about `D`. No axiom mentions it, so no sentence containing
-  `D` is derivable or refutable yet. Its governing equations arrive in
-  Section 8; the grammar above is fixed regardless.
+  `D` is derivable or refutable yet. Axioms for `D` arrive in 6.4, as
+  an infinite schema of equations; the grammar above is fixed
+  regardless.
 
 Consequences of the floor, in examples:
 
@@ -779,8 +781,9 @@ $M$`=0` at its own $M$.
 
 One gap matters here. No axiom mentions `D` yet (2.5), so nothing
 containing `D` is derivable, and no candidate sentence can yet say
-anything. Sections 6–7 work out what `D`'s equations must deliver;
-Section 8 writes them.
+anything. A primitive symbol can be governed in only one way — by
+adopting axioms for it — and this section does exactly that in 6.4:
+an infinite schema of equations, one per number.
 
 ### 6.2 The naive attempt
 
@@ -900,13 +903,15 @@ is exact in form, and $\mathrm{diag}$ is already defined. Guess:
 
 $$h := \mathrm{diag}, \qquad d := \mathrm{ndiag}.$$
 
-**The commitment.** The guess fixes what `D`'s equations must deliver:
-$d := \mathrm{ndiag}$, numeralwise — $\vdash$ `D(`$|x|$`)=`$|\mathrm{ndiag}(x)|$
-for every $x$. No such equations exist yet; Section 8 shows how
-definitions of this kind are written, and 8.1 how their values are
-derived. (2.5's gap now has a definite shape: for instance `D(0)=0`
-will be derivable, since $0$ codes the empty string, no formula, and
-$\mathrm{ndiag}$ defaults to $0$ there.)
+**The commitment.** The guess is adopted as axioms: for every $x$,
+the sentence `D(`$|x|$`)=`$|\mathrm{ndiag}(x)|$ joins the stock of
+2.5 — an infinite schema, one axiom per number, each transcribed from
+a metalevel run of $\mathrm{ndiag}$. Adopting sentences outright is
+the only mechanism 2.5 has, so while `D` is a primitive this schema
+is the only way to govern it. (For instance `D(0)=0` is now an axiom:
+$0$ codes the empty string, no formula, and $\mathrm{ndiag}$ defaults
+to $0$ there.) Section 8 replaces schemas of this kind by finitely
+many definitions written inside the language.
 
 **Verifying the guess.** It is enough to verify it on this section's
 sentence. Write $A$ for the string $Y$ — with $h = \mathrm{diag}$, the
@@ -944,7 +949,8 @@ Verification, using only facts already established:
 3. $\mathrm{ndiag}(68\_040\_118\_041\_061\_048) = \ulcorner
    \mathrm{diag}(A) \urcorner = \ulcorner S^{*} \urcorner$ — the 65-digit
    number computed in 5.4. Write $M$ for its numeral.
-4. Under the commitment of 6.4, $\vdash$
+4. The commitment's axiom at $x = 68\_040\_118\_041\_061\_048$ is
+   `D(68040118041061048)=`$M$, so $\vdash$
    `D(68040118041061048)=`$M$ — the sentence's own D-term, derivably
    evaluated.
 5. Rewriting by that equation (2.5) turns $S^{*}$ and $M$`=0` into
@@ -1010,8 +1016,9 @@ The requirements, collected from Section 6:
    \quad \text{for every } W \in \mathrm{dom}(h). \tag{3}$$
 
 Equations (1) and (2) are the system, with two string unknowns $S$ and
-$Y$; requirement (3) is language design — axioms owed to `D`, fixed
-once with $h$, before any $\mathcal{P}$ arrives.
+$Y$; requirement (3) is language design — an axiom schema for `D`,
+adopted as in 6.4, fixed once with $h$, before any $\mathcal{P}$
+arrives.
 
 > **Theorem 7.1 (the derivable equivalence).** Suppose (1), (2), (3)
 > hold, and write $M := |\ulcorner S \urcorner|$. Then
@@ -1127,7 +1134,7 @@ $$\mathrm{pack}(Q) = Q, \qquad
 h(Y) = \texttt{exists v1.D(} \frown |\ulcorner Y \urcorner| \frown
 \texttt{)} \frown Y$$
 
-with the axioms owing `D` this $h$'s shadow, per (3). The identity is
+with `D`'s axiom schema set to this $h$'s shadow, per (3). The identity is
 injective, so Theorem 7.2 applies. On the emptiness block:
 
 $Y = Q$ = `=v1 and (v1=0)`, fourteen characters, coded
@@ -1229,14 +1236,16 @@ defines rather than a string edit invented for the convention.
 only be decoded. diag is not special; the article keeps it because it is the one
 convention that stays inside the grammar.
 
-## 8 Defining D
+## 8 Eliminating the magic builtin
 
-So far `D` has no axioms: 2.5 left it ungoverned, and Sections 6–7
-only fixed what its equations must deliver. This section supplies the
-mechanism. EasyLang is extended so that function symbols are *defined
-inside the language*, and `D` becomes an ordinary defined name — the
-last symbol that owed its content to a promise now earns it from a
-definition.
+Sections 6–7 governed `D` the only way a primitive symbol can be
+governed: by an infinite axiom schema — one equation per number, each
+transcribed from a metalevel computation the language cannot see
+(6.4, 7.1's requirement (3)). That is what makes `D` a magic builtin.
+This section eliminates the magic. EasyLang is extended so that
+function symbols are *defined inside the language*; `D` becomes an
+ordinary defined name, and the infinite schema turns from axioms into
+theorems, derived from finitely many defining equations (8.1).
 
 **New syntax.** The character set gains the capital letters `A`–`Z`
 (codes 65–90), the comma (44), the semicolon (59), and the colon (58);
